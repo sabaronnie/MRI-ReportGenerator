@@ -1,0 +1,40 @@
+# GitHub CODEOWNERS
+# See: https://docs.github.com/en/repositories/managing-your-repositories-settings-and-customization/customizing-your-repository/about-code-owners
+#
+# --- PLACEHOLDERS ---
+# Replace TEAM_ANDREW, TEAM_RONI, TEAM_HAMAD with real GitHub handles
+# e.g. @sabaronnie for Roni
+# ----------------------
+
+# Default owner for everything (fallback review)
+*   @TEAM_ANDREW
+
+# Top-level rules and shared docs — all three must approve any change
+/CLAUDE.md                         @TEAM_ANDREW @TEAM_RONI @TEAM_HAMAD
+/README.md                         @TEAM_ANDREW @TEAM_RONI @TEAM_HAMAD
+/cervical-spine-master-plan.md     @TEAM_ANDREW @TEAM_RONI @TEAM_HAMAD
+/CODEOWNERS                        @TEAM_ANDREW @TEAM_RONI @TEAM_HAMAD
+/.gitignore                        @TEAM_ANDREW @TEAM_RONI @TEAM_HAMAD
+
+# SESSION_LOG is append-only; anyone can commit directly to their branch
+# /SESSION_LOG.md — intentionally not restricted
+
+# Phase ownership (assign after team decides — uncomment and fill in)
+# /plans/phase-0-foundations.md                    @TEAM_OWNER
+# /plans/phase-1-input-handling.md                 @TEAM_OWNER
+# /plans/phase-2-segmentation.md                   @TEAM_OWNER
+# /plans/phase-3a-geometric-measurements.md        @TEAM_OWNER
+# /plans/phase-3b-cord-compression.md              @TEAM_OWNER
+# /plans/phase-3c-signal-based.md                  @TEAM_OWNER
+# /plans/phase-4-interpretation.md                 @TEAM_OWNER
+# /plans/phase-5-clinical-validation.md            @TEAM_OWNER
+# /plans/phase-6-report-generation.md              @TEAM_OWNER
+# /plans/phase-7-deferred.md                       @TEAM_ANDREW @TEAM_RONI @TEAM_HAMAD
+
+# Service ownership (uncomment and fill in when coding starts)
+# /src/eep/       @TEAM_EEP_OWNER
+# /src/iep-seg/   @TEAM_SEG_OWNER
+# /src/iep-meas/  @TEAM_MEAS_OWNER
+# /docker/        @TEAM_ANDREW @TEAM_RONI @TEAM_HAMAD
+# /k8s/           @TEAM_ANDREW @TEAM_RONI @TEAM_HAMAD
+# /.github/       @TEAM_ANDREW @TEAM_RONI @TEAM_HAMAD

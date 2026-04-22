@@ -1,0 +1,128 @@
+# ============================================================
+# MRI-ReportGenerator — .gitignore
+# ============================================================
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+env/
+venv/
+.venv/
+ENV/
+*.whl
+
+# --- IDE / OS ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Environment & secrets (CRITICAL — never commit) ---
+.env
+.env.*
+!.env.example
+secrets/
+credentials/
+*.key
+*.pem
+*.cert
+aws-credentials*
+*secrets*.yaml
+*secrets*.yml
+*secrets*.json
+
+# --- Medical / patient data (CRITICAL — never commit raw data) ---
+data/
+raw_data/
+duke_cspineseg/
+midrc_data/
+*.nii
+*.nii.gz
+*.dcm
+*.dicom
+DICOM/
+NIfTI/
+*.zip
+*.tar
+*.tar.gz
+# Allow tiny synthetic samples for tests if placed explicitly here:
+!sample_data/README.md
+!tests/fixtures/
+
+# --- Model weights & caches ---
+*.pth
+*.pt
+*.h5
+*.onnx
+*.pkl
+*.pickle
+models/weights/
+weights/
+checkpoints/
+totalspineseg/models/
+**/.totalspineseg/
+spinalcordtoolbox_cache/
+nnUNet_preprocessed/
+nnUNet_raw/
+nnUNet_results/
+
+# --- MLflow / experiment tracking ---
+mlruns/
+mlartifacts/
+wandb/
+lightning_logs/
+
+# --- Outputs & logs ---
+outputs/
+results/
+logs/
+*.log
+*.out
+preview/
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# --- Docker / deployment ---
+.dockerignore.local
+docker-compose.override.yml
+*.tfstate
+*.tfstate.*
+.terraform/
+kubeconfig
+*.kubeconfig
+
+# --- Testing & coverage ---
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# --- Type checkers / linters caches ---
+.mypy_cache/
+.pytype/
+.ruff_cache/
+.pyre/
+
+# --- Local tooling notes (not shared with team) ---
+NOTES.local.md
+TODO.local.md
+scratch/
+playground/
