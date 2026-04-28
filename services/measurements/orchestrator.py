@@ -13,7 +13,7 @@ from typing import Any, Callable
 from prometheus_client import Counter, Histogram
 
 from .context import MeasurementContext, MeasurementError
-from .geometric import genant_6point
+from .geometric import genant_6point, spondylolisthesis
 
 
 MEASUREMENT_DURATION = Histogram(
@@ -36,6 +36,7 @@ PATHOLOGY_FLAGS = Counter(
 # Registry: name -> module. Each module must expose NAME, DEPENDS_ON, compute(ctx, prior).
 COMPONENTS = {
     genant_6point.NAME: genant_6point,
+    spondylolisthesis.NAME: spondylolisthesis,
 }
 
 

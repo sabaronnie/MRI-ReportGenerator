@@ -10,12 +10,12 @@ References: plans/phase-3a-geometric-measurements.md §3A.1 / §3A.2
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
 
-from ..context import MeasurementContext, MeasurementError
+from ..context import ComponentResult, MeasurementContext, MeasurementError
 
 
 NAME = "genant_6point"
@@ -64,14 +64,6 @@ class VertebraResult:
     corners_mm: dict[str, tuple[float, float]]   # {AS, PS, AI, PI, M_sup, M_inf} → (SI, AP) mm
     corners_voxel: dict[str, tuple[int, int, int]]  # {…} → (LR, PA, IS) voxel index
     flags: dict[str, bool]
-
-
-@dataclass
-class ComponentResult:
-    measurements: dict[str, dict[str, float]]
-    intermediate: dict[str, Any]
-    flags: dict[str, dict[str, bool]]
-    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 def compute(ctx: MeasurementContext, prior_results: dict[str, Any] | None = None) -> ComponentResult:

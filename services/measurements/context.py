@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 import nibabel as nib
 import numpy as np
@@ -21,13 +22,29 @@ class MeasurementError(RuntimeError):
 
 @dataclass
 class MeasurementContext:
-    seg_path: Path
+    seg_path: Path | None
     seg_data: np.ndarray            # int label volume in canonical RAS
     seg_affine: np.ndarray          # 4x4 affine of the canonical-RAS volume
     voxel_spacing_mm: tuple[float, float, float]   # (LR, PA, IS) in mm
     raw_path: Path | None = None
     raw_data: np.ndarray | None = None
     manifest: dict = field(default_factory=dict)
+
+
+@dataclass
+class ComponentResult:
+    """Standard output shape for every measurement component.
+
+    measurements : numeric outputs, keyed `{measurement_name: {level_or_pair: float}}`
+    intermediate : per-component state for downstream consumers (corners, axes, etc.)
+    flags        : boolean flags, keyed `{flag_name: {level_or_pair: bool}}`
+    metadata     : non-numeric outputs (grade strings, report lines, level lists)
+    """
+
+    measurements: dict[str, dict[str, float]]
+    intermediate: dict[str, Any]
+    flags: dict[str, dict[str, bool]]
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 def load_context(seg_path: Path | str, raw_path: Path | str | None = None) -> MeasurementContext:
