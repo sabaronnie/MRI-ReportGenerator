@@ -1,9 +1,9 @@
 """Phase 3A.3 — spondylolisthesis (vertebral slippage) + Meyerding grading.
 
 Reads PI corner of the upper vertebra and PS corner of the lower vertebra from
-the Genant 6-point component's intermediate output and computes the AP-axis
-displacement in canonical-RAS mm. Operates entirely in canonical RAS so axis 1
-is anatomically anterior — no per-case affine introspection is required.
+the cervical body morphometry component's intermediate output and computes the
+AP-axis displacement in canonical-RAS mm. Operates entirely in canonical RAS so
+axis 1 is anatomically anterior — no per-case affine introspection is required.
 
 References: plans/phase-3a-geometric-measurements.md §3A.3
 """
@@ -18,7 +18,7 @@ from ..context import ComponentResult, MeasurementContext, MeasurementError
 
 
 NAME = "spondylolisthesis"
-DEPENDS_ON = ["genant_6point"]
+DEPENDS_ON = ["cervical_body_morphometry"]
 
 LEVEL_ORDER = ["C2", "C3", "C4", "C5", "C6", "C7", "T1"]
 NEUTRAL_THRESHOLD_MM = 1.0
@@ -30,15 +30,15 @@ SUPINE_CAVEAT = (
 
 
 def compute(ctx: MeasurementContext, prior_results: dict[str, Any]) -> ComponentResult:
-    if "genant_6point" not in prior_results:
+    producer = prior_results.get("cervical_body_morphometry") or prior_results.get("genant_6point")
+    if producer is None:
         raise MeasurementError(
-            "spondylolisthesis requires `genant_6point` in prior_results — "
+            "spondylolisthesis requires `cervical_body_morphometry` in prior_results — "
             "register it as a DEPENDS_ON producer in the orchestrator."
         )
 
-    genant = prior_results["genant_6point"]
-    corners_voxel = genant.intermediate.get("corners_voxel", {})
-    ap_widths = genant.measurements.get("AP_width", {})
+    corners_voxel = producer.intermediate.get("corners_voxel", {})
+    ap_widths = producer.measurements.get("AP_width", {})
     spacing_pa_mm = float(ctx.voxel_spacing_mm[1])
 
     present = [n for n in LEVEL_ORDER if corners_voxel.get(n)]

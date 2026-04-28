@@ -6,7 +6,8 @@ Flask service running Phase 3 measurement components on a TotalSpineSeg `step2_o
 
 | Component | Phase | Outputs |
 |---|---|---|
-| `genant_6point` | 3A.1 + 3A.2 | `AP_width`, `H_anterior`, `H_middle`, `H_posterior`, `AP_superior`, `AP_inferior`, `tilt_deg` per cervical vertebra |
+| `cervical_body_morphometry` | 3A.1 + 3A.2 | `AP_width`, `H_anterior`, `H_middle`, `H_posterior`, `tilt_deg` per cervical vertebra |
+| `spondylolisthesis` | 3A.3 | `spondy_slip_mm`, `spondy_pct_of_lower_AP` per adjacent vertebral pair |
 
 Each component file lives under [services/measurements/](.) and exports `NAME`, `DEPENDS_ON`, and `compute(ctx, prior)`. Add a new measurement by registering it in `orchestrator.COMPONENTS`.
 
@@ -37,7 +38,7 @@ The `POST /measure` body is the same zip the segmentation IEP returns: at minimu
 ```bash
 curl -X POST -F "file=@segmentation.zip" http://localhost:8081/measure
 # only AP-width / SI-height pipeline:
-curl -X POST -F "file=@segmentation.zip" -F "measurement=genant_6point" http://localhost:8081/measure
+curl -X POST -F "file=@segmentation.zip" -F "measurement=cervical_body_morphometry" http://localhost:8081/measure
 ```
 
 Response:
@@ -46,7 +47,7 @@ Response:
 {
   "manifest": {"seg_shape": [25, 60, 50], "voxel_spacing_mm": [1.0, 1.0, 1.0], "labels_present": [...]},
   "report": {
-    "components": {"genant_6point": {"status": "ok", "duration_s": 0.012, "metadata": {"levels": ["C3", ...]}}},
+    "components": {"cervical_body_morphometry": {"status": "ok", "duration_s": 0.012, "metadata": {"levels": ["C3", ...]}}},
     "measurements": {
       "AP_width":     {"C3": 19.0, "C4": 19.5, ...},
       "H_anterior":   {"C3": 17.0, ...},
@@ -93,4 +94,4 @@ pytest services/measurements/tests
 
 The test suite uses synthetic 3D segmentations (no patient data) and verifies the joint AP-width / SI-height pipeline recovers known geometry.
 
-End-to-end validation against the Phase 3A Duke-case run is the next-session task — run the segmentation IEP CLI, feed the resulting `step2_output.nii.gz` into `services.measurements.geometric.genant_6point.compute()`, and compare to Roni's notebook numbers from 2026-04-28.
+End-to-end validation against the Phase 3A Duke-case run is the next-session task — run the segmentation IEP CLI, feed the resulting `step2_output.nii.gz` into `services.measurements.geometric.cervical_body_morphometry.compute()`, and compare to the Colab notebook numbers from 2026-04-28.

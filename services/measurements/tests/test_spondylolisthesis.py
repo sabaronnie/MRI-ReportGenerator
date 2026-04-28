@@ -1,8 +1,8 @@
 """Tests for the spondylolisthesis component.
 
-Unit tests use hand-built fake `genant_6point` outputs so the spondy logic is
+Unit tests use hand-built fake body-morphometry outputs so the spondy logic is
 exercised in isolation. One integration test builds a synthetic two-vertebra
-segmentation and runs the genant -> spondy chain end-to-end.
+segmentation and runs the body-morphometry -> spondy chain end-to-end.
 """
 
 from __future__ import annotations
@@ -17,13 +17,13 @@ from services.measurements.context import (
     MeasurementError,
     load_context,
 )
-from services.measurements.geometric import genant_6point, spondylolisthesis
+from services.measurements.geometric import cervical_body_morphometry, spondylolisthesis
 
 
 # ---------------------------------------------------------------- helpers ----
 
 
-def _fake_genant(corner_voxels: dict, ap_widths: dict) -> ComponentResult:
+def _fake_body_morphometry(corner_voxels: dict, ap_widths: dict) -> ComponentResult:
     return ComponentResult(
         measurements={"AP_width": ap_widths},
         intermediate={"corners_voxel": corner_voxels},
@@ -68,8 +68,8 @@ def _corners_for_pair(c3_pa_offset: int) -> dict:
 
 
 def test_anterolisthesis_3mm_grade_I():
-    fake = _fake_genant(_corners_for_pair(c3_pa_offset=3), {"C3": 20.0, "C4": 20.0})
-    r = spondylolisthesis.compute(_stub_ctx(), {"genant_6point": fake})
+    fake = _fake_body_morphometry(_corners_for_pair(c3_pa_offset=3), {"C3": 20.0, "C4": 20.0})
+    r = spondylolisthesis.compute(_stub_ctx(), {"cervical_body_morphometry": fake})
     assert r.measurements["spondy_slip_mm"]["C3-C4"] == pytest.approx(3.0)
     assert r.measurements["spondy_pct_of_lower_AP"]["C3-C4"] == pytest.approx(15.0)
     assert r.metadata["spondy_direction"]["C3-C4"] == "anterolisthesis"
@@ -78,23 +78,23 @@ def test_anterolisthesis_3mm_grade_I():
 
 
 def test_retrolisthesis_signed_negative():
-    fake = _fake_genant(_corners_for_pair(c3_pa_offset=-3), {"C3": 20.0, "C4": 20.0})
-    r = spondylolisthesis.compute(_stub_ctx(), {"genant_6point": fake})
+    fake = _fake_body_morphometry(_corners_for_pair(c3_pa_offset=-3), {"C3": 20.0, "C4": 20.0})
+    r = spondylolisthesis.compute(_stub_ctx(), {"cervical_body_morphometry": fake})
     assert r.measurements["spondy_slip_mm"]["C3-C4"] == pytest.approx(-3.0)
     assert r.metadata["spondy_direction"]["C3-C4"] == "retrolisthesis"
 
 
 def test_neutral_below_1mm_threshold():
-    fake = _fake_genant(_corners_for_pair(c3_pa_offset=0), {"C3": 20.0, "C4": 20.0})
-    r = spondylolisthesis.compute(_stub_ctx(), {"genant_6point": fake})
+    fake = _fake_body_morphometry(_corners_for_pair(c3_pa_offset=0), {"C3": 20.0, "C4": 20.0})
+    r = spondylolisthesis.compute(_stub_ctx(), {"cervical_body_morphometry": fake})
     assert r.measurements["spondy_slip_mm"]["C3-C4"] == pytest.approx(0.0)
     assert r.metadata["spondy_direction"]["C3-C4"] == "neutral"
     assert r.flags["spondylolisthesis_present"]["C3-C4"] is False
 
 
 def test_voxel_spacing_scales_slip():
-    fake = _fake_genant(_corners_for_pair(c3_pa_offset=2), {"C3": 20.0, "C4": 20.0})
-    r = spondylolisthesis.compute(_stub_ctx(spacing=(1.0, 0.7, 0.7)), {"genant_6point": fake})
+    fake = _fake_body_morphometry(_corners_for_pair(c3_pa_offset=2), {"C3": 20.0, "C4": 20.0})
+    r = spondylolisthesis.compute(_stub_ctx(spacing=(1.0, 0.7, 0.7)), {"cervical_body_morphometry": fake})
     assert r.measurements["spondy_slip_mm"]["C3-C4"] == pytest.approx(1.4)
 
 
@@ -114,19 +114,19 @@ def test_meyerding_grade_thresholds():
 
 def test_grade_5_spondyloptosis():
     # 25 mm slip on a 20 mm lower body → 125% → Grade V
-    fake = _fake_genant(_corners_for_pair(c3_pa_offset=25), {"C3": 20.0, "C4": 20.0})
-    r = spondylolisthesis.compute(_stub_ctx(), {"genant_6point": fake})
+    fake = _fake_body_morphometry(_corners_for_pair(c3_pa_offset=25), {"C3": 20.0, "C4": 20.0})
+    r = spondylolisthesis.compute(_stub_ctx(), {"cervical_body_morphometry": fake})
     assert r.measurements["spondy_slip_mm"]["C3-C4"] == pytest.approx(25.0)
     assert r.metadata["spondy_meyerding_grade"]["C3-C4"] == "V"
 
 
-def test_missing_genant_raises():
-    with pytest.raises(MeasurementError, match="genant_6point"):
+def test_missing_body_morphometry_raises():
+    with pytest.raises(MeasurementError, match="cervical_body_morphometry"):
         spondylolisthesis.compute(_stub_ctx(), {})
 
 
 def test_skips_pair_with_missing_corners():
-    fake = _fake_genant(
+    fake = _fake_body_morphometry(
         corner_voxels={
             "C3": {},  # corner extraction failed for C3
             "C4": _corners_for_pair(0)["C4"],
@@ -138,23 +138,23 @@ def test_skips_pair_with_missing_corners():
         },
         ap_widths={"C4": 20.0, "C5": 20.0},
     )
-    r = spondylolisthesis.compute(_stub_ctx(), {"genant_6point": fake})
+    r = spondylolisthesis.compute(_stub_ctx(), {"cervical_body_morphometry": fake})
     assert "C3-C4" not in r.measurements["spondy_slip_mm"]
     assert "C4-C5" in r.measurements["spondy_slip_mm"]
 
 
 def test_unknown_grade_when_ap_width_missing():
-    fake = _fake_genant(
+    fake = _fake_body_morphometry(
         _corners_for_pair(c3_pa_offset=3),
         {"C3": 20.0},  # C4 AP_width absent
     )
-    r = spondylolisthesis.compute(_stub_ctx(), {"genant_6point": fake})
+    r = spondylolisthesis.compute(_stub_ctx(), {"cervical_body_morphometry": fake})
     assert r.metadata["spondy_meyerding_grade"]["C3-C4"] == "?"
 
 
 def test_caveat_is_in_every_report_line():
-    fake = _fake_genant(_corners_for_pair(c3_pa_offset=3), {"C3": 20.0, "C4": 20.0})
-    r = spondylolisthesis.compute(_stub_ctx(), {"genant_6point": fake})
+    fake = _fake_body_morphometry(_corners_for_pair(c3_pa_offset=3), {"C3": 20.0, "C4": 20.0})
+    r = spondylolisthesis.compute(_stub_ctx(), {"cervical_body_morphometry": fake})
     line = r.metadata["spondy_report_lines"]["C3-C4"]
     assert "supine MRI" in line
     assert "Lattig" in line
@@ -198,10 +198,10 @@ def test_integration_3mm_anterolisthesis(tmp_path):
     seg_path = _build_two_vertebra_seg(tmp_path, ap_offset_voxels=3)
     ctx = load_context(seg_path)
 
-    genant_result = genant_6point.compute(ctx)
-    assert {"C3", "C4"}.issubset(set(genant_result.metadata["levels"]))
+    morphometry_result = cervical_body_morphometry.compute(ctx)
+    assert {"C3", "C4"}.issubset(set(morphometry_result.metadata["levels"]))
 
-    spondy = spondylolisthesis.compute(ctx, {"genant_6point": genant_result})
+    spondy = spondylolisthesis.compute(ctx, {"cervical_body_morphometry": morphometry_result})
     slip = spondy.measurements["spondy_slip_mm"]["C3-C4"]
     assert slip == pytest.approx(3.0, abs=1.0)
     assert spondy.metadata["spondy_direction"]["C3-C4"] == "anterolisthesis"
