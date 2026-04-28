@@ -2,8 +2,8 @@
 
 **Owner:** TBD
 **Reviewer:** TBD
-**Status:** v1 content imported — under team review
-**Last updated:** 2026-04-22 by Andrew (initial import from master_plan_v1.md)
+**Status:** v1 content imported — under team review; 3A.1 and 3A.2 method finalized 2026-04-28 by Roni
+**Last updated:** 2026-04-28 by Roni (3A.1 / 3A.2: disc-anchored 6-point Genant method, validated end-to-end on one Duke case)
 
 ---
 
@@ -30,50 +30,102 @@ Each sub-engine outputs a flat dict `{ measurement_name: { level: value_in_physi
 
 All 3A measurements operate on a single chosen mid-sagittal 2D slice unless otherwise noted. All outputs are in mm or degrees.
 
-#### 3A.1 Vertebral body AP width
+#### 3A.1 Vertebral body AP width  &  3A.2 Vertebral body SI heights — joint method
 
-**Input:** 2D binary mask per vertebra (C2–C7).
+> **Note:** 3A.1 (AP width) and 3A.2 (anterior / middle / posterior SI heights) share a single 6-point extraction pipeline based on the Genant 1993 morphometric method, adapted for mask-based MRI input. The pipeline produces all four measurements per vertebra in one pass. This section documents the joint method; 3A.2 below references it.
 
-**Method:** For each vertebra:
-1. Extract its 2D binary mask on the mid-sagittal slice.
-2. Fit a **minimum-area rotated rectangle** via `cv2.minAreaRect`. This returns a center, (width, height), and rotation angle.
-3. Identify which side of the rectangle is AP vs SI based on rotation angle (SI side is the longer one in a vertebral body; AP is shorter). Sanity-check by comparing ratio to population norms (SI/AP typically 0.7–1.1).
-4. Report shorter side × pixel spacing = AP width in mm.
+**Input (per vertebra):** TotalSpineSeg `step2_output/scan.nii.gz` 3D segmentation containing:
+- Cervical vertebra labels: C3=13, C4=14, C5=15, C6=16, C7=17
+- Adjacent disc labels: 63=C2-C3, 64=C3-C4, 65=C4-C5, 66=C5-C6, 67=C6-C7, 71=C7-T1
+- Canal labels: 1=spinal cord, 2=CSF
 
-**Why rotated rectangle over axis-aligned bounding box:** vertebrae tilt with lordosis (especially C2 and C7); axis-aligned box overestimates AP width by including empty space when the vertebra is rotated.
+The MRI used for display is loaded from `input_raw/scan_0000.nii.gz` and resampled onto the segmentation grid via `nibabel.processing.resample_from_to`.
 
-**Why not "measure at mid-height":** the rotated rectangle already integrates over the whole vertebra. Measuring at a single mid-height horizontal line is noisier and sensitive to exact choice of horizontal coordinate. The rotated-rectangle approach is more robust and is the de-facto standard in [Spine Explorer (Huang 2020)](https://www.sciencedirect.com/science/article/abs/pii/S1529943019311241) for lumbar.
+**Method:** Five stages.
 
-**Known limitation:** Osteophytes anterior to the vertebral body inflate AP width. For cases where osteophyte detection becomes relevant, a future refinement is to erode the mask by 1–2 mm before fitting the rectangle. Not implemented in v1.
+**1. 3D disc-anchored body isolation.** The body's anteroposterior range is defined by the union of voxels in its adjacent discs (above and below) across the entire 3D volume:
 
-**Reference values (for Phase 4 thresholds):**
-- Yukawa et al. 2018 — 1,200 asymptomatic Japanese adults, C2–C7 VB dimensions stratified by age/sex
-- Thelen et al. 2019 (SHIP, [PLOS One](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0222682)) — 2,453 Caucasian adults, cervical VB width reference
+```
+ap_lo = min(disc_voxels along AP axis) − 2 mm margin
+ap_hi = max(disc_voxels along AP axis) + 2 mm margin
+body_3d = vertebra_mask  AND  (ap_lo ≤ AP coordinate ≤ ap_hi)
+```
 
-**Code asset:** Custom, ~30 lines. No standalone repo for this on cervical MRI.
+Discs share AP depth with the bodies (both anterior of the canal); arch + spinous process are posterior of the canal and so fall outside the disc AP range. Using all disc voxels in 3D — not per-slice — makes the AP filter robust to per-slice TSS noise. This replaces a previous SI-extent-threshold approach which failed on C7 (large spinous process) and on slices with thin body cross-sections.
+
+**2. Slice selection — canal-visible (midline) band.** Per-slice canal voxel count peaks at the true midline and falls off laterally. Slices where canal voxels reach ≥ 70% of the per-slice peak define the *midline band* — anatomically the slices nearest the patient's true sagittal midline. Within this band, each vertebra's optimal slice is the slice with the most body-mask voxels for that level. Edge slices (where TSS produces sliver-shaped artefacts) are excluded by construction without measurement-value filtering, so pathological measurements are still surfaced as flags.
+
+**3. PCA in physical (mm) space.** On the chosen 2D body mask, compute pixel coordinates in mm by multiplying voxel positions by the affine spacings, then run PCA on the centred coordinates. The two principal eigenvectors are the body's intrinsic SI and AP axes — robust to anisotropic voxel spacing and to lordotic vertebra tilt. SI is identified as the eigenvector more aligned with the global SI direction; AP is the perpendicular one. Signs are made deterministic (SI points inferior, AP sign consistent across vertebrae).
+
+**4. Six-point extraction.** All six points are real body pixels in the PCA-projected (SI, AP) frame. Corners use **edge-strip extrema**:
+
+- **Top edge strip** = body pixels in the top 15% of SI range (the superior endplate region).
+- **Bottom edge strip** = bottom 15% of SI range (the inferior endplate region).
+- **AS** = pixel in top strip with smallest AP projection (anterior-superior corner).
+- **PS** = pixel in top strip with largest AP projection (posterior-superior corner).
+- **AI** = pixel in bottom strip with smallest AP projection.
+- **PI** = pixel in bottom strip with largest AP projection.
+- **M_sup, M_inf** = topmost / bottommost pixels in a thin AP slab (~1.5 mm wide) around the AP midpoint of the body. These follow the actual endplate surface, capturing inward dip in biconcave fractures (Genant 1993).
+
+**5. Measurements (Euclidean distance in mm space).**
+
+| Measurement | Formula | Goes to |
+|---|---|---|
+| `AP_superior` | ‖AS − PS‖ | 3A.1 (intermediate) |
+| `AP_inferior` | ‖AI − PI‖ | 3A.1 (intermediate) |
+| `AP_width`    | mean(AP_sup, AP_inf) | **3A.1 output** |
+| `H_anterior`  | ‖AS − AI‖ | **3A.2 output** |
+| `H_middle`    | ‖M_sup − M_inf‖ | **3A.2 output** |
+| `H_posterior` | ‖PS − PI‖ | **3A.2 output** |
+
+**Pathology flags (post-measurement, never used to reject):**
+- `AP_width` < 12 mm or > 22 mm → outside typical cervical normative range.
+- |tilt| > 20° → unusual axis orientation; likely segmentation issue.
+- `H_anterior` < 70% × `H_posterior` → possible wedge fracture.
+- `H_middle` < 70% × max(`H_anterior`, `H_posterior`) → possible biconcave fracture.
+
+Flags are surfaced for radiologist review. Measurements are always reported regardless of their values, so genuine pathology remains visible in the output.
+
+**Why edge-strip corners over rotated bounding-box vertices:** Rotated-bbox vertices (e.g. `cv2.minAreaRect` corners) sit at the body's outermost extent in PCA space — *not on the body itself* — so AP_width is overestimated for non-rectangular bodies. Edge-strip extrema return real body pixels along the actual endplates, giving accurate AP and SI dimensions for any body shape.
+
+**Why edge-strip corners over closest-pixel-to-bbox-vertex search:** A nearest-neighbour search for each bbox vertex can land on interior pixels when the body is irregular (a more "central" pixel can win the Euclidean-distance race against an actual corner pixel). It also caused symmetric-collapse failures (e.g. AS = PS at C7) when the body was small. Edge-strip extrema put each corner in a distinct strip and at the strip's actual edge.
+
+**Why disc-anchored body isolation over an SI-extent threshold:** A 50%-of-max-SI-extent threshold on AP bins fails on vertebrae where the spinous process has comparable SI extent to the body (notably C7). Discs provide an anatomical AP anchor that doesn't require a tunable threshold and gives consistent results across all cervical levels.
+
+**Why canal-visibility for slice selection:** The canal is a midline structure visible only at slices near the true midline. Restricting slice selection to slices where the canal reaches ≥ 70% of its peak voxel count selects an anatomically meaningful band — the same band where the body cross-section is well-formed. Edge slices producing sliver-shaped TSS artefacts are excluded without filtering on measurement values.
+
+**Method references:**
+- **Genant HK, Wu CY, van Kuijk C, Nevitt MC.** "Vertebral fracture assessment using a semiquantitative technique." *J Bone Miner Res* 1993; 8(9):1137–1148. PMID: [8237484](https://pubmed.ncbi.nlm.nih.gov/8237484/). Defines the 6-point morphometric method (originally lateral X-ray; the mask-based MRI adaptation here is novel and validated in Phase 5).
+- **Huang J, Shen H, Wu J, et al.** "Spine Explorer: a deep learning based fully automated program for efficient and reliable quantifications of the vertebrae and discs on sagittal lumbar spine MR images." *Eur Spine J* 2020; 29:139–149. DOI: [10.1007/s00586-019-06182-z](https://doi.org/10.1007/s00586-019-06182-z). Validates the segmentation → PCA → corner-extraction pipeline (ICC > 0.95 vs manual on lumbar). Cervical adaptation is novel here. ⚠ Verify exact title/DOI before final submission.
+
+**Reference values (Phase 4 thresholds will use these):**
+- **Yukawa Y, Nakashima H, Ito K, et al.** "Quantitative analysis of cervical sagittal alignment in 1,200 asymptomatic adults." *Eur Spine J* 2018; 27:426–432. C2–C7 VB AP widths and heights stratified by age/sex. DOI: [10.1007/s00586-016-4807-7](https://doi.org/10.1007/s00586-016-4807-7). ⚠ Verify exact citation before publishing.
+- **Thelen K, Jaeger M, Petersohn D, et al. (SHIP).** "Reference values for cervical canal and vertebral dimensions on MRI in 2,453 asymptomatic Caucasian adults." *PLOS ONE* 2019; 14(9):e0222682. DOI: [10.1371/journal.pone.0222682](https://doi.org/10.1371/journal.pone.0222682). Cervical VB and canal MRI normative dimensions.
+
+**Validation status:** End-to-end working on one Duke case (2026-04-28) for C3–C7. Mask-based 6-point Genant on cervical sagittal T2 MRI is **not directly validated** in published literature — Phase 5 (clinical validation against AUBMC manual measurements) is required before clinical use.
+
+**Known limitations:**
+- TSS edge under-segmentation: TSS is known to under-cover ~1–2 mm strips at endplates, biasing SI heights low by ~5–15%. Quantified in Phase 5.
+- C7 with very large spinous process: if disc 71 (C7-T1) segmentation is poor, body isolation may admit arch + SP pixels at C7. Compensated by the canal-visibility slice filter and by sanity flags.
+- Anterior osteophytes: not specifically detected; if present they can extend the body's anterior AP edge and inflate AP_width by 1–2 mm.
+
+**Code asset:** Custom, ~250 lines (helpers + measurement + display). Lives in the Phase 3A measurement service.
 
 #### 3A.2 Vertebral body SI height (anterior + middle + posterior)
 
-**Input:** same as 3A.1.
+**Method:** Computed jointly with 3A.1 — see the 6-point Genant pipeline above. The three heights come out of the same six-point extraction:
 
-**Method:**
-1. Get the 4 corners of the rotated rectangle (from 3A.1).
-2. Identify the 4 corners as: anterior-superior (AS), anterior-inferior (AI), posterior-superior (PS), posterior-inferior (PI).
-   - Identification: sort corners by the AP axis (shorter principal axis of rectangle) to get anterior vs posterior pair, then by SI axis to get superior vs inferior within each pair.
-3. Compute:
-   - **Anterior height** = distance(AS, AI)
-   - **Posterior height** = distance(PS, PI)
-   - **Middle height** = distance between midpoints of the two SI edges (average of the two)
-4. All three values per vertebra.
+- **`H_anterior`** = ‖AS − AI‖ (Euclidean distance in mm between anterior-superior and anterior-inferior corners on the body's edge strips).
+- **`H_posterior`** = ‖PS − PI‖.
+- **`H_middle`** = ‖M_sup − M_inf‖ (midpoints of the superior and inferior endplate slabs, following the actual endplate surface — captures inward dip in biconcave fractures per Genant 1993).
 
-**Why all three rather than just one:** Free extra signal. The ratio of anterior/posterior height is the standard [Genant 1993 classification](https://pubmed.ncbi.nlm.nih.gov/8237484/) metric for vertebral wedge fractures. Storing all three now unlocks future fracture-detection work without rerunning segmentation.
+**Why all three rather than just one:** The anterior/posterior ratio is the standard Genant 1993 classification metric for vertebral wedge fractures, and the middle/corner ratio is the biconcave signature. Reporting all three with the AP measurement preserves diagnostic signal for future fracture-detection work without rerunning segmentation.
 
-**Reference values:**
-- Same Yukawa 2018 / SHIP 2019 as 3A.1.
+**Reference values:** Same Yukawa 2018 / SHIP 2019 normative tables cited in 3A.1.
 
-**Code asset:** Custom, ~20 lines atop 3A.1.
+**Pathology flags:** Same as 3A.1 (`H_ant < 70% × H_post` → wedge; `H_mid < 70% × max(corner)` → biconcave).
 
-**Downstream consumer:** 3A.6 Disc Height Index uses `middle height`.
+**Downstream consumer:** 3A.6 Disc Height Index uses `H_middle`.
 
 #### 3A.3 Spondylolisthesis + Meyerding grading
 
@@ -222,4 +274,14 @@ Yukawa 2018 (N=1,200 asymptomatic): mean 13.9° ± 12.3°. Wide normal range —
 
 (Append brief notes by date/author as research progresses. Don't delete old notes.)
 
-- _(none yet)_
+- **2026-04-28 — Roni:** Finalized the 3A.1 / 3A.2 method end-to-end on one Duke case. Replaced the v1 `cv2.minAreaRect` rotated-rectangle approach with a disc-anchored, canal-restricted, edge-strip 6-point Genant pipeline. Iteration log:
+  - **v1 cv2.minAreaRect on full vertebra mask:** AP_widths came out ~38–58 mm for C3–C7 (2–3× too high). Cause: TSS vertebra label includes the posterior arch + spinous process, which extends the rotated rectangle posteriorly far past the body.
+  - **+ 50%-of-max-SI-extent threshold to trim the SP tail:** worked for C5/C6/C7 but C3/C4 corners collapsed (body region too thin) and C7 sometimes selected the back portion (arch had comparable SI extent to body). Tuning the threshold caused regressions elsewhere.
+  - **Per-vertebra slice selection (max total vertebra voxels):** fixed C4/C5 picking the back, but the C3 chosen slice was where TSS produced a thin diagonal sliver — wrong AP and 30°+ tilt artefact.
+  - **Slice picker by shape quality (solidity, single-CC, not-ribbon-thin):** could land on a small clean blob that wasn't the actual body — segmentation noise wins by being well-shaped.
+  - **Disc-anchored body isolation (3D, using union of disc voxels):** anatomically correct AP filter, no tunable threshold, robust to per-slice TSS noise. Solved the SP-inclusion and threshold-tuning problems for all five vertebrae.
+  - **Canal-visibility slice band (≥ 70% of peak canal voxels):** restricts to true midline slices where the body cross-section is well-formed. Replaces the value-based "physiological range" filter, which was wrongly hiding pathology.
+  - **Corner finding iteration:** rotated-bbox vertices (Spine Explorer convention) overestimated AP because vertices sit outside the body. Closest-pixel-to-vertex landed on interior pixels for irregular bodies. Half-locked closest worked partially but missed body corners on asymmetric bodies. Pure SI extrema in halves underestimated AP. Lexicographic SI-then-AP failed because PCA float projections never tie. **Final method: edge-strip extrema (top/bottom 15% SI bands; min/max AP within each strip)** puts corners on real body pixels at the actual endplates.
+  - **Result on the test Duke case (C3–C7):** AP widths in the cervical normative range (15–22 mm), tilts physiological (< 10° max), no degenerate / collapsed measurements. Pathology surfaces as flags rather than getting filtered out.
+- **Validation gap:** mask-based 6-point Genant on cervical sagittal MRI is novel — Phase 5 must validate this against AUBMC manual radiologist measurements (ICC, Bland-Altman) before clinical use.
+- **Open question for Phase 5:** edge-strip width (`EDGE_FRAC = 0.15`) was set empirically. Phase 5 ICC analysis should compare 0.10 / 0.15 / 0.20 against radiologist measurements to pick the best.

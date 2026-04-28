@@ -36,13 +36,32 @@ The system is positioned as an **Application** (provisional — pending explicit
 
 ### Service architecture (per EECE503N rubric, GT3)
 
-- **External Endpoint (EEP):** FastAPI orchestrator. Public API, input validation, rate-limit, report assembly.
-- **Internal Endpoint 1 (IEP1):** Segmentation service. TotalSpineSeg + Spinal Cord Toolbox wrappers. Non-trivial DL inference.
-- **Internal Endpoint 2 (IEP2):** Measurements + Interpretation service. Geometric, cord, signal engines + threshold flagging.
+- **External Endpoint (EEP):** Flask orchestrator (decided 2026-04-28 by Roni; was FastAPI in v1 — Flask is sufficient for a stateless inference pipeline with no per-request persistence). Public API, input validation, rate-limit, report assembly. Not yet implemented.
+- **Internal Endpoint 1 (IEP1):** Segmentation service. TotalSpineSeg + Spinal Cord Toolbox wrappers. Non-trivial DL inference. **Implementation:** [`services/segmentation/`](./services/segmentation/) — Phase 1 input handling + Phase 2.1 TSS wrapper landed 2026-04-28; SCT (Phase 2.2), mid-sagittal slice selection (2.3), and segmentation QC (2.4) pending.
+- **Internal Endpoint 2 (IEP2):** Measurements + Interpretation service. Geometric, cord, signal engines + threshold flagging. **Implementation:** [`services/measurements/`](./services/measurements/) — pluggable-component scaffold + Genant 6-point pipeline (3A.1 + 3A.2) landed 2026-04-28; remaining 3A / 3B / 3C / Phase 4 components pending.
 
 Three services → three Docker images (rubric S4) → three owners.
 
 **Open question:** Is report generation a third IEP (IEP3) or does it live inline in the EEP? Impacts Docker image count and rubric T3. See `plans/phase-6-report-generation.md` and open questions below.
+
+### Implementation status
+
+Live mapping of plan-to-code. Owners stay TBD per the matrix below — *Built by* records who landed the implementation and is descriptive, not an ownership claim.
+
+| Plan section | Implementation | Built by | Status |
+|---|---|---|---|
+| Phase 1 — Input Handling (1.1–1.4) | [`services/segmentation/input_handler.py`](./services/segmentation/input_handler.py) | Roni 2026-04-28 | Smoke-tested 6/6 on synthetic NIfTI; pending end-to-end on a Duke case |
+| Phase 2.1 — TotalSpineSeg wrapper | [`services/segmentation/segmenter.py`](./services/segmentation/segmenter.py) | Roni 2026-04-28 | Subprocess shape per plan; pending live TSS run on a Duke case |
+| Phase 3A.1 + 3A.2 — VB AP width + SI heights (joint Genant 6-point) | [`services/measurements/geometric/genant_6point.py`](./services/measurements/geometric/genant_6point.py) | Roni 2026-04-28 | Smoke-tested on synthetic 20×18 mm body (AP_width 19.0, H_* 17.0 exactly); pending parity check against Roni's 04-28 notebook on the Duke case |
+
+Service runtime layout (both IEPs are Flask, K8s-shaped):
+
+| Service | Path | Endpoints | Notes |
+|---|---|---|---|
+| IEP1 segmentation | [`services/segmentation/`](./services/segmentation/) | `GET /healthz`, `POST /segment` | `cli.py` for "prove on one case before scaling" runs |
+| IEP2 measurements | [`services/measurements/`](./services/measurements/) | `GET /healthz`, `GET /readyz`, `GET /metrics`, `POST /measure` | Prometheus metrics: `measurement_duration_seconds`, `measurement_results_total`, `measurement_pathology_flags_total`. `PORT` and `MAX_UPLOAD_BYTES` env-driven; no on-disk state between requests |
+
+Pending implementation (in plan order): 2.2 SCT cord, 2.3 mid-sagittal slice selection, 2.4 segmentation QC, 3A.3–3A.12, 3B.x, 3C.x, Phase 4, Phase 5, Phase 6, EEP service.
 
 ### Phase ownership matrix (research phase)
 
