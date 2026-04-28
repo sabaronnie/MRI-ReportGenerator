@@ -1,9 +1,19 @@
 """
-Colab-ready cervical vertebral body measurements (C3-C7).
+Colab-ready cervical vertebral body measurements (C3-C7) on ONE shared midsagittal slice.
 
 Goal:
-- Maximize geometric accuracy on sagittal T2 MRI + TotalSpineSeg labels.
-- Keep the measurement definitions as close as possible to validated methods.
+- Use one anatomically defensible midsagittal slice for all vertebral body measurements.
+- Keep the same validated-style body morphometry logic as the main Colab script.
+
+Slice-selection strategy:
+- First define a midsagittal candidate band using canal visibility.
+- Then choose one shared slice inside that band that maximizes the TOTAL isolated-body
+  area across the measured cervical vertebrae (C3-C7).
+
+This is useful when you want:
+- one consistent slice for every level
+- easier visual review
+- direct comparison across vertebrae on the same sagittal plane
 
 Primary measurement conventions used here:
 - Vertebral heights:
@@ -12,12 +22,6 @@ Primary measurement conventions used here:
 - Vertebral AP width:
   SHIP-style vertebral-body AP width measured through the craniocaudal center
   of the body, implemented as AP span in a thin SI slab around the body center.
-
-Practical robustness additions:
-- Canonical-RAS reorientation before any geometry.
-- 3D disc-anchored body isolation to exclude posterior arch / spinous process.
-- Midline-band slice selection using canal visibility.
-- Optional averaging across best-slice ± 1 when valid.
 
 References:
 - Genant HK et al. J Bone Miner Res. 1993. PMID: 8237484
@@ -62,7 +66,6 @@ CANAL_BAND_FRACTION = 0.70
 EDGE_STRIP_FRACTION = 0.15
 MID_AP_SLAB_MM = 1.5
 MID_SI_SLAB_MM = 1.5
-MULTI_SLICE_OFFSETS = (-1, 0, 1)
 MIN_BODY_PIXELS_2D = 25
 
 
@@ -139,20 +142,6 @@ def take_sagittal_slice(vol, idx):
     return vol[idx, :, :]
 
 
-# =========================
-# 1) Midline-band slice selection
-# =========================
-canal_3d = np.isin(SEG_3D, CANAL_LABELS)
-canal_per_slice = canal_3d.sum(axis=(AP_AXIS, SI_AXIS))
-canal_peak = int(canal_per_slice.max())
-if canal_peak == 0:
-    raise RuntimeError("Canal labels absent; cannot select a reliable midline band.")
-MIDLINE_BAND = canal_per_slice >= CANAL_BAND_FRACTION * canal_peak
-
-
-# =========================
-# 2) 3D body isolation
-# =========================
 def isolate_body_3d(seg_3d, level):
     label = LEVEL_LABELS[level]
     vertebra = seg_3d == label
@@ -179,16 +168,49 @@ def isolate_body_3d(seg_3d, level):
     return body_3d if body_3d.any() else None
 
 
-def select_best_slice(body_3d):
-    body_per_slice = body_3d.sum(axis=(AP_AXIS, SI_AXIS))
-    masked = np.where(MIDLINE_BAND, body_per_slice, -1)
-    if masked.max() <= 0:
-        return None
-    return int(np.argmax(masked))
+# =========================
+# 1) Shared midsagittal slice selection
+# =========================
+canal_3d = np.isin(SEG_3D, CANAL_LABELS)
+canal_per_slice = canal_3d.sum(axis=(AP_AXIS, SI_AXIS))
+canal_peak = int(canal_per_slice.max())
+if canal_peak == 0:
+    raise RuntimeError("Canal labels absent; cannot select a reliable midline band.")
+
+MIDLINE_BAND = canal_per_slice >= CANAL_BAND_FRACTION * canal_peak
+
+body_3d_by_level = {}
+for level in LEVEL_LABELS:
+    body_3d_by_level[level] = isolate_body_3d(SEG_3D, level)
+
+slice_scores = np.full(SEG_3D.shape[SAG_AXIS], -1.0, dtype=np.float64)
+for s in range(SEG_3D.shape[SAG_AXIS]):
+    if not MIDLINE_BAND[s]:
+        continue
+    total_area = 0
+    levels_present = 0
+    for level, body_3d in body_3d_by_level.items():
+        if body_3d is None:
+            continue
+        body_2d = largest_connected_component(take_sagittal_slice(body_3d, s))
+        npx = int(body_2d.sum())
+        if npx >= MIN_BODY_PIXELS_2D:
+            total_area += npx
+            levels_present += 1
+    if levels_present > 0:
+        # Favor slices that preserve the most total body area.
+        # Small bonus for having more vertebrae represented cleanly.
+        slice_scores[s] = total_area + 1000.0 * levels_present
+
+if slice_scores.max() <= 0:
+    raise RuntimeError("Could not find a shared midsagittal slice with measurable cervical bodies.")
+
+SHARED_MIDSAG_SLICE = int(np.argmax(slice_scores))
+print(f"Shared midsagittal slice selected: {SHARED_MIDSAG_SLICE}")
 
 
 # =========================
-# 3) Genant-style heights + SHIP-style AP width
+# 2) Measure on that ONE slice
 # =========================
 def measure_body_slice(level, body_mask_2d, slice_idx):
     body_mask_2d = largest_connected_component(body_mask_2d)
@@ -225,7 +247,6 @@ def measure_body_slice(level, body_mask_2d, slice_idx):
     if si_range <= 0 or ap_range <= 0:
         return None
 
-    # Genant-style edge strips for anterior/posterior heights.
     top_strip = si_proj >= si_max - EDGE_STRIP_FRACTION * si_range
     bot_strip = si_proj <= si_min + EDGE_STRIP_FRACTION * si_range
     if not top_strip.any() or not bot_strip.any():
@@ -236,7 +257,6 @@ def measure_body_slice(level, body_mask_2d, slice_idx):
     AI = _argbreak(bot_strip, ap_proj, "max", si_proj, "min")
     PI = _argbreak(bot_strip, ap_proj, "min", si_proj, "min")
 
-    # Genant middle height through a thin AP slab around body-center.
     ap_mid = 0.5 * (ap_min + ap_max)
     half_ap_slab = max(MID_AP_SLAB_MM / 2.0, 0.08 * ap_range)
     in_mid_ap_slab = np.abs(ap_proj - ap_mid) <= half_ap_slab
@@ -248,9 +268,6 @@ def measure_body_slice(level, body_mask_2d, slice_idx):
     M_sup = _argbreak(in_mid_ap_slab, si_proj, "max", ap_proj, "max")
     M_inf = _argbreak(in_mid_ap_slab, si_proj, "min", ap_proj, "max")
 
-    # SHIP-style AP width through the craniocaudal center of the body.
-    # We stay inside a thin SI slab, then prefer points closest to the true
-    # SI center so off-center slices don't inflate width.
     si_mid = 0.5 * (si_min + si_max)
     half_si_slab = max(MID_SI_SLAB_MM / 2.0, 0.08 * si_range)
     in_mid_si_slab = np.abs(si_proj - si_mid) <= half_si_slab
@@ -296,30 +313,6 @@ def measure_body_slice(level, body_mask_2d, slice_idx):
     )
 
 
-def average_measurements(level, per_slice):
-    valid = [m for m in per_slice if m is not None]
-    if not valid:
-        return None
-
-    best_geom = valid[len(valid) // 2]  # center slice if present
-    best_ap = min(valid, key=lambda m: m.AP_si_mismatch)
-
-    out = {
-        "level": level,
-        "slice_idx": best_geom.slice_idx,
-        "AP_width_mm": float(best_ap.AP_width),
-        "H_anterior_mm": float(np.mean([m.H_anterior for m in valid])),
-        "H_middle_mm": float(np.mean([m.H_middle for m in valid])),
-        "H_posterior_mm": float(np.mean([m.H_posterior for m in valid])),
-        "tilt_deg": float(np.mean([m.tilt_deg for m in valid])),
-        "n_slices_used": len(valid),
-        "overlay_source": best_ap,
-        "ap_width_slice_idx": best_ap.slice_idx,
-        "ap_width_si_mismatch_mm": float(best_ap.AP_si_mismatch),
-    }
-    return out
-
-
 def derive_flags(row):
     flags = []
     if row["AP_width_mm"] < 12.0:
@@ -335,70 +328,61 @@ def derive_flags(row):
     return flags
 
 
-# =========================
-# 4) Run per level
-# =========================
 results = {}
-
-for level in LEVEL_LABELS:
-    body_3d = isolate_body_3d(SEG_3D, level)
+print("Per-vertebra measurements on one shared midsagittal slice:")
+for level, body_3d in body_3d_by_level.items():
     if body_3d is None:
         print(f"{level}: body isolation failed")
         continue
 
-    best_slice = select_best_slice(body_3d)
-    if best_slice is None:
-        print(f"{level}: no valid slice in midline band")
+    body_2d = take_sagittal_slice(body_3d, SHARED_MIDSAG_SLICE)
+    m = measure_body_slice(level, body_2d, SHARED_MIDSAG_SLICE)
+    if m is None:
+        print(f"{level}: measurement failed on shared slice")
         continue
 
-    per_slice = []
-    for off in MULTI_SLICE_OFFSETS:
-        s = best_slice + off
-        if not (0 <= s < SEG_3D.shape[SAG_AXIS]):
-            continue
-        body_2d = take_sagittal_slice(body_3d, s)
-        per_slice.append(measure_body_slice(level, body_2d, s))
-
-    row = average_measurements(level, per_slice)
-    if row is None:
-        print(f"{level}: measurement failed")
-        continue
-
+    row = {
+        "level": level,
+        "slice_idx": SHARED_MIDSAG_SLICE,
+        "AP_width_mm": float(m.AP_width),
+        "H_anterior_mm": float(m.H_anterior),
+        "H_middle_mm": float(m.H_middle),
+        "H_posterior_mm": float(m.H_posterior),
+        "tilt_deg": float(m.tilt_deg),
+        "ap_width_si_mismatch_mm": float(m.AP_si_mismatch),
+        "overlay_source": m,
+        "flags": [],
+    }
     row["flags"] = derive_flags(row)
     results[level] = row
 
     print(
-        f"{level}: slice={row['slice_idx']}  "
-        f"AP={row['AP_width_mm']:.2f} mm  "
+        f"{level}: AP={row['AP_width_mm']:.2f} mm  "
         f"H_ant={row['H_anterior_mm']:.2f}  "
         f"H_mid={row['H_middle_mm']:.2f}  "
         f"H_post={row['H_posterior_mm']:.2f}  "
-        f"tilt={row['tilt_deg']:.1f} deg  "
-        f"n={row['n_slices_used']}"
+        f"tilt={row['tilt_deg']:.1f} deg"
     )
 
-
 if not results:
-    raise RuntimeError("No vertebral body measurements were produced.")
+    raise RuntimeError("No vertebral body measurements were produced on the shared midsagittal slice.")
 
 
 # =========================
-# 5) Tabulate
+# 3) Table
 # =========================
 rows = []
 for level, row in results.items():
     rows.append(
         {
             "level": level,
-            "slice_idx": row["slice_idx"],
-            "ap_width_slice_idx": row["ap_width_slice_idx"],
+            "shared_slice_idx": row["slice_idx"],
             "AP_width_mm": round(row["AP_width_mm"], 2),
             "H_anterior_mm": round(row["H_anterior_mm"], 2),
             "H_middle_mm": round(row["H_middle_mm"], 2),
             "H_posterior_mm": round(row["H_posterior_mm"], 2),
             "tilt_deg": round(row["tilt_deg"], 1),
             "ap_width_si_mismatch_mm": round(row["ap_width_si_mismatch_mm"], 3),
-            "n_slices_used": row["n_slices_used"],
             "flags": "; ".join(row["flags"]) if row["flags"] else "",
         }
     )
@@ -408,7 +392,7 @@ display(df)
 
 
 # =========================
-# 6) Visual sanity-check
+# 4) Visual sanity-check
 # =========================
 unique_labels = np.unique(SEG_3D)
 unique_labels = unique_labels[unique_labels > 0]
@@ -445,10 +429,10 @@ def zoom_to_mask(ax, mask_2d, margin=25):
 
 
 edge_specs = [
-    ("A_mid", "P_mid", "lime", 2.8),      # AP width
-    ("AS", "AI", "yellow", 1.6),          # anterior height
-    ("M_sup", "M_inf", "cyan", 2.0),      # middle height
-    ("PS", "PI", "orange", 1.6),          # posterior height
+    ("A_mid", "P_mid", "lime", 2.8),
+    ("AS", "AI", "yellow", 1.6),
+    ("M_sup", "M_inf", "cyan", 2.0),
+    ("PS", "PI", "orange", 1.6),
 ]
 
 n = len(results)
@@ -459,10 +443,9 @@ if n == 1:
 for row_idx, level in enumerate(sorted(results)):
     result = results[level]
     src = result["overlay_source"]
-    slice_idx = src.slice_idx
 
-    raw_2d = take_sagittal_slice(MRI_3D, slice_idx)
-    seg_2d = take_sagittal_slice(SEG_3D, slice_idx)
+    raw_2d = take_sagittal_slice(MRI_3D, SHARED_MIDSAG_SLICE)
+    seg_2d = take_sagittal_slice(SEG_3D, SHARED_MIDSAG_SLICE)
     ax_raw, ax_seg, ax_txt = axes[row_idx]
 
     ax_raw.imshow(np.rot90(normalize_mri(raw_2d)), cmap="gray", interpolation="nearest")
@@ -471,8 +454,8 @@ for row_idx, level in enumerate(sorted(results)):
     ax_raw.imshow(np.rot90(body_overlay), interpolation="nearest")
     ax_seg.imshow(np.rot90(build_seg_color(seg_2d)), interpolation="nearest")
 
-    ax_raw.set_title(f"{level} raw MRI @ sagittal slice {slice_idx}", fontsize=12)
-    ax_seg.set_title(f"{level} segmentation @ sagittal slice {slice_idx}", fontsize=12)
+    ax_raw.set_title(f"{level} raw MRI @ shared sagittal slice {SHARED_MIDSAG_SLICE}", fontsize=12)
+    ax_seg.set_title(f"{level} segmentation @ shared sagittal slice {SHARED_MIDSAG_SLICE}", fontsize=12)
 
     for ax in (ax_raw, ax_seg):
         for a, b, color, lw in edge_specs:
@@ -492,9 +475,7 @@ for row_idx, level in enumerate(sorted(results)):
         0.98,
         (
             f"{level}\n"
-            f"slice = {result['slice_idx']}\n"
-            f"AP slice = {result['ap_width_slice_idx']}\n"
-            f"slices averaged = {result['n_slices_used']}\n\n"
+            f"shared slice = {SHARED_MIDSAG_SLICE}\n\n"
             f"AP_width   = {result['AP_width_mm']:.2f} mm\n"
             f"H_anterior = {result['H_anterior_mm']:.2f} mm\n"
             f"H_middle   = {result['H_middle_mm']:.2f} mm\n"
@@ -512,10 +493,10 @@ for row_idx, level in enumerate(sorted(results)):
     )
 
 plt.suptitle(
-    "Validated-style cervical VB measurements: lime=SHIP-style mid-body AP width; "
-    "yellow/cyan/orange=Genant-style anterior/middle/posterior heights",
+    "Single-slice cervical VB measurements on one shared midsagittal slice",
     fontsize=12,
     y=1.002,
 )
 plt.tight_layout()
 plt.show()
+

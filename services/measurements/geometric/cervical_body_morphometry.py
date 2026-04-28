@@ -75,6 +75,8 @@ class SliceMeasurement:
     tilt_deg: float
     corners_mm: dict[str, tuple[float, float]]
     corners_voxel: dict[str, tuple[int, int, int]]
+    AP_only: float
+    AP_si_mismatch: float
 
 
 def compute(ctx: MeasurementContext, prior_results: dict[str, Any] | None = None) -> ComponentResult:
@@ -116,6 +118,8 @@ def compute(ctx: MeasurementContext, prior_results: dict[str, Any] | None = None
         "corners_mm": {},
         "corners_voxel": {},
         "sagittal_slice": {},
+        "ap_width_slice": {},
+        "ap_width_si_mismatch_mm": {},
         "n_slices_used": {},
     }
 
@@ -135,6 +139,8 @@ def compute(ctx: MeasurementContext, prior_results: dict[str, Any] | None = None
         intermediate["corners_mm"][level] = row["corners_mm"]
         intermediate["corners_voxel"][level] = row["corners_voxel"]
         intermediate["sagittal_slice"][level] = row["slice_idx"]
+        intermediate["ap_width_slice"][level] = row["ap_width_slice_idx"]
+        intermediate["ap_width_si_mismatch_mm"][level] = row["ap_width_si_mismatch_mm"]
         intermediate["n_slices_used"][level] = row["n_slices_used"]
 
     return ComponentResult(
@@ -176,19 +182,22 @@ def _measure_level(
     if not per_slice:
         raise MeasurementError(f"{level}: measurement failed on best slice and neighbors")
 
-    overlay = next((m for m in per_slice if m.slice_idx == best_slice), per_slice[len(per_slice) // 2])
+    best_geom = next((m for m in per_slice if m.slice_idx == best_slice), per_slice[len(per_slice) // 2])
+    best_ap = min(per_slice, key=lambda m: m.AP_si_mismatch)
 
     return {
         "level": level,
-        "slice_idx": int(overlay.slice_idx),
-        "AP_width": float(np.mean([m.AP_width for m in per_slice])),
+        "slice_idx": int(best_geom.slice_idx),
+        "AP_width": float(best_ap.AP_width),
         "H_anterior": float(np.mean([m.H_anterior for m in per_slice])),
         "H_middle": float(np.mean([m.H_middle for m in per_slice])),
         "H_posterior": float(np.mean([m.H_posterior for m in per_slice])),
         "tilt_deg": float(np.mean([m.tilt_deg for m in per_slice])),
         "n_slices_used": len(per_slice),
-        "corners_mm": overlay.corners_mm,
-        "corners_voxel": overlay.corners_voxel,
+        "corners_mm": best_ap.corners_mm,
+        "corners_voxel": best_ap.corners_voxel,
+        "ap_width_slice_idx": int(best_ap.slice_idx),
+        "ap_width_si_mismatch_mm": float(best_ap.AP_si_mismatch),
     }
 
 
@@ -318,8 +327,11 @@ def _measure_body_slice(
     if in_mid_si_slab.sum() < 3:
         return None
 
-    A_mid = _argbreak(in_mid_si_slab, ap_proj, "max", si_proj, "max")
-    P_mid = _argbreak(in_mid_si_slab, ap_proj, "min", si_proj, "max")
+    # Prefer points closest to the true SI center so off-center slices do not
+    # inflate the measured AP span.
+    si_center_closeness = -np.abs(si_proj - si_mid)
+    A_mid = _argbreak(in_mid_si_slab, ap_proj, "max", si_center_closeness, "max")
+    P_mid = _argbreak(in_mid_si_slab, ap_proj, "min", si_center_closeness, "max")
 
     point_idx = {
         "AS": AS,
@@ -338,15 +350,19 @@ def _measure_body_slice(
     }
 
     tilt_deg = float(np.degrees(np.arccos(np.clip(abs(np.dot(si_axis, global_si)), 0.0, 1.0))))
+    ap_only = abs(corners_mm["A_mid"][1] - corners_mm["P_mid"][1])
+    ap_si_mismatch = abs(corners_mm["A_mid"][0] - corners_mm["P_mid"][0])
 
     return SliceMeasurement(
         level=level,
         slice_idx=int(slice_idx),
-        AP_width=_dist_mm(corners_mm["A_mid"], corners_mm["P_mid"]),
+        AP_width=ap_only,
         H_anterior=_dist_mm(corners_mm["AS"], corners_mm["AI"]),
         H_middle=_dist_mm(corners_mm["M_sup"], corners_mm["M_inf"]),
         H_posterior=_dist_mm(corners_mm["PS"], corners_mm["PI"]),
         tilt_deg=tilt_deg,
         corners_mm=corners_mm,
         corners_voxel=corners_voxel,
+        AP_only=ap_only,
+        AP_si_mismatch=ap_si_mismatch,
     )

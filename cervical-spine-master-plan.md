@@ -38,7 +38,7 @@ The system is positioned as an **Application** (provisional — pending explicit
 
 - **External Endpoint (EEP):** Flask orchestrator (decided 2026-04-28 by Roni; was FastAPI in v1 — Flask is sufficient for a stateless inference pipeline with no per-request persistence). Public API, input validation, rate-limit, report assembly. Not yet implemented.
 - **Internal Endpoint 1 (IEP1):** Segmentation service. TotalSpineSeg + Spinal Cord Toolbox wrappers. Non-trivial DL inference. **Implementation:** [`services/segmentation/`](./services/segmentation/) — Phase 1 input handling + Phase 2.1 TSS wrapper landed 2026-04-28; SCT (Phase 2.2), mid-sagittal slice selection (2.3), and segmentation QC (2.4) pending.
-- **Internal Endpoint 2 (IEP2):** Measurements + Interpretation service. Geometric, cord, signal engines + threshold flagging. **Implementation:** [`services/measurements/`](./services/measurements/) — pluggable-component scaffold + Genant 6-point pipeline (3A.1 + 3A.2) landed 2026-04-28; remaining 3A / 3B / 3C / Phase 4 components pending.
+- **Internal Endpoint 2 (IEP2):** Measurements + Interpretation service. Geometric, cord, signal engines + threshold flagging. **Implementation:** [`services/measurements/`](./services/measurements/) — pluggable-component scaffold landed 2026-04-28; the first producer component is now [`services/measurements/geometric/cervical_body_morphometry.py`](./services/measurements/geometric/cervical_body_morphometry.py), which outputs vertebral body AP width and anterior/middle/posterior heights for C3-C7. Downstream geometric components consume its corners/AP widths via `DEPENDS_ON`. Remaining 3A / 3B / 3C / Phase 4 components pending.
 
 Three services → three Docker images (rubric S4) → three owners.
 
@@ -52,8 +52,8 @@ Live mapping of plan-to-code. Owners stay TBD per the matrix below — *Built by
 |---|---|---|---|
 | Phase 1 — Input Handling (1.1–1.4) | [`services/segmentation/input_handler.py`](./services/segmentation/input_handler.py) | Roni 2026-04-28 | Smoke-tested 6/6 on synthetic NIfTI; pending end-to-end on a Duke case |
 | Phase 2.1 — TotalSpineSeg wrapper | [`services/segmentation/segmenter.py`](./services/segmentation/segmenter.py) | Roni 2026-04-28 | Subprocess shape per plan; pending live TSS run on a Duke case |
-| Phase 3A.1 + 3A.2 — VB AP width + SI heights (joint Genant 6-point) | [`services/measurements/geometric/genant_6point.py`](./services/measurements/geometric/genant_6point.py) | Roni 2026-04-28 | Smoke-tested on synthetic 20×18 mm body (AP_width 19.0, H_* 17.0 exactly); pending parity check against Roni's 04-28 notebook on the Duke case |
-| Phase 3A.3 — Spondylolisthesis + Meyerding grading | [`services/measurements/geometric/spondylolisthesis.py`](./services/measurements/geometric/spondylolisthesis.py) | Roni 2026-04-28 | First component using `DEPENDS_ON` (consumes Genant corners). Smoke-tested 11/11: unit tests over fake-genant inputs (anterolisthesis / retrolisthesis / neutral / spacing scaling / grade thresholds I–V / missing-genant / missing-corner / missing-AP-width / supine-caveat-in-report) + an integration test on a synthetic two-vertebra seg recovering 3.000 mm anterolisthesis Grade I exactly. Outputs `spondy_slip_mm` + `spondy_pct_of_lower_AP` as numeric measurements; Meyerding grade and report lines (with mandatory supine-MRI caveat) in metadata. Pending Duke-case parity check |
+| Phase 3A.1 + 3A.2 — VB AP width + SI heights (validated-style body morphometry) | [`services/measurements/geometric/cervical_body_morphometry.py`](./services/measurements/geometric/cervical_body_morphometry.py) | Roni 2026-04-28 / updated 2026-04-28 | First measurement producer in IEP2. Implements canonical-RAS geometry, 3D disc-anchored body isolation, canal-visible midline-band slice selection, Genant-style 3-point heights, and SHIP-style mid-body AP width. Synthetic-mask unit tests added; pending Duke-case parity check against the Colab notebook. |
+| Phase 3A.3 — Spondylolisthesis + Meyerding grading | [`services/measurements/geometric/spondylolisthesis.py`](./services/measurements/geometric/spondylolisthesis.py) | Roni 2026-04-28 / updated 2026-04-28 | First downstream `DEPENDS_ON` consumer of `cervical_body_morphometry` (reads PI / PS corners and lower-level AP width). Unit coverage retained for anterolisthesis / retrolisthesis / neutral / spacing scaling / grade thresholds I–V / missing-producer / missing-corner / missing-AP-width / supine-caveat-in-report, plus a synthetic two-vertebra integration test. Outputs `spondy_slip_mm` + `spondy_pct_of_lower_AP` as numeric measurements; Meyerding grade and report lines (with mandatory supine-MRI caveat) in metadata. Pending Duke-case parity check. |
 
 `ComponentResult` (the standard return shape for every measurement) lives in [`services/measurements/context.py`](./services/measurements/context.py) so multiple components can share the contract without circular imports.
 
@@ -118,7 +118,7 @@ Owners and reviewers are assigned here once the team decides. Until then, every 
 
 - **GT1** Live demo works end-to-end → demo pipeline on one Duke case
 - **GT2** Public cloud API functional → **AWS** deployment (decided)
-- **GT3** EEP + ≥2 IEPs architecture → FastAPI EEP + IEP1 (Segmentation) + IEP2 (Measurements)
+- **GT3** EEP + ≥2 IEPs architecture → Flask EEP + IEP1 (Segmentation) + IEP2 (Measurements)
 - **GT4** Required deliverables complete → repo + docs + deployment + demo + poster
 - **GT5** Application positioning (provisional) → baseline = manual radiologist measurement; deployer = radiology departments
 
