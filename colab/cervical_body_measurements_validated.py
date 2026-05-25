@@ -16,8 +16,8 @@ Primary measurement conventions used here:
 Practical robustness additions:
 - Canonical-RAS reorientation before any geometry.
 - 3D disc-anchored body isolation to exclude posterior arch / spinous process.
-- Midline-band slice selection using canal visibility.
-- Optional averaging across best-slice ± 1 when valid.
+- Midline-band candidate slice search using canal visibility.
+- Quality-scored reference-slice choice with robust support-slice aggregation.
 
 References:
 - Genant HK et al. J Bone Miner Res. 1993. PMID: 8237484
@@ -26,6 +26,7 @@ References:
 """
 
 import os
+import json
 from dataclasses import dataclass
 
 import matplotlib.pyplot as plt
@@ -42,10 +43,72 @@ except ImportError:
 
 
 # =========================
-# Config
+# EDIT THESE FOR EACH SCAN
 # =========================
-MRI_PATH = os.path.join(OUTPUT_DIR, "input_raw", "scan_0000.nii.gz")
-SEG_PATH = SEG_PATH  # expected to be already defined in the Colab notebook
+# Option A — point at a per-scan TotalSpineSeg output folder on Drive.
+# This script now supports both:
+# - the new Colab layout with `run_manifest.json` + `segmentation_final.nii.gz`
+# - the older TotalSpineSeg layout with `step2_output/`, `step1_output/`, etc.
+SCAN_OUTPUT_DIR = "/content/drive/MyDrive/503N-Proj/cspineseg_totalspineseg_outputs/593973-001232_Study-MR-1255_Series-5"
+
+# Option B — explicit overrides. If both are non-empty, they take precedence
+# over SCAN_OUTPUT_DIR. Use this when your files live outside a TSS run folder.
+MRI_PATH_OVERRIDE = ""
+SEG_PATH_OVERRIDE = ""
+
+
+def _resolve_scan_paths(scan_dir, mri_override, seg_override):
+    if mri_override and seg_override:
+        return mri_override, seg_override
+
+    manifest_path = os.path.join(scan_dir, "run_manifest.json")
+    if os.path.exists(manifest_path):
+        with open(manifest_path, "r") as f:
+            manifest = json.load(f)
+
+        mri = manifest.get("input_mri")
+        seg = manifest.get("final_segmentation") or manifest.get("source_segmentation_file")
+
+        if mri and seg and os.path.exists(mri) and os.path.exists(seg):
+            return mri, seg
+
+    seg_candidates = [
+        os.path.join(scan_dir, "segmentation_final.nii.gz"),
+        os.path.join(scan_dir, "step2_output", "scan.nii.gz"),
+        os.path.join(scan_dir, "step1_output", "scan.nii.gz"),
+    ]
+    seg = next((p for p in seg_candidates if os.path.exists(p)), None)
+    if seg is None:
+        raise FileNotFoundError(
+            f"No segmentation found under {scan_dir}. Tried segmentation_final.nii.gz, "
+            f"step2_output/, and step1_output/. Set SEG_PATH_OVERRIDE if your file is elsewhere."
+        )
+
+    mri_candidates = [
+        os.path.join(scan_dir, "input_raw", "scan_0000.nii.gz"),
+        os.path.join(scan_dir, "step2_raw", "scan.nii.gz"),
+        os.path.join(scan_dir, "input", "scan_0000.nii.gz"),
+    ]
+    mri = next((p for p in mri_candidates if os.path.exists(p)), None)
+    if mri is None and os.path.exists(manifest_path):
+        with open(manifest_path, "r") as f:
+            manifest = json.load(f)
+        mri = manifest.get("input_mri")
+        if mri and not os.path.exists(mri):
+            mri = None
+    if mri is None:
+        raise FileNotFoundError(
+            f"No MRI found under {scan_dir}. Tried run_manifest.json, input_raw/, step2_raw/, "
+            f"and input/. Set MRI_PATH_OVERRIDE if your file is elsewhere."
+        )
+
+    return mri, seg
+
+
+MRI_PATH, SEG_PATH = _resolve_scan_paths(SCAN_OUTPUT_DIR, MRI_PATH_OVERRIDE, SEG_PATH_OVERRIDE)
+print(f"MRI: {MRI_PATH}")
+print(f"SEG: {SEG_PATH}")
+
 
 LEVEL_LABELS = {"C3": 13, "C4": 14, "C5": 15, "C6": 16, "C7": 17}
 DISC_NEIGHBOURS = {
@@ -62,8 +125,11 @@ CANAL_BAND_FRACTION = 0.70
 EDGE_STRIP_FRACTION = 0.15
 MID_AP_SLAB_MM = 1.5
 MID_SI_SLAB_MM = 1.5
-MULTI_SLICE_OFFSETS = (-1, 0, 1)
 MIN_BODY_PIXELS_2D = 25
+SUPPORT_AREA_FRACTION = 0.75
+SUPPORT_SCORE_FRACTION = 0.72
+MAX_SUPPORT_TILT_DEG = 18.0
+MAX_SUPPORT_MISMATCH_MM = 2.5
 
 
 # =========================
@@ -106,6 +172,10 @@ class SliceMeasurement:
     body_mask_2d: np.ndarray
     AP_only: float
     AP_si_mismatch: float
+    body_area_px: int
+    bbox_fill_ratio: float
+    ap_range_mm: float
+    si_range_mm: float
 
 
 def largest_connected_component(mask):
@@ -179,12 +249,57 @@ def isolate_body_3d(seg_3d, level):
     return body_3d if body_3d.any() else None
 
 
-def select_best_slice(body_3d):
+def candidate_slice_indices(body_3d):
     body_per_slice = body_3d.sum(axis=(AP_AXIS, SI_AXIS))
-    masked = np.where(MIDLINE_BAND, body_per_slice, -1)
-    if masked.max() <= 0:
-        return None
-    return int(np.argmax(masked))
+    return [int(s) for s in np.where(MIDLINE_BAND & (body_per_slice > 0))[0]]
+
+
+def score_slice_quality(m, area_max):
+    # Favor large, compact body cross-sections and penalize oblique / off-center
+    # width picks that usually come from sliver-like sagittal cuts.
+    area_term = m.body_area_px / max(area_max, 1)
+    penalty = 1.0 + 0.05 * m.tilt_deg + 0.25 * m.AP_si_mismatch
+    return (area_term * m.bbox_fill_ratio) / penalty
+
+
+def choose_reference_and_support_slices(valid):
+    if not valid:
+        return None, []
+
+    area_max = max(m.body_area_px for m in valid)
+    scored = [(m, score_slice_quality(m, area_max)) for m in valid]
+    scored.sort(
+        key=lambda item: (
+            item[1],
+            item[0].body_area_px,
+            item[0].bbox_fill_ratio,
+            -item[0].tilt_deg,
+            -item[0].AP_si_mismatch,
+        ),
+        reverse=True,
+    )
+    reference_slice, reference_score = scored[0]
+
+    support = []
+    for m, score in scored:
+        if abs(m.slice_idx - reference_slice.slice_idx) > 1:
+            continue
+        if m.body_area_px < SUPPORT_AREA_FRACTION * reference_slice.body_area_px:
+            continue
+        if score < SUPPORT_SCORE_FRACTION * reference_score:
+            continue
+        if m.tilt_deg > max(MAX_SUPPORT_TILT_DEG, reference_slice.tilt_deg + 6.0):
+            continue
+        if m.AP_si_mismatch > max(MAX_SUPPORT_MISMATCH_MM, reference_slice.AP_si_mismatch + 1.0):
+            continue
+        support.append((m, score))
+
+    if not support:
+        support = [(reference_slice, reference_score)]
+
+    support.sort(key=lambda item: item[0].slice_idx)
+    support_measurements = [m for m, _ in support]
+    return reference_slice, support_measurements
 
 
 # =========================
@@ -192,11 +307,16 @@ def select_best_slice(body_3d):
 # =========================
 def measure_body_slice(level, body_mask_2d, slice_idx):
     body_mask_2d = largest_connected_component(body_mask_2d)
-    if int(body_mask_2d.sum()) < MIN_BODY_PIXELS_2D:
+    body_area_px = int(body_mask_2d.sum())
+    if body_area_px < MIN_BODY_PIXELS_2D:
         return None
 
     coords_vox = np.argwhere(body_mask_2d).astype(np.float64)  # (N,2) -> (AP, SI)
     coords_mm = coords_vox * np.array([SPACING_AP, SPACING_SI])
+    ap_vox_min, si_vox_min = coords_vox.min(axis=0)
+    ap_vox_max, si_vox_max = coords_vox.max(axis=0)
+    bbox_area_px = int((ap_vox_max - ap_vox_min + 1) * (si_vox_max - si_vox_min + 1))
+    bbox_fill_ratio = body_area_px / max(bbox_area_px, 1)
 
     center_mm = coords_mm.mean(axis=0)
     centered = coords_mm - center_mm
@@ -293,6 +413,10 @@ def measure_body_slice(level, body_mask_2d, slice_idx):
         body_mask_2d=body_mask_2d,
         AP_only=ap_only,
         AP_si_mismatch=ap_si_mismatch,
+        body_area_px=body_area_px,
+        bbox_fill_ratio=float(bbox_fill_ratio),
+        ap_range_mm=float(ap_range),
+        si_range_mm=float(si_range),
     )
 
 
@@ -301,21 +425,35 @@ def average_measurements(level, per_slice):
     if not valid:
         return None
 
-    best_geom = valid[len(valid) // 2]  # center slice if present
-    best_ap = min(valid, key=lambda m: m.AP_si_mismatch)
+    reference_slice, support_slices = choose_reference_and_support_slices(valid)
+    if reference_slice is None:
+        return None
+
+    best_ap = min(
+        support_slices,
+        key=lambda m: (
+            m.AP_si_mismatch,
+            -m.body_area_px,
+            m.tilt_deg,
+        ),
+    )
 
     out = {
         "level": level,
-        "slice_idx": best_geom.slice_idx,
+        "slice_idx": reference_slice.slice_idx,
         "AP_width_mm": float(best_ap.AP_width),
-        "H_anterior_mm": float(np.mean([m.H_anterior for m in valid])),
-        "H_middle_mm": float(np.mean([m.H_middle for m in valid])),
-        "H_posterior_mm": float(np.mean([m.H_posterior for m in valid])),
-        "tilt_deg": float(np.mean([m.tilt_deg for m in valid])),
-        "n_slices_used": len(valid),
+        "H_anterior_mm": float(np.median([m.H_anterior for m in support_slices])),
+        "H_middle_mm": float(np.median([m.H_middle for m in support_slices])),
+        "H_posterior_mm": float(np.median([m.H_posterior for m in support_slices])),
+        "tilt_deg": float(np.median([m.tilt_deg for m in support_slices])),
+        "n_slices_used": len(support_slices),
         "overlay_source": best_ap,
         "ap_width_slice_idx": best_ap.slice_idx,
         "ap_width_si_mismatch_mm": float(best_ap.AP_si_mismatch),
+        "candidate_slices": [m.slice_idx for m in valid],
+        "support_slices": [m.slice_idx for m in support_slices],
+        "reference_body_area_px": int(reference_slice.body_area_px),
+        "reference_fill_ratio": float(reference_slice.bbox_fill_ratio),
     }
     return out
 
@@ -346,16 +484,13 @@ for level in LEVEL_LABELS:
         print(f"{level}: body isolation failed")
         continue
 
-    best_slice = select_best_slice(body_3d)
-    if best_slice is None:
+    candidate_slices = candidate_slice_indices(body_3d)
+    if not candidate_slices:
         print(f"{level}: no valid slice in midline band")
         continue
 
     per_slice = []
-    for off in MULTI_SLICE_OFFSETS:
-        s = best_slice + off
-        if not (0 <= s < SEG_3D.shape[SAG_AXIS]):
-            continue
+    for s in candidate_slices:
         body_2d = take_sagittal_slice(body_3d, s)
         per_slice.append(measure_body_slice(level, body_2d, s))
 
@@ -399,6 +534,9 @@ for level, row in results.items():
             "tilt_deg": round(row["tilt_deg"], 1),
             "ap_width_si_mismatch_mm": round(row["ap_width_si_mismatch_mm"], 3),
             "n_slices_used": row["n_slices_used"],
+            "support_slices": ",".join(str(s) for s in row["support_slices"]),
+            "body_area_px": row["reference_body_area_px"],
+            "fill_ratio": round(row["reference_fill_ratio"], 3),
             "flags": "; ".join(row["flags"]) if row["flags"] else "",
         }
     )
@@ -494,6 +632,7 @@ for row_idx, level in enumerate(sorted(results)):
             f"{level}\n"
             f"slice = {result['slice_idx']}\n"
             f"AP slice = {result['ap_width_slice_idx']}\n"
+            f"support slices = {result['support_slices']}\n"
             f"slices averaged = {result['n_slices_used']}\n\n"
             f"AP_width   = {result['AP_width_mm']:.2f} mm\n"
             f"H_anterior = {result['H_anterior_mm']:.2f} mm\n"
@@ -501,6 +640,8 @@ for row_idx, level in enumerate(sorted(results)):
             f"H_posterior= {result['H_posterior_mm']:.2f} mm\n"
             f"tilt       = {result['tilt_deg']:.1f} deg\n\n"
             f"AP SI mismatch = {result['ap_width_si_mismatch_mm']:.3f} mm\n\n"
+            f"body area = {result['reference_body_area_px']} px\n"
+            f"fill ratio = {result['reference_fill_ratio']:.3f}\n\n"
             f"flags:\n{flags_text}"
         ),
         transform=ax_txt.transAxes,
