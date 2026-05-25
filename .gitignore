@@ -47,6 +47,7 @@ data/
 raw_data/
 duke_cspineseg/
 midrc_data/
+spider_data/
 *.nii
 *.nii.gz
 *.dcm
@@ -90,6 +91,8 @@ logs/
 *.log
 *.out
 preview/
+out_*.csv
+out_*.json
 
 # --- Jupyter ---
 .ipynb_checkpoints/
