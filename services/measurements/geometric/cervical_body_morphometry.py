@@ -24,6 +24,7 @@ from typing import Any
 
 import numpy as np
 from scipy.ndimage import label as cc_label
+from scipy.ndimage import zoom as ndi_zoom
 
 from ..context import ComponentResult, MeasurementContext, MeasurementError
 
@@ -50,6 +51,15 @@ MID_AP_SLAB_MM = 1.5
 MID_SI_SLAB_MM = 1.5
 MULTI_SLICE_OFFSETS = (-1, 0, 1)
 MIN_BODY_PIXELS_2D = 25
+
+# Sub-voxel boundary refinement: per-slice in-plane (AP/SI) upsample factor applied
+# before locating landmarks. A linear upsample + 0.5 re-threshold places the body
+# edge at the half-level crossing (~marching-squares) instead of on voxel centres,
+# cutting the ±1 voxel quantisation on heights/widths/slip to ~spacing/factor.
+# Only the in-plane axes are refined; the through-plane (slice) axis is left alone
+# because it is the low-resolution direction (see context.resolution_quality).
+# Set to 1 to disable and recover exact voxel-centre behaviour.
+SUBVOXEL_FACTOR = 4
 
 # Flags / soft sanity checks.
 AP_WIDTH_LOW_MM = 12.0
@@ -243,6 +253,38 @@ def _largest_connected_component(mask: np.ndarray) -> np.ndarray:
     return labeled == int(np.argmax(sizes))
 
 
+def _refine_mask(
+    mask_2d: np.ndarray,
+    spacing_pa: float,
+    spacing_si: float,
+) -> tuple[np.ndarray, float, float, float]:
+    """In-plane sub-voxel refinement of a 2D body mask.
+
+    Linearly upsamples by SUBVOXEL_FACTOR in the cell (grid) convention and
+    re-thresholds at 0.5, putting the boundary at the half-level crossing
+    (equivalent to a marching-squares 0.5 contour along axis directions) rather
+    than on voxel centres. Returns the refined mask, its per-voxel mm spacing,
+    and the scale (refined voxels per original voxel) for converting landmark
+    indices back to original-voxel coordinates.
+    """
+    if SUBVOXEL_FACTOR <= 1:
+        return mask_2d, spacing_pa, spacing_si, 1.0
+    k = int(SUBVOXEL_FACTOR)
+    fine = (
+        ndi_zoom(
+            mask_2d.astype(np.float32),
+            k,
+            order=1,
+            grid_mode=True,
+            mode="grid-constant",
+            cval=0.0,
+        )
+        >= 0.5
+    )
+    fine = _largest_connected_component(fine)
+    return fine, spacing_pa / k, spacing_si / k, float(k)
+
+
 def _argbreak(mask: np.ndarray, values: np.ndarray, mode: str, tiebreak: np.ndarray, tb_mode: str) -> int:
     idx = np.where(mask)[0]
     sub = values[idx]
@@ -268,8 +310,11 @@ def _measure_body_slice(
     if int(body_mask_2d.sum()) < MIN_BODY_PIXELS_2D:
         return None
 
-    coords_vox = np.argwhere(body_mask_2d).astype(np.float64)  # (N,2) -> (AP, SI)
-    coords_mm = coords_vox * np.array([spacing_pa, spacing_si])
+    # Refine the in-plane boundary to sub-voxel before locating landmarks. The
+    # min-pixel gate above runs on the original mask so its meaning is unchanged.
+    refined, fine_pa, fine_si, scale = _refine_mask(body_mask_2d, spacing_pa, spacing_si)
+    coords_vox = np.argwhere(refined).astype(np.float64)  # (N,2) -> (AP, SI) on refined grid
+    coords_mm = coords_vox * np.array([fine_pa, fine_si])
 
     center_mm = coords_mm.mean(axis=0)
     centered = coords_mm - center_mm
@@ -344,8 +389,15 @@ def _measure_body_slice(
         "P_mid": P_mid,
     }
     corners_mm = {name: (float(si_proj[i]), float(ap_proj[i])) for name, i in point_idx.items()}
+    # Map refined-grid indices back to original-voxel coordinates (cell-centre
+    # convention). At scale==1 this is the identity, so factor=1 reproduces the
+    # original integer voxel coordinates exactly (as floats).
     corners_voxel = {
-        name: (int(slice_idx), int(coords_vox[i, 0]), int(coords_vox[i, 1]))
+        name: (
+            int(slice_idx),
+            float((coords_vox[i, 0] + 0.5) / scale - 0.5),
+            float((coords_vox[i, 1] + 0.5) / scale - 0.5),
+        )
         for name, i in point_idx.items()
     }
 

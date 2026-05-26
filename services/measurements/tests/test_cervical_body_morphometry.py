@@ -43,14 +43,20 @@ def synthetic_seg(tmp_path):
 
 
 def test_recovers_ap_width_and_si_heights(synthetic_seg):
+    """Sub-voxel refinement recovers the body's true physical size.
+
+    The body is 20 voxels AP and 18 voxels SI at 1 mm-iso, i.e. 20 mm wide and
+    18 mm tall. Voxel-centre extremes under-read by ~1 mm (the old 19/17 mm
+    values); the sub-voxel boundary (SUBVOXEL_FACTOR) recovers within ~0.5 mm.
+    """
     ctx = load_context(synthetic_seg)
     result = cervical_body_morphometry.compute(ctx)
 
     assert "C3" in result.measurements["AP_width"]
-    assert result.measurements["AP_width"]["C3"] == pytest.approx(19.0, abs=1.0)
-    assert result.measurements["H_anterior"]["C3"] == pytest.approx(17.0, abs=1.0)
-    assert result.measurements["H_middle"]["C3"] == pytest.approx(17.0, abs=1.0)
-    assert result.measurements["H_posterior"]["C3"] == pytest.approx(17.0, abs=1.0)
+    assert result.measurements["AP_width"]["C3"] == pytest.approx(20.0, abs=0.5)
+    assert result.measurements["H_anterior"]["C3"] == pytest.approx(18.0, abs=0.9)
+    assert result.measurements["H_middle"]["C3"] == pytest.approx(18.0, abs=0.9)
+    assert result.measurements["H_posterior"]["C3"] == pytest.approx(18.0, abs=0.9)
 
 
 def test_flags_clean_on_synthetic(synthetic_seg):
@@ -63,11 +69,20 @@ def test_flags_clean_on_synthetic(synthetic_seg):
     assert result.flags["biconcave_fracture"]["C3"] is False
 
 
-def test_corners_are_real_body_voxels(synthetic_seg):
+def test_corners_lie_on_body_surface(synthetic_seg):
+    """Sub-voxel corners are boundary points in original-voxel coordinates
+    (floats), so each must round to within one voxel of an actual body voxel
+    rather than drift into background or a neighbouring structure."""
     ctx = load_context(synthetic_seg)
     result = cervical_body_morphometry.compute(ctx)
     corners_voxel = result.intermediate["corners_voxel"]["C3"]
-    seg = ctx.seg_data
+    body = ctx.seg_data == 13
 
-    for _, (lr, pa, is_) in corners_voxel.items():
-        assert seg[lr, pa, is_] == 13
+    for name, (lr, pa, is_) in corners_voxel.items():
+        lr_i, pa_i, is_i = int(round(lr)), int(round(pa)), int(round(is_))
+        nbhd = body[
+            max(lr_i - 1, 0):lr_i + 2,
+            max(pa_i - 1, 0):pa_i + 2,
+            max(is_i - 1, 0):is_i + 2,
+        ]
+        assert nbhd.any(), f"{name} at ({lr:.2f},{pa:.2f},{is_:.2f}) not within 1 voxel of body"
