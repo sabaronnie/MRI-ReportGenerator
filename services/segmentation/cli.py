@@ -34,6 +34,8 @@ def main(argv: list[str] | None = None) -> int:
             f"shape={metadata.shape} spacing_mm={metadata.voxel_spacing_mm} "
             f"axes={metadata.canonical_axes}"
         )
+        if metadata.geometry_standardization is not None:
+            print(f"  standardized geometry: {metadata.geometry_standardization}")
         result = run_totalspineseg(
             metadata.nifti_path, Path(args.output_dir), iso=not args.no_iso
         )

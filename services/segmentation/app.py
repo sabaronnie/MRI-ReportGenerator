@@ -81,6 +81,7 @@ def _zip_outputs(result: SegmentationResult, metadata, zip_path: Path) -> None:
             f"voxel_spacing_mm={metadata.voxel_spacing_mm}\n"
             f"shape={metadata.shape}\n"
             f"canonical_axes={metadata.canonical_axes}\n"
+            f"geometry_standardization={metadata.geometry_standardization}\n"
             f"cervical_labels_present={result.cervical_labels_present}\n"
         )
         zf.writestr("manifest.txt", manifest)

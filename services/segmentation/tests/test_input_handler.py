@@ -15,6 +15,21 @@ def _sagittal_affine(spacing=(3.0, 0.7, 0.7)):
     return a
 
 
+def _oblique_sagittal_affine(spacing=(3.0, 0.7, 0.7), tilt_deg=12.0):
+    theta = np.deg2rad(tilt_deg)
+    rot_x = np.array(
+        [
+            [1.0, 0.0, 0.0],
+            [0.0, np.cos(theta), -np.sin(theta)],
+            [0.0, np.sin(theta), np.cos(theta)],
+        ],
+        dtype=np.float64,
+    )
+    affine = np.eye(4, dtype=np.float64)
+    affine[:3, :3] = rot_x @ np.diag([-spacing[0], spacing[1], spacing[2]])
+    return affine
+
+
 def _make_nifti(path, shape=(20, 256, 256), spacing=(3.0, 0.7, 0.7), affine=None, ndim=3):
     rng = np.random.RandomState(0)
     if ndim == 4:
@@ -32,6 +47,21 @@ def test_passthrough_sagittal_nifti(tmp_path):
     assert md.shape == (20, 256, 256)
     assert md.voxel_spacing_mm == pytest.approx((3.0, 0.7, 0.7), rel=1e-6)
     assert md.canonical_axes[0] in ("L", "R")
+    assert md.geometry_standardization is None
+
+
+def test_standardizes_oblique_sagittal_grid(tmp_path):
+    p = _make_nifti(tmp_path / "scan.nii.gz", affine=_oblique_sagittal_affine())
+
+    md = prepare_nifti(p, tmp_path / "work")
+
+    assert md.nifti_path.name == "input_standardized.nii.gz"
+    assert md.geometry_standardization is not None
+    assert md.geometry_standardization["max_oblique_deg"] > 5.0
+    assert md.canonical_axes == "RAS"
+    standardized = nib.load(str(md.nifti_path))
+    off_diag = standardized.affine[:3, :3] - np.diag(np.diag(standardized.affine[:3, :3]))
+    assert np.max(np.abs(off_diag)) < 1e-3
 
 
 def test_rejects_coronal_orientation(tmp_path):

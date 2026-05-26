@@ -13,6 +13,7 @@ subset of registered components; default runs all.
 
 from __future__ import annotations
 
+import json
 import os
 import tempfile
 import uuid
@@ -73,8 +74,20 @@ def measure():
             return jsonify(error="upload missing step2_output.nii.gz"), 400
         seg_path = candidates[0]
 
+    # The segmentation file is already 1 mm isotropic, so the original MRI slice
+    # thickness can only come from the segmentation manifest (if the upload
+    # included one). Absent it, load_context falls back gracefully.
+    source_spacing = None
+    manifest_file = next(extract_dir.rglob("segmentation_run_manifest.json"), None)
+    if manifest_file is not None:
+        try:
+            meta = json.loads(manifest_file.read_text())
+            source_spacing = meta.get("input_metadata", {}).get("voxel_spacing_mm")
+        except (ValueError, OSError):
+            source_spacing = None
+
     try:
-        ctx = load_context(seg_path)
+        ctx = load_context(seg_path, source_spacing_mm=source_spacing)
         report = run_all(ctx, enabled)
     except MeasurementError as e:
         return jsonify(error=str(e)), 500
