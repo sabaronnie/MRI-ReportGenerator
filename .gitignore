@@ -94,6 +94,12 @@ preview/
 out_*.csv
 out_*.json
 
+# --- Group-2 generated artifacts (regenerable; CSV is derived patient data) ---
+group2_summary.csv
+group2_calibration_report.md
+services/measurements/calibration.json
+tss_runs/
+
 # --- Jupyter ---
 .ipynb_checkpoints/
 *.ipynb_checkpoints
