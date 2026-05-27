@@ -13,6 +13,55 @@ from ..geometric.disc_si_height import DISC_LABELS, join_flags
 NAME = "pfirrmann_grade"
 DEPENDS_ON = ["disc_si_height", "disc_height_index"]
 
+# Region-specific cut-points on `nucleus_norm` = (nucleus - dark)/(csf - dark),
+# a scale/offset-robust hydration proxy in ~[0, 1] (brighter, wetter nucleus -> higher).
+# Order: (grade_I_min, grade_II_min, grade_III_min, grade_IV_min); below grade_IV_min -> V.
+#
+# cervical: CALIBRATED to the Duke C-spine T2 intensity scale (10-scan cohort).
+#   The grade ladder is recentered onto the observed nucleus_norm distribution so that
+#   a well-hydrated young disc (scan 000001, nucleus_norm 0.35-0.63) reads grade I and
+#   only genuinely dry discs (nucleus_norm < ~0.10) read IV. This shifts the *threshold
+#   placement* to match the dataset's intensity range; it preserves the disc-to-disc
+#   ordering and does not invent disc health. Still heuristic (no cervical ground truth).
+# lumbar: GROUND-TRUTH calibrated against SPIDER radiologist Pfirrmann (see LAST_RUN.md).
+NORM_CUTS = {
+    "cervical": (0.30, 0.18, 0.095, 0.04),
+    "lumbar": (0.454, 0.272, 0.150, 0.066),
+}
+
+# Optional auto-calibration override. colab/auto_calibrate.py writes refitted cut-points
+# here when the Pfirrmann grade distribution drifts out of range on new data; if the file
+# is absent or invalid the baked-in NORM_CUTS above are used. Loaded once at import (the
+# calibrator re-runs measurement in a fresh process, so it always reads the latest file).
+import json as _json  # noqa: E402
+from pathlib import Path as _Path  # noqa: E402
+
+CALIBRATION_PATH = _Path(__file__).resolve().parents[1] / "calibration.json"
+
+
+def _active_cuts() -> dict:
+    cuts = {k: tuple(v) for k, v in NORM_CUTS.items()}
+    try:
+        if CALIBRATION_PATH.is_file():
+            data = _json.loads(CALIBRATION_PATH.read_text())
+            for region, c in data.get("pfirrmann_norm_cuts", {}).items():
+                if isinstance(c, (list, tuple)) and len(c) == 4:
+                    cuts[region] = tuple(float(x) for x in c)
+    except Exception:  # noqa: BLE001 - never let a bad cal file break measurement
+        pass
+    return cuts
+
+
+ACTIVE_CUTS = _active_cuts()
+
+
+def _region_for(disc_name: str) -> str:
+    """Map a disc level to the cut-point regime. Upper-thoracic discs in a C-spine
+    FOV share the cervical T2 scale, so they use the cervical cuts."""
+    if disc_name.startswith("L") or disc_name == "L5-S1":
+        return "lumbar"
+    return "cervical"
+
 
 def compute(ctx: MeasurementContext, prior_results: dict[str, Any]) -> ComponentResult:
     if ctx.raw_data is None:
@@ -65,11 +114,13 @@ def compute(ctx: MeasurementContext, prior_results: dict[str, Any]) -> Component
         if dhi_result is not None and disc_name in dhi_result.measurements.get("DHI", {}):
             height_ratio = float(dhi_result.measurements["DHI"][disc_name])
 
+        region = _region_for(disc_name)
         grade, label = _grade_disc(
             nucleus_norm=features["nucleus_norm"],
             na_contrast_norm=features["na_contrast_norm"],
             heterogeneity=features["heterogeneity"],
             height_ratio=height_ratio,
+            region=region,
         )
 
         row_flags = []
@@ -82,7 +133,7 @@ def compute(ctx: MeasurementContext, prior_results: dict[str, Any]) -> Component
             "disc_label": disc_label,
             "disc_name": disc_name,
             "slice_index": slice_idx,
-            "region": "cervical",
+            "region": region,
             "intensity_mean": round(features["intensity_mean"], 2),
             "intensity_std": round(features["intensity_std"], 2),
             "nucleus_intensity": round(features["nucleus_intensity"], 2),
@@ -177,22 +228,28 @@ def _grade_disc(
     na_contrast_norm: float,
     heterogeneity: float,
     height_ratio: float,
+    region: str = "cervical",
 ) -> tuple[int, str]:
-    if np.isfinite(height_ratio):
-        if nucleus_norm >= 0.38 and na_contrast_norm >= 0.15 and heterogeneity <= 0.55 and height_ratio >= 0.18:
-            return 1, "I (normal)"
-        if nucleus_norm >= 0.25 and height_ratio >= 0.12:
-            return 2, "II"
-        if nucleus_norm >= 0.15 and height_ratio >= 0.08:
-            return 3, "III"
-        if height_ratio > 0.04:
-            return 4, "IV"
+    """Ordinal Pfirrmann-style grade from the hydration signal, with a structural
+    grade-V gate on disc-space collapse.
+
+    The grade ladder is driven by `nucleus_norm` against region-calibrated cut-points
+    (`NORM_CUTS`). Grade I additionally requires a clear nucleus-annulus contrast and
+    low heterogeneity (homogeneous bright nucleus). Grade V is reserved for a collapsed
+    disc space (low DHI) so that signal darkness alone caps at IV — see LAST_RUN.md.
+    """
+    c1, c2, c3, c4 = ACTIVE_CUTS.get(region, ACTIVE_CUTS["cervical"])
+
+    # Structural collapse (very thin disc) -> V, regardless of signal.
+    if np.isfinite(height_ratio) and height_ratio < 0.12:
         return 5, "V"
 
-    if nucleus_norm >= 0.38 and na_contrast_norm >= 0.15 and heterogeneity <= 0.55:
+    if nucleus_norm >= c1 and na_contrast_norm >= 0.12 and heterogeneity <= 0.60:
         return 1, "I (normal)"
-    if nucleus_norm >= 0.25:
+    if nucleus_norm >= c2:
         return 2, "II"
-    if nucleus_norm >= 0.15:
+    if nucleus_norm >= c3:
         return 3, "III"
-    return 4, "IV"
+    if nucleus_norm >= c4:
+        return 4, "IV"
+    return 5, "V"

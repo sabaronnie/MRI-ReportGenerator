@@ -14,6 +14,7 @@ import numpy as np
 from ..context import ComponentResult, MeasurementContext, MeasurementError
 from .cervical_body_morphometry import (
     AP_AXIS,
+    AP_WIDTH_TRIM_PCT,
     CANAL_LABELS,
     DISC_AP_MARGIN_MM,
     SAG_AXIS,
@@ -71,6 +72,7 @@ EDGE_STRIP_FRACTION = 0.20
 MID_AP_SLAB_MM = 1.5
 MID_SI_SLAB_MM = 1.5
 MIN_DISC_PIXELS_2D = 9
+AP_WIDTH_PLAUSIBLE_MAX_MM = 25.0   # cervical disc AP above this is a measurement artifact
 
 
 def compute(ctx: MeasurementContext, prior_results: dict[str, Any] | None = None) -> ComponentResult:
@@ -177,6 +179,10 @@ def _measure_disc(
         flags.append("upper_vb_fov_edge")
     if lower_vb and vertebra_touches_fov_edge(seg, lower_vb):
         flags.append("lower_vb_fov_edge")
+    # Plausibility guard: a cervical disc AP wider than this is a measurement artifact
+    # (a tilted PCA axis or osteophyte spread), not real anatomy -> flag, don't trust it.
+    if measured["ap_width_mm"] > AP_WIDTH_PLAUSIBLE_MAX_MM:
+        flags.append("ap_width_implausible")
 
     reliable = "no" if flags else "yes"
     return {
@@ -307,26 +313,58 @@ def measure_disc_slice(
     else:
         h_center_mm = _dist_mm(proj_points["M_sup"], proj_points["M_inf"])
 
+    # Robust anterior/posterior heights: SI extent of the disc within an anterior or
+    # posterior AP-column band (in the tilt-corrected PCA frame). This is bounded by the
+    # disc's true SI extent in that column, so a ragged posterior margin voxel near the
+    # canal cannot inflate it (single-corner _dist_mm produced 10-14 mm cervical discs and
+    # a near-random anterior/posterior wedge). Falls back to the corner distance if a band
+    # is too sparse.
+    h_anterior_mm = _band_si_extent(
+        ap_proj, si_proj, ap_max - AP_COLUMN_FRACTION * ap_range, ap_max,
+        fallback=_dist_mm(proj_points["AS"], proj_points["AI"]),
+    )
+    h_posterior_mm = _band_si_extent(
+        ap_proj, si_proj, ap_min, ap_min + AP_COLUMN_FRACTION * ap_range,
+        fallback=_dist_mm(proj_points["PS"], proj_points["PI"]),
+    )
+    h_middle_mm = _dist_mm(proj_points["M_sup"], proj_points["M_inf"])
+
+    # AP width at mid-height, trimmed to reject single-voxel anterior/posterior spikes.
+    in_mid_si_local = np.abs(si_proj - si_mid) <= si_half_slab
+    if in_mid_si_local.sum() >= 4:
+        ap_in_mid = ap_proj[in_mid_si_local]
+        ap_width_mm = float(np.percentile(ap_in_mid, 100 - AP_WIDTH_TRIM_PCT)
+                            - np.percentile(ap_in_mid, AP_WIDTH_TRIM_PCT))
+    else:
+        ap_width_mm = abs(proj_points["A_mid"][1] - proj_points["P_mid"][1])
+
     return {
         "slice_index": int(slice_idx),
         "corners_voxel": corners_voxel,
-        "h_anterior_mm": _dist_mm(proj_points["AS"], proj_points["AI"]),
-        "h_middle_mm": _dist_mm(proj_points["M_sup"], proj_points["M_inf"]),
-        "h_posterior_mm": _dist_mm(proj_points["PS"], proj_points["PI"]),
-        "h_mean_mm": float(
-            np.mean(
-                [
-                    _dist_mm(proj_points["AS"], proj_points["AI"]),
-                    _dist_mm(proj_points["M_sup"], proj_points["M_inf"]),
-                    _dist_mm(proj_points["PS"], proj_points["PI"]),
-                ]
-            )
-        ),
+        "h_anterior_mm": h_anterior_mm,
+        "h_middle_mm": h_middle_mm,
+        "h_posterior_mm": h_posterior_mm,
+        "h_mean_mm": float(np.mean([h_anterior_mm, h_middle_mm, h_posterior_mm])),
         "h_center_mm": float(h_center_mm),
-        "ap_width_mm": abs(proj_points["A_mid"][1] - proj_points["P_mid"][1]),
+        "ap_width_mm": ap_width_mm,
         "ap_bounds_voxel": (int(ap_idx.min()), int(ap_idx.max())),
         "si_bounds_voxel": (int(si_idx.min()), int(si_idx.max())),
     }
+
+
+# Anterior/posterior heights are sampled in the outer ~22% AP column at each margin.
+# Narrow bands sit on the true anterior/posterior disc edges where the cervical lordotic
+# wedge (anterior taller than posterior) is expressed; wider bands average toward the
+# parallel-sided centre and wash the wedge out.
+AP_COLUMN_FRACTION = 0.22
+
+
+def _band_si_extent(ap_proj, si_proj, ap_lo: float, ap_hi: float, fallback: float) -> float:
+    """SI extent (mm) of the disc within an AP-projection band [ap_lo, ap_hi]."""
+    band = (ap_proj >= ap_lo) & (ap_proj <= ap_hi)
+    if band.sum() < 2:
+        return float(fallback)
+    return float(si_proj[band].max() - si_proj[band].min())
 
 
 def vertebra_touches_fov_edge(seg: np.ndarray, vert_name: str) -> bool:

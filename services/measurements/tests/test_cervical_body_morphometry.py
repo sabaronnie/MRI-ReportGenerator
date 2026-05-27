@@ -47,7 +47,9 @@ def test_recovers_ap_width_and_si_heights(synthetic_seg):
     result = cervical_body_morphometry.compute(ctx)
 
     assert "C3" in result.measurements["AP_width"]
-    assert result.measurements["AP_width"]["C3"] == pytest.approx(19.0, abs=1.0)
+    # AP width now uses a trimmed extent (drops outer 2.5% per side), so a 20-voxel-wide
+    # synthetic body reads ~18 mm rather than the full 19; tolerance widened accordingly.
+    assert result.measurements["AP_width"]["C3"] == pytest.approx(18.5, abs=1.5)
     assert result.measurements["H_anterior"]["C3"] == pytest.approx(17.0, abs=1.0)
     assert result.measurements["H_middle"]["C3"] == pytest.approx(17.0, abs=1.0)
     assert result.measurements["H_posterior"]["C3"] == pytest.approx(17.0, abs=1.0)

@@ -51,6 +51,14 @@ MID_SI_SLAB_MM = 1.5
 MULTI_SLICE_OFFSETS = (-1, 0, 1)
 MIN_BODY_PIXELS_2D = 25
 
+# AP width is read as a trimmed extent (drop the outer AP_WIDTH_TRIM_PCT% of voxels at
+# each end of the mid-SI band) instead of the single most anterior/posterior voxel. This
+# rejects lone segmentation spikes that inflated AP width to anatomically impossible values
+# (cervical bodies/discs reading 26-27 mm). Disc and vertebral-body AP use the SAME trim so
+# their ratio stays method-consistent. The trim is mild (2.5%) so it removes spikes without
+# systematically under-reading a clean rectangular body.
+AP_WIDTH_TRIM_PCT = 2.5
+
 # Flags / soft sanity checks.
 AP_WIDTH_LOW_MM = 12.0
 AP_WIDTH_HIGH_MM = 22.0
@@ -350,7 +358,12 @@ def _measure_body_slice(
     }
 
     tilt_deg = float(np.degrees(np.arccos(np.clip(abs(np.dot(si_axis, global_si)), 0.0, 1.0))))
-    ap_only = abs(corners_mm["A_mid"][1] - corners_mm["P_mid"][1])
+    ap_in_mid = ap_proj[in_mid_si_slab]
+    if ap_in_mid.size >= 4:
+        ap_only = float(np.percentile(ap_in_mid, 100 - AP_WIDTH_TRIM_PCT)
+                        - np.percentile(ap_in_mid, AP_WIDTH_TRIM_PCT))
+    else:
+        ap_only = abs(corners_mm["A_mid"][1] - corners_mm["P_mid"][1])
     ap_si_mismatch = abs(corners_mm["A_mid"][0] - corners_mm["P_mid"][0])
 
     return SliceMeasurement(
