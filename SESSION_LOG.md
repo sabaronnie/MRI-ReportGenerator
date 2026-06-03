@@ -11,6 +11,26 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-03 — Andrew (validation-data hunts + Spine-Generic acquisition recipe)
+
+**Branch:** `research/andrew/groups-5-6-week1`
+
+**What was done:**
+- Ran the **Groups 1–4 validation-data hunt** (17-platform Workflow). Result: **KIND-B (per-case expert cervical-MRI measurements) = ZERO**, confirming the 2026-04-29 finding. Usable open data is KIND-A masks + norms only. 3 genuinely-new open finds: **VerSe'19+'20** (CT vertebra masks+centroids → G1/G4 code test), **Nell 2019 / SHIP** (PLOS ONE pone.0222682; cervical-MRI norms for canal AP / dural sac / cord AP / SAC / Torg + VB-width at C2–C7), **NASSJ 2025** (G4 alignment norms). **SPIDER** (lumbar disc/vertebra/canal masks, open) recovered by manual check — it was *missed* by the sweep (precision-tuned verifier drops borderline hits). Duke CSpineSeg remains the only on-modality (cervical T2) mask set = G1+G2 linchpin.
+- Pulled **inter-observer tolerance bands** (cord AP ICC 0.82 ≈ ±0.5–1 mm; C2–C7 Cobb 0.73°±3.43° ≈ ±7°; disc-height SEM ≤0.43 mm) — the "as good as a radiologist" yardstick for KIND-B validation slides.
+- Established the **measurement-foundation rule** (measure in mm via the affine, never pixels — the cause of the "each MRI looks a different size" symptom) and the **cervical-tilt (PCA) correction** that G1 heights / G4 Cobb need. Confirmed Group 5.2 already implements mm+orientation correctly; it's a Groups 1–4 (Ronnie/Mohammad) gap.
+- Confirmed **no paid/commercial source** fills the KIND-B gap (vendors sell images, not measurements) → Duke self-measure + AUBMC stands.
+- Ran a verification Workflow to produce a **Spine-Generic Multi-Subject acquisition recipe** for Group 5.2's healthy-norm validation (Duke DCM Ha/Hp ~0.85 vs healthy ~0.97). Verified route, specs, filter, license against primary sources.
+
+**Files changed:** `SESSION_LOG.md` (this entry). All findings are in Claude memory (`groups_1_4_validation_datasets.md`, `spine_generic_acquisition.md` — Andrew's local `~/.claude` store, not the repo). Reusable workflow: `.claude/workflows/groups-1-4-dataset-hunt.js`.
+
+**Pending / next action:**
+
+1. **Group 5.2 healthy-norm validation — DO THIS NEXT.** Download a ~30-subject healthy cervical **T2w** subset of **Spine-Generic Multi-Subject** (NOT ds002393 — that's the single-subject set; use GitHub `spine-generic/data-multi-subject` via git-annex). Verified recipe: clone → `git checkout r20231212` → `git annex init` → `awk -F'\t' 'NR>1 && $14=="HC"{n[$9]++; if(n[$9]<=10) print $1}' participants.tsv` → `git annex get <id>/anat/<id>_T2w.nii.gz`. T2w is 0.8 mm isotropic (~5× finer through-plane than our 4 mm Duke cases). **Key control:** also measure the healthy norm at the data **downsampled to ~4 mm** — if healthy stays ~0.97 the Duke 0.85 is real degeneration; if it sags toward 0.85 it's a resolution artifact. License CC BY 4.0; keep NIfTIs OUT of the repo.
+2. **Hand to Ronnie/Mohammad (G1–G4):** adopt 5.2's spacing+reorient discipline + PCA tilt-correction; wire Duke/VerSe/SPIDER masks for KIND-A code validation; use Nell-2019/PAM50/NASSJ norms; validate against the ±1 mm / ±3° tolerance bands.
+
+---
+
 ## 2026-04-22 — Andrew (measurement split + handoff prep)
 
 **Branch:** `research/andrew/measurement-split-handoff` (off main; will be PR'd back)
