@@ -11,6 +11,27 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-05 — Andrew (G5: A/B/C/D + full Groups 1-4 accuracy audit)
+
+**Branch:** `groups-5-6`
+
+**What was done:**
+- **A — 5.2 threshold recalibration (DONE + PUSHED `bb6ecd8`):** replaced the debunked Ha/Hp 0.97±0.02 with the healthy-cohort norm 0.94±0.13 (cited); added `cervical_deformity_flag` (data-driven screen, z=2.0, separate from the medical Genant grade). FP on 12 healthy: 17%→0%. 30 tests green. **z=2.0 decided** (research confirms: no cervical compression data exists, SD is the lever — see memory `vb_hahp_z_threshold.md`).
+- **B — 5→6 flags-JSON contract (DONE + PUSHED `381bee0`):** `group5/flags_contract.py` emitter, 7 tests, proven on a real case. **v0.1 PROPOSAL — needs team sign-off.**
+- **C — 5.1 SCIseg healthy-specificity (LOCAL DONE, NOT pushed `66c5429`,`677258d`):** scorer + runner + retargeted Colab notebook + `data/sciseg_healthy_pilot.zip` ready. **Colab run still pending (Andrew).**
+- **D — Groups 1-4 accuracy audit (DONE):** 8-agent read-only audit → memo `group5/AUDIT_groups1-4_measurements.md` (committed `e693907`, NOT pushed). Math mostly correct but ~no cervical validation, 4/6 untested, cutoffs uncited; disc-bulge under-reports, thick-slice false precision, orchestrator crash. C7-T1 label 71 verified correct.
+
+**Files changed:** `group5/vertebral_fracture.py`, `run_fracture_on_tss.py`, `test_vertebral_fracture.py`, `flags_contract.py`, `test_flags_contract.py`, `myelomalacia_specificity.py`, `test_myelomalacia_specificity.py`, `run_sciseg_specificity.py`, `colab_sciseg_spinegeneric.ipynb`, `AUDIT_groups1-4_measurements.md` (all under `group5/`).
+
+**Pending / next action — ANDREW'S WAKE-UP CHECKLIST (do in order):**
+1. **Launch the 4 research prompts** (separate chats, parallel OK) — file: `.claude/workflows/RESEARCH-PROMPTS-groups1-4-norms-2026-06-05.md` (disc height/DHI, disc bulge, Pfirrmann, spondylolisthesis).
+2. **Paste research results back into the Group-5 chat** as each returns (the z-threshold one already landed in memory; the 4 new ones feed tier-1 validation of teammates' code).
+3. **Run the Colab SCIseg job (C):** upload `~/dev/group5-proto/data/sciseg_healthy_pilot.zip` → Drive, run `group5/colab_sciseg_spinegeneric.ipynb` (T4 GPU, ~25-30 min) → download `*_lesion_seg.nii.gz` → `~/dev/group5-proto/out_sg_lesion/` → tell Claude to score (expect FP ~0%).
+4. **Approve push** of the 3 unpushed commits (`66c5429`, `677258d`, `e693907`) to `groups-5-6`.
+5. **Later / team:** B contract needs team sign-off; raise the disc-bulge/thick-slice/orchestrator issues + the stale-morphometry merge with Ronnie/Mohammad; tier-1 validation once norms land.
+
+---
+
 ## 2026-04-28 — Roni (Phase 3A.1 + 3A.2 measurement component, IEP2 scaffold)
 
 **Branch:** `main` (still relaxed for this session)
