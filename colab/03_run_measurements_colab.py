@@ -19,6 +19,7 @@ from typing import Any
 
 import nibabel as nib
 import numpy as np
+import matplotlib.pyplot as plt
 from nibabel.affines import obliquity
 from nibabel.processing import resample_from_to, resample_to_output
 from scipy.ndimage import label as cc_label
@@ -78,6 +79,14 @@ SUPINE_CAVEAT = (
     "Measured on supine MRI - functional radiographs may show greater slip "
     "(Lattig 2012; Segebarth 2015)."
 )
+LEVEL_COLORS = {
+    "C3": "#ef4444",
+    "C4": "#f97316",
+    "C5": "#22c55e",
+    "C6": "#3b82f6",
+    "C7": "#8b5cf6",
+}
+SEG_OVERLAY_COLOR = np.array([1.0, 0.75, 0.2])
 
 
 class MeasurementError(RuntimeError):
@@ -127,15 +136,14 @@ def _mount_drive_if_needed() -> None:
 
 
 def _resolve_step2_path() -> Path:
+    manifest = _read_manifest()
     if SEG_STEP2_PATH:
         step2_path = Path(SEG_STEP2_PATH)
         if not step2_path.exists():
             raise FileNotFoundError(f"SEG_STEP2_PATH does not exist: {step2_path}")
         return step2_path
 
-    manifest_path = CASE_OUTPUT_DIR / "segmentation_run_manifest.json"
-    if manifest_path.exists():
-        manifest = json.loads(manifest_path.read_text())
+    if manifest:
         step2_path = Path(manifest["step2_output"])
         if step2_path.exists():
             return step2_path
@@ -157,14 +165,34 @@ def _read_source_spacing() -> list[float] | None:
     only record of the true acquisition slice thickness. Returns None if the
     manifest is missing — load_context then falls back gracefully.
     """
+    manifest = _read_manifest()
+    return manifest.get("input_metadata", {}).get("voxel_spacing_mm") if manifest else None
+
+
+def _read_manifest() -> dict[str, Any]:
     manifest_path = CASE_OUTPUT_DIR / "segmentation_run_manifest.json"
     if not manifest_path.exists():
-        return None
+        return {}
     try:
-        manifest = json.loads(manifest_path.read_text())
-        return manifest.get("input_metadata", {}).get("voxel_spacing_mm")
+        return json.loads(manifest_path.read_text())
     except (ValueError, OSError):
-        return None
+        return {}
+
+
+def _resolve_raw_mri_path() -> Path | None:
+    if RAW_MRI_PATH:
+        p = Path(RAW_MRI_PATH)
+        return p if p.exists() else None
+
+    manifest = _read_manifest()
+    for key in ("iso_input", "prepared_nifti_path", "input_path"):
+        candidate = manifest.get(key)
+        if not candidate:
+            continue
+        p = Path(candidate)
+        if p.exists() and p.suffix in {".nii", ".gz"}:
+            return p
+    return None
 
 
 def _ensure_isotropic(seg_img: nib.Nifti1Image) -> tuple[nib.Nifti1Image, dict | None]:
@@ -324,6 +352,8 @@ def run_all(ctx: MeasurementContext, enabled: list[str] | None = None) -> dict[s
         report["components"][name] = {
             "status": "ok",
             "metadata": result.metadata,
+            "intermediate": result.intermediate,
+            "flags": result.flags,
         }
         prior[name] = result
     return report
@@ -866,17 +896,132 @@ def _display_report(report: dict, step2_path: Path, ctx: MeasurementContext) -> 
             print(f"  - {line}")
 
 
+def _draw_point(ax, point: tuple[float, float, float], color: str) -> None:
+    _, ap, si = point
+    ax.scatter(si, ap, s=24, c=color, edgecolors="black", linewidths=0.6, zorder=4)
+
+
+def _draw_line(ax, p1: tuple[float, float, float], p2: tuple[float, float, float], color: str, lw: float = 2.0) -> None:
+    _, ap1, si1 = p1
+    _, ap2, si2 = p2
+    ax.plot([si1, si2], [ap1, ap2], color=color, linewidth=lw, zorder=3)
+
+
+def _show_geometric_overlays(report: dict, ctx: MeasurementContext) -> None:
+    morph = report.get("components", {}).get("cervical_body_morphometry", {})
+    intermediate = morph.get("intermediate", {})
+    corners_by_level = intermediate.get("corners_voxel", {})
+    slice_by_level = intermediate.get("sagittal_slice", {})
+    if not corners_by_level or not slice_by_level:
+        return
+
+    base = ctx.raw_data if ctx.raw_data is not None else ctx.seg_data.astype(np.float32)
+    seg = ctx.seg_data
+    levels = [lvl for lvl in LEVEL_LABELS if lvl in corners_by_level and lvl in slice_by_level]
+    if not levels:
+        return
+
+    fig, axes = plt.subplots(len(levels), 1, figsize=(8.5, 4.8 * len(levels)))
+    if len(levels) == 1:
+        axes = [axes]
+
+    for ax, level in zip(axes, levels):
+        slice_idx = int(slice_by_level[level])
+        label_id = LEVEL_LABELS[level]
+        body_mask = seg[slice_idx, :, :] == label_id
+        seg_any = seg[slice_idx, :, :] > 0
+        base_slice = base[slice_idx, :, :]
+
+        ax.imshow(base_slice, cmap="gray", origin="lower")
+        if np.any(seg_any):
+            rgb = np.zeros((*seg_any.shape, 4), dtype=np.float32)
+            rgb[..., :3] = SEG_OVERLAY_COLOR
+            rgb[..., 3] = seg_any.astype(np.float32) * 0.10
+            ax.imshow(rgb, origin="lower")
+        if np.any(body_mask):
+            body_rgba = np.zeros((*body_mask.shape, 4), dtype=np.float32)
+            body_rgba[..., :3] = np.array([1.0, 0.2, 0.2])
+            body_rgba[..., 3] = body_mask.astype(np.float32) * 0.26
+            ax.imshow(body_rgba, origin="lower")
+
+        color = LEVEL_COLORS.get(level, "#ffffff")
+        corners = corners_by_level[level]
+        for pair in (("AS", "AI"), ("PS", "PI"), ("M_sup", "M_inf"), ("P_mid", "A_mid")):
+            if pair[0] in corners and pair[1] in corners:
+                _draw_line(ax, corners[pair[0]], corners[pair[1]], color)
+        for name in ("AS", "AI", "PS", "PI", "M_sup", "M_inf", "A_mid", "P_mid"):
+            if name in corners:
+                _draw_point(ax, corners[name], color)
+
+        ax.set_title(f"{level} geometric overlay (sagittal slice {slice_idx})")
+        ax.set_xlabel("SI axis (voxels)")
+        ax.set_ylabel("AP axis (voxels)")
+
+    plt.tight_layout()
+    plt.show()
+
+    spondy = report.get("components", {}).get("spondylolisthesis", {})
+    spondy_meta = spondy.get("metadata", {})
+    directions = spondy_meta.get("spondy_direction", {})
+    slips = report.get("measurements", {}).get("spondy_slip_mm", {})
+    if not slips:
+        return
+
+    present_pairs = []
+    for pair in slips:
+        upper, lower = pair.split("-")
+        if upper in corners_by_level and lower in corners_by_level:
+            present_pairs.append((pair, upper, lower))
+    if not present_pairs:
+        return
+
+    fig, axes = plt.subplots(len(present_pairs), 1, figsize=(8.5, 4.8 * len(present_pairs)))
+    if len(present_pairs) == 1:
+        axes = [axes]
+
+    for ax, (pair, upper, lower) in zip(axes, present_pairs):
+        slice_idx = int(round((slice_by_level[upper] + slice_by_level[lower]) / 2.0))
+        slice_idx = max(0, min(slice_idx, seg.shape[0] - 1))
+        base_slice = base[slice_idx, :, :]
+        seg_slice = np.isin(seg[slice_idx, :, :], [LEVEL_LABELS.get(upper, -1), LEVEL_LABELS.get(lower, -1)])
+
+        ax.imshow(base_slice, cmap="gray", origin="lower")
+        if np.any(seg_slice):
+            rgba = np.zeros((*seg_slice.shape, 4), dtype=np.float32)
+            rgba[..., :3] = np.array([0.3, 0.8, 1.0])
+            rgba[..., 3] = seg_slice.astype(np.float32) * 0.22
+            ax.imshow(rgba, origin="lower")
+
+        upper_pi = corners_by_level[upper].get("PI")
+        lower_ps = corners_by_level[lower].get("PS")
+        if upper_pi is not None and lower_ps is not None:
+            _draw_line(ax, upper_pi, lower_ps, "#f8fafc", lw=2.4)
+            _draw_point(ax, upper_pi, LEVEL_COLORS.get(upper, "#ffffff"))
+            _draw_point(ax, lower_ps, LEVEL_COLORS.get(lower, "#ffffff"))
+
+        direction = directions.get(pair, "-")
+        slip_mm = slips.get(pair, float("nan"))
+        ax.set_title(f"{pair} slip overlay ({direction}, {_fmt(slip_mm, 2)} mm)")
+        ax.set_xlabel("SI axis (voxels)")
+        ax.set_ylabel("AP axis (voxels)")
+
+    plt.tight_layout()
+    plt.show()
+
+
 def main() -> None:
     _mount_drive_if_needed()
 
     step2_path = _resolve_step2_path()
-    raw_path = Path(RAW_MRI_PATH) if RAW_MRI_PATH else None
+    raw_path = _resolve_raw_mri_path()
     source_spacing = _read_source_spacing()
 
     ctx = load_context(step2_path, raw_path=raw_path, source_spacing_mm=source_spacing)
     report = run_all(ctx, enabled=ENABLED_COMPONENTS)
 
     _display_report(report, step2_path, ctx)
+    print("\nGeometric overlays:")
+    _show_geometric_overlays(report, ctx)
 
 
 main()

@@ -8,6 +8,7 @@ Endpoints:
 
 from __future__ import annotations
 
+import json
 import tempfile
 import uuid
 import zipfile
@@ -71,6 +72,20 @@ def _materialise_upload(upload, work_dir: Path) -> Path:
 
 
 def _zip_outputs(result: SegmentationResult, metadata, zip_path: Path) -> None:
+    manifest_payload = {
+        "input_path": str(metadata.nifti_path),
+        "prepared_nifti_path": str(metadata.nifti_path),
+        "step2_output": "step2_output.nii.gz",
+        "step1_levels": "step1_levels.nii.gz",
+        "iso_input": "input_iso.nii.gz" if result.iso_input is not None and result.iso_input.exists() else None,
+        "cervical_labels_present": result.cervical_labels_present,
+        "input_metadata": {
+            "voxel_spacing_mm": list(metadata.voxel_spacing_mm),
+            "shape": list(metadata.shape),
+            "canonical_axes": metadata.canonical_axes,
+            "geometry_standardization": metadata.geometry_standardization,
+        },
+    }
     with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
         zf.write(result.step2_output, arcname="step2_output.nii.gz")
         zf.write(result.step1_levels, arcname="step1_levels.nii.gz")
@@ -85,6 +100,7 @@ def _zip_outputs(result: SegmentationResult, metadata, zip_path: Path) -> None:
             f"cervical_labels_present={result.cervical_labels_present}\n"
         )
         zf.writestr("manifest.txt", manifest)
+        zf.writestr("segmentation_run_manifest.json", json.dumps(manifest_payload, indent=2))
 
 
 if __name__ == "__main__":

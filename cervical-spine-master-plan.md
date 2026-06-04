@@ -11,7 +11,7 @@ This file is the top-level plan and index. Deep-dive research for each phase liv
 
 ## Goal
 
-Build a cervical spine MRI analysis pipeline that takes a sagittal T2-weighted MRI (DICOM series or NIfTI file) as input and produces a structured radiology-style report containing vertebral, disc, canal, and cord measurements, threshold-based interpretation against literature norms, and anomaly flags for physician review.
+Build a cervical spine MRI analysis pipeline that takes one preselected sagittal cervical spine MRI series as input, preferably T2-weighted and provided as either a DICOM series or derived NIfTI file, and produces a structured radiology-style report containing vertebral, disc, canal, and cord measurements, threshold-based interpretation against literature norms, and anomaly flags for physician review.
 
 The system is positioned as an **Application** (provisional — pending explicit team sign-off): a clinical-workflow tool, with manual radiologist measurement as the non-AI baseline.
 
@@ -33,6 +33,10 @@ The system is positioned as an **Application** (provisional — pending explicit
 ```
 
 **Clinical Validation (Phase 5)** is a separate meta-workstream that validates the whole system against radiologist ground truth. It is not a runtime pipeline stage.
+
+### Input requirement
+
+This prototype operates on a single preselected sagittal cervical spine MR series rather than a full multi-series DICOM study. Supported input is one eligible cervical sagittal series, preferably T2-weighted, with adequate vertebral coverage and acceptable slice thickness for downstream segmentation and measurement. Full study-level series discovery, ranking, and fallback orchestration are outside the current prototype scope.
 
 ### Service architecture (per EECE503N rubric, GT3)
 

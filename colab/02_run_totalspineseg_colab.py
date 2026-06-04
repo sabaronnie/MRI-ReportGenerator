@@ -26,7 +26,9 @@ from pathlib import Path
 import nibabel as nib
 import numpy as np
 from nibabel.affines import obliquity
-from nibabel.processing import resample_to_output
+from nibabel.processing import resample_from_to, resample_to_output
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 
 
 # -------- Edit these before running --------
@@ -44,6 +46,24 @@ GRID_ALIGN_TOL = 0.02
 CERVICAL_VERTEBRA_LABELS = {11, 12, 13, 14, 15, 16, 17, 21}
 CERVICAL_DISC_LABELS = {63, 64, 65, 66, 67, 71}
 REQUIRED_VERTEBRAE = {12, 13, 14, 15, 16, 17}
+LABEL_NAMES = {
+    1: "Canal",
+    2: "Cord",
+    11: "C1",
+    12: "C2",
+    13: "C3",
+    14: "C4",
+    15: "C5",
+    16: "C6",
+    17: "C7",
+    21: "T1",
+    63: "C2-C3",
+    64: "C3-C4",
+    65: "C4-C5",
+    66: "C5-C6",
+    67: "C6-C7",
+    71: "C7-T1",
+}
 PINNED_NNUNETV2 = "2.6.2"
 PINNED_KORNIA = "0.7.2"
 WEIGHT_DATASET_DIRS = (
@@ -76,6 +96,7 @@ class SegmentationResult:
     step1_levels: Path
     iso_input: Path | None
     cervical_labels_present: list[int]
+    missing_required_vertebrae: list[int]
 
 
 def _mount_drive_if_needed() -> None:
@@ -338,7 +359,7 @@ def run_totalspineseg(
             iso_files = sorted(iso_dir.glob("*.nii.gz"))
             iso_input = iso_files[0] if iso_files else None
 
-    labels_present = _check_cervical_labels(step2)
+    labels_present, missing_required = _check_cervical_labels(step2)
 
     return SegmentationResult(
         output_dir=out_dir,
@@ -346,6 +367,7 @@ def run_totalspineseg(
         step1_levels=levels,
         iso_input=iso_input,
         cervical_labels_present=sorted(labels_present),
+        missing_required_vertebrae=sorted(missing_required),
     )
 
 
@@ -358,16 +380,79 @@ def _expect_one_nifti(folder: Path, label: str) -> Path:
     return files[0]
 
 
-def _check_cervical_labels(seg_path: Path) -> set[int]:
+def _check_cervical_labels(seg_path: Path) -> tuple[set[int], set[int]]:
     seg = nib.load(str(seg_path)).get_fdata().astype(np.int32)
     present = set(np.unique(seg).tolist()) - {0}
     missing = REQUIRED_VERTEBRAE - present
-    if missing:
-        raise SegmentationError(
-            f"{seg_path.name}: required cervical vertebrae missing: "
-            f"{sorted(missing)} (got labels {sorted(present)})"
+    relevant = present & (CERVICAL_VERTEBRA_LABELS | CERVICAL_DISC_LABELS)
+    return relevant, missing
+
+
+def _render_segmentation_overlay(
+    mri_path: Path,
+    seg_path: Path,
+) -> None:
+    """Show one sagittal slice with cervical segmentation labels overlaid."""
+    mri_img = nib.load(str(mri_path))
+    seg_img = nib.load(str(seg_path))
+
+    # TotalSpineSeg may output on an isotropic grid with a different sagittal
+    # slice count from the input preview volume. Resample the MRI onto the
+    # segmentation grid so the overlay is index-aligned.
+    if mri_img.shape[:3] != seg_img.shape[:3] or not np.allclose(mri_img.affine, seg_img.affine):
+        mri_img = resample_from_to(mri_img, (seg_img.shape, seg_img.affine), order=1)
+
+    mri = mri_img.get_fdata().astype(np.float32)
+    seg = seg_img.get_fdata().astype(np.int32)
+
+    relevant_labels = sorted((CERVICAL_VERTEBRA_LABELS | CERVICAL_DISC_LABELS) & set(np.unique(seg)))
+    if not relevant_labels:
+        print("Overlay preview skipped: no cervical labels present in segmentation.")
+        return
+
+    relevant_mask = np.isin(seg, relevant_labels)
+    per_slice = relevant_mask.sum(axis=(1, 2))
+    slice_idx = int(np.argmax(per_slice))
+    if per_slice[slice_idx] == 0:
+        print("Overlay preview skipped: no cervical labels visible on any sagittal slice.")
+        return
+
+    mri_slice = np.rot90(mri[slice_idx, :, :])
+    seg_slice = np.rot90(seg[slice_idx, :, :])
+    palette = [
+        "#ef4444", "#f97316", "#eab308", "#22c55e",
+        "#14b8a6", "#3b82f6", "#8b5cf6", "#ec4899",
+        "#84cc16", "#06b6d4", "#f59e0b", "#10b981",
+    ]
+    cmap = ListedColormap(palette[: len(relevant_labels)])
+    remapped = np.zeros_like(seg_slice, dtype=np.int32)
+    for idx, label in enumerate(relevant_labels):
+        remapped[seg_slice == label] = idx
+    remapped_masked = np.ma.masked_where(~np.isin(seg_slice, relevant_labels), remapped)
+
+    plt.figure(figsize=(9, 9))
+    plt.imshow(mri_slice, cmap="gray")
+    plt.imshow(remapped_masked, cmap=cmap, alpha=0.35, interpolation="nearest")
+    plt.title(f"TotalSpineSeg overlay on sagittal slice {slice_idx}")
+    plt.axis("off")
+
+    for label in relevant_labels:
+        ys, xs = np.where(seg_slice == label)
+        if ys.size == 0:
+            continue
+        y = float(np.median(ys))
+        x = float(np.median(xs))
+        plt.text(
+            x + 4,
+            y,
+            LABEL_NAMES.get(label, str(label)),
+            color="white",
+            fontsize=10,
+            weight="bold",
+            bbox={"facecolor": "black", "alpha": 0.65, "pad": 1.5, "edgecolor": "none"},
         )
-    return present & (CERVICAL_VERTEBRA_LABELS | CERVICAL_DISC_LABELS)
+
+    plt.show()
 
 
 def main() -> None:
@@ -393,6 +478,7 @@ def main() -> None:
         "step1_levels": str(result.step1_levels),
         "iso_input": str(result.iso_input) if result.iso_input else None,
         "cervical_labels_present": result.cervical_labels_present,
+        "missing_required_vertebrae": result.missing_required_vertebrae,
         "input_metadata": {
             "voxel_spacing_mm": list(metadata.voxel_spacing_mm),
             "shape": list(metadata.shape),
@@ -411,6 +497,18 @@ def main() -> None:
         print(f"  iso_input: {result.iso_input}")
     print(f"  manifest: {manifest_path}")
     print(f"  cervical labels present: {result.cervical_labels_present}")
+    if result.missing_required_vertebrae:
+        missing_names = [LABEL_NAMES.get(label, str(label)) for label in result.missing_required_vertebrae]
+        print(
+            "  WARNING: required cervical vertebrae missing: "
+            f"{result.missing_required_vertebrae} ({missing_names})"
+        )
+        print("  Continuing anyway so you can review the overlay and manifest.")
+
+    overlay_input = result.iso_input or metadata.nifti_path
+    print("\nOverlay preview:")
+    _render_segmentation_overlay(overlay_input, result.step2_output)
+
     print("\nNext: run cell 3 (03_run_measurements_colab.py).")
 
 

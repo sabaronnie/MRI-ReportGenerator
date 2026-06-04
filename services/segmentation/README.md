@@ -41,7 +41,7 @@ flask --app services.segmentation.app run --host 0.0.0.0 --port 8080
 ### Endpoints
 
 - `GET /healthz` — liveness check.
-- `POST /segment` — multipart upload, field `file` is either a `.nii`/`.nii.gz` or a `.zip` of a DICOM folder. Returns a `.zip` with `step2_output.nii.gz`, `step1_levels.nii.gz`, optionally `input_iso.nii.gz`, and `manifest.txt`.
+- `POST /segment` — multipart upload, field `file` is either a `.nii`/`.nii.gz` or a `.zip` of a DICOM folder. Returns a `.zip` with `step2_output.nii.gz`, `step1_levels.nii.gz`, optionally `input_iso.nii.gz`, plus both `manifest.txt` and `segmentation_run_manifest.json`.
 
 Optional form field: `iso=false` to disable TotalSpineSeg's `--iso` 1mm-isotropic resampling.
 

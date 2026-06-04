@@ -8,6 +8,7 @@ Flask service running Phase 3 measurement components on a TotalSpineSeg `step2_o
 |---|---|---|
 | `cervical_body_morphometry` | 3A.1 + 3A.2 | `AP_width`, `H_anterior`, `H_middle`, `H_posterior`, `tilt_deg` per cervical vertebra |
 | `spondylolisthesis` | 3A.3 | `spondy_slip_mm`, `spondy_pct_of_lower_AP` per adjacent vertebral pair |
+| `functional_canal_ap` | 3.1 | `dural_sac_AP_min` per cervical vertebra via SCT `sc_canal_t2` + `sct_process_segmentation` |
 
 Each component file lives under [services/measurements/](.) and exports `NAME`, `DEPENDS_ON`, and `compute(ctx, prior)`. Add a new measurement by registering it in `orchestrator.COMPONENTS`.
 
@@ -33,7 +34,7 @@ PORT=8081 flask --app services.measurements.app run --host 0.0.0.0 --port 8081
 | GET | `/metrics` | Prometheus scrape endpoint |
 | POST | `/measure` | Run measurement components on an uploaded segmentation zip |
 
-The `POST /measure` body is the same zip the segmentation IEP returns: at minimum a `step2_output.nii.gz`. Optional repeated form field `measurement=<name>` picks a subset of components.
+The `POST /measure` body is the same zip the segmentation IEP returns: at minimum a `step2_output.nii.gz`. Components backed by SCT also require `step1_levels.nii.gz` and `input_iso.nii.gz`, which the segmentation IEP now bundles by default. Optional repeated form field `measurement=<name>` picks a subset of components.
 
 ```bash
 curl -X POST -F "file=@segmentation.zip" http://localhost:8081/measure
