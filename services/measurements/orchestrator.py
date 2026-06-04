@@ -12,7 +12,7 @@ from typing import Any, Callable
 
 from prometheus_client import Counter, Histogram
 
-from .cord import cord_ap, functional_canal_ap
+from .cord import cord_ap, functional_canal_ap, sac
 from .context import MeasurementContext, MeasurementError
 from .geometric import cervical_body_morphometry, spondylolisthesis
 
@@ -40,6 +40,7 @@ COMPONENTS = {
     spondylolisthesis.NAME: spondylolisthesis,
     functional_canal_ap.NAME: functional_canal_ap,
     cord_ap.NAME: cord_ap,
+    sac.NAME: sac,
 }
 
 
