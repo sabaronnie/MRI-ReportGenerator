@@ -1,0 +1,12 @@
+# Group 5 — local measurement code (lightweight; pure numpy/scipy on masks)
+numpy
+nibabel
+scipy
+pytest
+
+# Data acquisition (5.2 RSNA validation)
+kaggle
+
+# NOTE: heavy segmentation deps (totalspineseg, nnunetv2, kornia<0.8 for TSS;
+# spinalcordtoolbox for SCIseg) are NOT installed locally — they run on Colab GPU.
+# See the colab_segment_*.ipynb notebooks.
