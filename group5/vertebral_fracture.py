@@ -15,6 +15,21 @@ Cervical caveats (this project is cervical):
 import numpy as np
 from scipy import ndimage
 
+# Healthy cervical Ha/Hp (anterior/posterior body height ratio), measured on OUR pipeline
+# from the Spine-Generic healthy cohort: 0.94 +/- 0.13 (mean +/- SD, n=60 C3-C7, 12 subjects,
+# 3 vendors, 2026-06-04; native 0.8mm and 4mm-downsampled agree -> resolution-robust).
+# This REPLACES the debunked in-code 0.97 +/- 0.02 "norm", which traced only to Sorci 2024
+# (World J Radiol PMC11718528, a 62%-osteoporotic all-female mean-age-67.6 cohort -- NOT
+# healthy) with a SD-of-level-means, not a within-population SD.
+# Triangulating cadaver/radiograph literature agrees on order-of-magnitude (healthy ~0.88-0.95,
+# posterior > anterior from lordotic wedging): Tan 2004 (Eur Spine J PMC3476578, mean ~0.90),
+# Kaur 2025 (~0.90), Lee 2012 (PMC3393857). NOTE: no like-for-like healthy + MRI + cervical
+# Ha/Hp study with comparable mean +/- SD exists, so this is triangulated PLAUSIBILITY, not a
+# proven comparator -> the threshold below is derived from OUR cohort (matching our definition),
+# with the literature as convergent support only.
+COHORT_HAHP_MEAN = 0.94
+COHORT_HAHP_SD = 0.13
+
 
 def _anterior_marker(seeds, anterior):
     """Label id of the seed component spanning the anterior edge (AP=axis0)."""
@@ -311,3 +326,30 @@ def classify_genant(heights, ref_post=None, grade1=0.20, grade2=0.25, grade3=0.4
     loss = losses[typ]
     grade = 3 if loss >= grade3 else 2 if loss >= grade2 else 1 if loss >= grade1 else 0
     return {"type": typ if grade > 0 else "normal", "grade": grade, "height_loss": float(loss)}
+
+
+def cervical_deformity_flag(ratio, mean=COHORT_HAHP_MEAN, sd=COHORT_HAHP_SD, z=2.0):
+    """Data-driven cervical vertebral-body COMPRESSION/deformity SCREEN flag from Ha/Hp.
+
+    This is SEPARATE from `classify_genant` (which stays the medical Genant standard at
+    20/25/40% loss). Here we flag a cervical body whose anterior/posterior ratio falls
+    `z` SDs below the measured healthy-cohort mean -- i.e. ratio < mean - z*sd. With the
+    defaults (Spine-Generic healthy 0.94 +/- 0.13, z=2) the threshold is ~0.68, chosen for
+    SPECIFICITY: it catches moderate-severe compression and will MISS mild wedging
+    (Ha/Hp ~0.78). `z` is an EXPOSED policy knob (a team/AUBMC sensitivity-vs-specificity
+    decision), deliberately NOT hardcoded as a clinical claim. The continuous `zscore` is
+    returned so a borderline body is visible to the physician even when not flagged.
+
+    SCOPE CAVEAT (keep honest): this is a vertebral-body compression/deformity screen for
+    physician review, NOT a validated general fracture detector -- on RSNA-2022 the geometric
+    wedge metric had ~zero power for non-compression cervical fractures (odontoid/facet/arch).
+    Per-vertebra SD is wide (0.13) -> reliable at the group/screening level, coarse per body.
+
+    Returns {"flagged": bool, "zscore": float, "threshold": float}.
+    """
+    threshold = mean - z * sd
+    return {
+        "flagged": bool(ratio < threshold),
+        "zscore": float((ratio - mean) / sd),
+        "threshold": float(threshold),
+    }

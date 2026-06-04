@@ -12,6 +12,7 @@ import numpy as np
 from vertebral_fracture import (
     heights_from_sagittal_mask,
     classify_genant,
+    cervical_deformity_flag,
     vertebra_axes_from_orientation,
     mid_sagittal_index,
     measure_vertebra,
@@ -273,6 +274,44 @@ def test_measure_vertebra_isolates_body_from_whole_vertebra():
     h = measure_vertebra(vol, ("P", "S", "R"), zooms=(0.43, 1.0, 4.0))
     assert abs(h["Ha"] - h["Hp"]) <= 1.0   # body only, uniform -> no false deformity
     assert classify_genant(h)["grade"] == 0
+
+
+# --- data-driven cervical deformity SCREEN flag (recalibrated threshold) -----
+# classify_genant() stays the medical Genant standard (20/25/40% loss). SEPARATELY, the
+# cervical compression/deformity SCREEN flags off the DATA-DRIVEN healthy cohort norm
+# (Spine-Generic 0.94 +/- 0.13, n=60 C3-C7) -- NOT the debunked in-code 0.97 +/- 0.02
+# phantom (Sorci 2024 osteoporotic cohort). Flag when Ha/Hp < mean - z*sd (z=2 -> ~0.68).
+# z is a TUNABLE specificity policy (a team/AUBMC decision), never a hardcoded clinical claim.
+
+def test_cervical_flag_healthy_ratio_not_flagged():
+    # the cohort median healthy Ha/Hp sits well above the screen threshold
+    assert cervical_deformity_flag(0.92)["flagged"] is False
+
+
+def test_cervical_flag_compressed_ratio_flagged():
+    # a markedly low ratio (below mean-2sd ~0.68) is flagged for physician review
+    assert cervical_deformity_flag(0.60)["flagged"] is True
+
+
+def test_cervical_flag_zscore_matches_definition():
+    # zscore = (ratio - mean)/sd: 0 at the mean, negative (and proportional) below it
+    assert cervical_deformity_flag(0.94, mean=0.94, sd=0.13)["zscore"] == 0.0
+    out = cervical_deformity_flag(0.81, mean=0.94, sd=0.13)
+    assert out["zscore"] == (0.81 - 0.94) / 0.13     # = -1.0
+    assert out["zscore"] < 0
+
+
+def test_cervical_flag_threshold_is_mean_minus_z_sd():
+    out = cervical_deformity_flag(0.90, mean=0.94, sd=0.13, z=2.0)
+    assert abs(out["threshold"] - (0.94 - 2.0 * 0.13)) < 1e-9     # ~0.68
+
+
+def test_cervical_flag_z_tunes_specificity():
+    # z is the exposed policy knob: a smaller z (looser, higher threshold) flags a borderline
+    # ratio that a larger z (stricter, lower threshold) clears. Same ratio, different policy.
+    borderline = 0.78
+    assert cervical_deformity_flag(borderline, z=1.0)["flagged"] is True      # thr ~0.81
+    assert cervical_deformity_flag(borderline, z=3.0)["flagged"] is False     # thr ~0.55
 
 
 # --- validation scoring (predicted fracture flag vs expert label) ------------
