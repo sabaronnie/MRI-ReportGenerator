@@ -11,6 +11,29 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-06 — Andrew (Group 5 to ~done + tier-1 validation of teammates' code + new practices)
+
+**Branch:** `groups-5-6`
+
+**What was done (audit of the session):**
+- **Group 5 nearly done.** Built the **end-to-end runner** `group5/run_group5_pipeline.py` (TSS step2 [+ optional SCIseg lesion] → the 5→6 flags JSON; glues 5.2 + 5.1 + the contract; lesion→level by SI overlap; 3 TDD tests, proven on a real healthy neck). Refreshed `group5/README.md` and **closed 5.3 (scoped out — no labeled tumor data) + 5.4 (deferred — needs gadolinium)** with a documented Scope & Limitations section. **Only 5.1 remains** (the SCIseg healthy-specificity Colab run → `out_sg_lesion/`).
+- **Research results integrated.** The 4 norm prompts + z-threshold all returned (memories: `disc_*`, `cervical_*`, `vb_hahp_z_threshold`). Folded the verified cited fixes into `group5/AUDIT_groups1-4_measurements.md` (disc-bulge tilted-chord, Miyazaki not Pfirrmann, CSF normalization validated, spondy upright-borrow, DHI/disc-height gap real). z=2.0 kept.
+- **Tier-1 validation of the teammates' measurement code on the 12 healthy necks** (`out_sg/`): ran their components directly. **First over-claimed "inaccurate," then corrected** — separated CLINICAL flags from QUALITY/caution flags (tilt_outlier etc.), confirmed the input is valid (genuine cervical T2 SPACE 3D-iso; our 5.2 reads the same masks correctly; over-flagging persists at 0.8 mm AND 4 mm → not a resolution/input artifact).
+- **THE KEYSTONE (Ronnie's G1/G4):** pulled Ronnie's canonical branch (`Standarization-Ronnie` @ `4102f06`), ran via his own orchestrator. The 6-corner landmark extraction is unstable on real lordotic necks → cascades into 3 outputs: anterior>posterior heights (Ha/Hp ≈ 1.08, backwards), Cobb C3–C7 = −21°±27° (healthy reads kyphotic; segmental ±90°), spondylolisthesis 62% flagged. Sizes (AP width, heights) are fine. **One keystone, not five bugs.** G3 (canal/cord) is SCT-backed → couldn't validate locally (needs Colab). Audited his NEW G4 (Cobb math correct but C3–C7≠C2–C7, sign unvalidated, 10° uncited) + G3 (SCT-delegated, SAC<3mm uncited, no neg-SAC guard).
+- **Sent validation-request handoffs** to Ronnie + Mohammad (`handoffs/validation-requests/`). Ronnie replied (answers captured); Mohammad pending.
+- **NEW PRACTICES (Andrew's directives, now standing):** (1) **commit granularly** — every small step its own commit; the commit history is graded, not the push ([[commit-granularly]]). (2) **document mistakes for the report/papers** — created `DEVELOPMENT_JOURNEY.md` (mistake → how found → fix → validation; seeded J1–J6) ([[document-mistakes-for-report]]).
+- **Drafted the corner/body-isolation FIX research prompt** (`handoffs/research-prompts/RESEARCH-PROMPT-cervical-corner-endplate-method-2026-06-06.md`) — get the validated cervical corner/endplate-landmark + Cobb method so we reverse-engineer a stable replacement (our canal-cut + endplate-line is the candidate).
+
+**Files changed:** `group5/run_group5_pipeline.py` (+test), `group5/README.md`, `group5/AUDIT_groups1-4_measurements.md`, `DEVELOPMENT_JOURNEY.md`; handoffs under `../handoffs/` (not in repo). Tier-1 harnesses live in `~/dev/group5-proto/` (import teammate worktrees; not committed).
+
+**Pending / next action:**
+1. **Launch the corner/endplate-method research prompt** (the fix for Ronnie's keystone) — Andrew gives it to another chat.
+2. **Colab:** (a) SCIseg on 12 healthy cords → `out_sg_lesion/` closes 5.1; (b) a future SCT run to validate Ronnie's G3.
+3. **Mohammad's reply** → re-validate his disc code correctly.
+4. Keep appending DEVELOPMENT_JOURNEY + committing granularly.
+
+---
+
 ## 2026-06-05 — Andrew (G5: A/B/C/D + full Groups 1-4 accuracy audit)
 
 **Branch:** `groups-5-6`
