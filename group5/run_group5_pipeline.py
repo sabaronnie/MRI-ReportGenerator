@@ -14,6 +14,7 @@ Usage:  python run_group5_pipeline.py <step2.nii.gz> [--lesion <lesion_seg.nii.g
 """
 import argparse
 import json
+import os
 import sys
 
 import nibabel as nib
@@ -28,6 +29,23 @@ from vertebral_fracture import (
 
 CERVICAL = {13: "C3", 14: "C4", 15: "C5", 16: "C6", 17: "C7"}   # C1/C2 excluded (structurally unique)
 CANAL_LABEL = 2
+
+
+def _case_key(path):
+    """Shared subject key for pairing a TSS step2 mask with its SCIseg lesion mask.
+    sub-amu01_T2w_step2.nii.gz -> sub-amu01_T2w ; sub-amu01_T2w_lesion_seg.nii.gz -> sub-amu01_T2w."""
+    b = os.path.basename(path)
+    for suf in ("_step2.nii.gz", "_lesion_seg.nii.gz", ".nii.gz"):
+        if b.endswith(suf):
+            return b[: -len(suf)]
+    return b
+
+
+def pair_cases(step2_paths, lesion_paths=None):
+    """Pair each step2 mask with its lesion mask by subject key; lesion=None when absent.
+    Returns a list of (case_key, step2_path, lesion_path_or_None)."""
+    lesion_by_key = {_case_key(p): p for p in (lesion_paths or [])}
+    return [(_case_key(s), s, lesion_by_key.get(_case_key(s))) for s in step2_paths]
 
 
 def _si_span(mask, si_axis):

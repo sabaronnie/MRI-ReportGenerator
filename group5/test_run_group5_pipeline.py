@@ -10,7 +10,7 @@ import json
 
 import numpy as np
 
-from run_group5_pipeline import assemble_case_contract
+from run_group5_pipeline import assemble_case_contract, pair_cases
 
 
 def _two_vertebra_seg():
@@ -50,6 +50,22 @@ def test_assemble_lesion_maps_to_overlapping_level():
     assert m["C3"]["present"] is True                   # lesion overlaps C3
     assert m["C4"]["present"] is False                  # not C4
     json.dumps(c)
+
+
+def test_pair_cases_matches_step2_and_lesion_by_subject():
+    # the SCIseg lesion mask pairs to its TSS step2 mask by the shared subject key
+    # (sub-amu01_T2w_step2 <-> sub-amu01_T2w_lesion_seg); a case with no lesion -> None.
+    step2 = ["/a/sub-amu01_T2w_step2.nii.gz", "/a/sub-beijingGE01_T2w_step2.nii.gz"]
+    lesion = ["/b/sub-amu01_T2w_lesion_seg.nii.gz"]
+    pairs = {k: (s, l) for k, s, l in pair_cases(step2, lesion)}
+    assert set(pairs) == {"sub-amu01_T2w", "sub-beijingGE01_T2w"}
+    assert pairs["sub-amu01_T2w"][1].endswith("lesion_seg.nii.gz")     # paired
+    assert pairs["sub-beijingGE01_T2w"][1] is None                     # no lesion -> not assessed
+
+
+def test_pair_cases_no_lesion_dir_all_none():
+    pairs = pair_cases(["/a/sub-x_T2w_step2.nii.gz"], None)
+    assert pairs == [("sub-x_T2w", "/a/sub-x_T2w_step2.nii.gz", None)]
 
 
 def test_assemble_empty_lesion_assessed_but_negative():
