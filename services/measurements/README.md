@@ -10,6 +10,7 @@ Flask service running Phase 3 measurement components on a TotalSpineSeg `step2_o
 | `spondylolisthesis` | 3A.3 | `spondy_slip_mm`, `spondy_pct_of_lower_AP` per adjacent vertebral pair |
 | `c3c7_cobb_angle` | 4.1 | `Cobb_C3_C7` from reused `cervical_body_morphometry` AI/PI corners in the common PA-SI frame |
 | `lordosis_classification` | 4.2 | Derived `lordotic` / `straightened / low lordosis` / `kyphotic` from `Cobb_C3_C7`, with supine-MRI caveat |
+| `segmental_angles` | 4.3 | `segmental_angle` for `C3-C4` through `C6-C7` from reused inferior/superior endplate corners in the common PA-SI frame |
 | `functional_canal_ap` | 3.1 | `dural_sac_AP_min` per cervical vertebra via SCT `sc_canal_t2` + `sct_process_segmentation` |
 | `cord_ap` | 3.2 | `cord_AP` per cervical vertebra via SCT `seg_sc_contrast_agnostic`, aligned to `functional_canal_ap` focal slices |
 | `sac` | 3.3 | `SAC` per cervical vertebra by same-slice subtraction of `dural_sac_AP_min - cord_AP` |

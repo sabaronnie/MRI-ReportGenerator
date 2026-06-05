@@ -74,14 +74,22 @@ def compute(ctx: MeasurementContext, prior_results: dict[str, Any]) -> Component
     )
 
 
-def _require_endplate(corners_voxel: dict[str, Any], level: str) -> dict[str, tuple[float, float, float]]:
+def _require_corners(
+    corners_voxel: dict[str, Any],
+    level: str,
+    required: tuple[str, ...],
+) -> dict[str, tuple[float, float, float]]:
     level_corners = corners_voxel.get(level)
     if not level_corners:
         raise MeasurementError(f"c3c7_cobb_angle requires corners for {level}")
-    missing = [name for name in REQUIRED_CORNERS if level_corners.get(name) is None]
+    missing = [name for name in required if level_corners.get(name) is None]
     if missing:
         raise MeasurementError(f"c3c7_cobb_angle missing corners for {level}: {missing}")
     return level_corners
+
+
+def _require_endplate(corners_voxel: dict[str, Any], level: str) -> dict[str, tuple[float, float, float]]:
+    return _require_corners(corners_voxel, level, REQUIRED_CORNERS)
 
 
 def _line_angle_deg(

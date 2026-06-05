@@ -18,6 +18,7 @@ from .geometric import (
     c3c7_cobb_angle,
     cervical_body_morphometry,
     lordosis_classification,
+    segmental_angles,
     spondylolisthesis,
 )
 
@@ -45,6 +46,7 @@ COMPONENTS = {
     spondylolisthesis.NAME: spondylolisthesis,
     c3c7_cobb_angle.NAME: c3c7_cobb_angle,
     lordosis_classification.NAME: lordosis_classification,
+    segmental_angles.NAME: segmental_angles,
     functional_canal_ap.NAME: functional_canal_ap,
     cord_ap.NAME: cord_ap,
     sac.NAME: sac,
