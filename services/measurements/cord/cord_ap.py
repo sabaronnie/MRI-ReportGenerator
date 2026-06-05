@@ -7,8 +7,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from ...segmentation.sct_segmenter import SCTSegmentationError, run_sct_deepseg
 from ..context import ComponentResult, MeasurementContext, MeasurementError
-from ..sct import SCTError, ShapeMetricRow, run_deepseg, run_process_segmentation
+from ..sct import SCTError, ShapeMetricRow, run_process_segmentation
 from .functional_canal_ap import LEVELS, NAME as FUNCTIONAL_CANAL_AP_NAME
 
 
@@ -23,8 +24,8 @@ class _CordSliceMetric:
 
 
 def compute(ctx: MeasurementContext, prior_results: dict[str, Any] | None = None) -> ComponentResult:
-    if ctx.raw_path is None:
-        raise MeasurementError("cord_ap requires a raw/iso MRI path; upload must include input_iso.nii.gz")
+    if ctx.raw_path is None and ctx.sct_cord_seg_path is None:
+        raise MeasurementError("cord_ap requires either a precomputed SCT cord mask or input_iso.nii.gz")
     if ctx.levels_path is None:
         raise MeasurementError("cord_ap requires TotalSpineSeg step1_levels.nii.gz for vertebral-level mapping")
     if prior_results is None or FUNCTIONAL_CANAL_AP_NAME not in prior_results:
@@ -37,7 +38,9 @@ def compute(ctx: MeasurementContext, prior_results: dict[str, Any] | None = None
     try:
         with tempfile.TemporaryDirectory(prefix="mri-cord-ap-") as tmpdir:
             work_dir = Path(tmpdir)
-            cord_seg = run_deepseg("seg_sc_contrast_agnostic", ctx.raw_path, work_dir / "deepseg")
+            cord_seg = ctx.sct_cord_seg_path
+            if cord_seg is None:
+                cord_seg = run_sct_deepseg("spinalcord", ctx.raw_path, work_dir / "deepseg")
             rows = run_process_segmentation(
                 cord_seg,
                 discfile=ctx.levels_path,
@@ -45,7 +48,7 @@ def compute(ctx: MeasurementContext, prior_results: dict[str, Any] | None = None
                 vert="2:7",
                 perslice=True,
             )
-    except SCTError as e:
+    except (SCTError, SCTSegmentationError) as e:
         raise MeasurementError(str(e)) from e
 
     grouped = _group_by_level(rows)
@@ -93,7 +96,7 @@ def compute(ctx: MeasurementContext, prior_results: dict[str, Any] | None = None
         flags=flags,
         metadata={
             "levels": sorted(measurements["cord_AP"].keys()),
-            "method": "SCT seg_sc_contrast_agnostic + sct_process_segmentation perslice aligned to functional canal focal slice",
+            "method": "SCT spinalcord + sct_process_segmentation perslice aligned to functional canal focal slice",
             "measurement_name": "cord_AP",
         },
     )

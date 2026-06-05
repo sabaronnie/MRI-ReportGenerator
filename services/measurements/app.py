@@ -7,7 +7,9 @@ Endpoints:
 - POST /measure   : multipart upload of the segmentation zip from the segmentation IEP
 
 The /measure endpoint accepts the same zip the segmentation IEP returns (containing at
-minimum step2_output.nii.gz). Optional repeated form field `measurement=<name>` selects a
+minimum step2_output.nii.gz). If the zip also contains `sct_canal_seg.nii.gz` and
+`sct_spinalcord_seg.nii.gz`, the SCT-backed measurements will reuse those masks instead of
+rerunning deepseg locally. Optional repeated form field `measurement=<name>` selects a
 subset of registered components; default runs all.
 """
 
@@ -77,6 +79,8 @@ def measure():
 
     levels_path = _find_optional_nifti(extract_dir, "step1_levels.nii.gz")
     raw_path = _find_optional_nifti(extract_dir, "input_iso.nii.gz")
+    sct_canal_seg_path = _find_optional_nifti(extract_dir, "sct_canal_seg.nii.gz")
+    sct_cord_seg_path = _find_optional_nifti(extract_dir, "sct_spinalcord_seg.nii.gz")
 
     # The segmentation file is already 1 mm isotropic, so the original MRI slice
     # thickness can only come from the segmentation manifest (if the upload
@@ -91,6 +95,8 @@ def measure():
             seg_path,
             raw_path=raw_path,
             levels_path=levels_path,
+            sct_canal_seg_path=sct_canal_seg_path,
+            sct_cord_seg_path=sct_cord_seg_path,
             source_spacing_mm=source_spacing,
         )
         report = run_all(ctx, enabled)

@@ -12,8 +12,8 @@ Flask service running Phase 3 measurement components on a TotalSpineSeg `step2_o
 | `lordosis_classification` | 4.2 | Derived `lordotic` / `straightened / low lordosis` / `kyphotic` from `Cobb_C3_C7`, with supine-MRI caveat |
 | `segmental_angles` | 4.3 | `segmental_angle` for `C3-C4` through `C6-C7` from reused inferior/superior endplate corners in the common PA-SI frame |
 | `posterior_tangent_angle` | 4.4 | `posterior_tangent_C3_C7` from reused `PS/PI` posterior-wall corners, plus Cobb divergence metadata for cross-checking |
-| `functional_canal_ap` | 3.1 | `dural_sac_AP_min` per cervical vertebra via SCT `sc_canal_t2` + `sct_process_segmentation` |
-| `cord_ap` | 3.2 | `cord_AP` per cervical vertebra via SCT `seg_sc_contrast_agnostic`, aligned to `functional_canal_ap` focal slices |
+| `functional_canal_ap` | 3.1 | `dural_sac_AP_min` per cervical vertebra via SCT `canal` + `sct_process_segmentation` |
+| `cord_ap` | 3.2 | `cord_AP` per cervical vertebra via SCT `spinalcord`, aligned to `functional_canal_ap` focal slices |
 | `sac` | 3.3 | `SAC` per cervical vertebra by same-slice subtraction of `dural_sac_AP_min - cord_AP` |
 
 Each component file lives under [services/measurements/](.) and exports `NAME`, `DEPENDS_ON`, and `compute(ctx, prior)`. Add a new measurement by registering it in `orchestrator.COMPONENTS`.
@@ -40,7 +40,12 @@ PORT=8081 flask --app services.measurements.app run --host 0.0.0.0 --port 8081
 | GET | `/metrics` | Prometheus scrape endpoint |
 | POST | `/measure` | Run measurement components on an uploaded segmentation zip |
 
-The `POST /measure` body is the same zip the segmentation IEP returns: at minimum a `step2_output.nii.gz`. Components backed by SCT also require `step1_levels.nii.gz` and `input_iso.nii.gz`, which the segmentation IEP now bundles by default. Optional repeated form field `measurement=<name>` picks a subset of components.
+The `POST /measure` body is the same zip the segmentation IEP returns: at minimum a `step2_output.nii.gz`. Components backed by SCT require `step1_levels.nii.gz` and either:
+
+- `sct_canal_seg.nii.gz` / `sct_spinalcord_seg.nii.gz` from the new SCT segmentation service, or
+- `input_iso.nii.gz` so the measurement service can fall back to running SCT itself.
+
+Optional repeated form field `measurement=<name>` picks a subset of components.
 
 ```bash
 curl -X POST -F "file=@segmentation.zip" http://localhost:8081/measure

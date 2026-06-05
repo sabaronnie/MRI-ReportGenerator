@@ -16,8 +16,9 @@ from pathlib import Path
 from statistics import median
 from typing import Any
 
+from ...segmentation.sct_segmenter import SCTSegmentationError, run_sct_deepseg
 from ..context import ComponentResult, MeasurementContext, MeasurementError
-from ..sct import SCTError, ShapeMetricRow, run_deepseg, run_process_segmentation
+from ..sct import SCTError, ShapeMetricRow, run_process_segmentation
 
 
 NAME = "functional_canal_ap"
@@ -42,9 +43,9 @@ class _LevelSliceMetric:
 
 
 def compute(ctx: MeasurementContext, prior_results: dict[str, Any] | None = None) -> ComponentResult:
-    if ctx.raw_path is None:
+    if ctx.raw_path is None and ctx.sct_canal_seg_path is None:
         raise MeasurementError(
-            "functional_canal_ap requires a raw/iso MRI path; upload must include input_iso.nii.gz"
+            "functional_canal_ap requires either a precomputed SCT canal mask or input_iso.nii.gz"
         )
     if ctx.levels_path is None:
         raise MeasurementError(
@@ -54,7 +55,9 @@ def compute(ctx: MeasurementContext, prior_results: dict[str, Any] | None = None
     try:
         with tempfile.TemporaryDirectory(prefix="mri-canal-ap-") as tmpdir:
             work_dir = Path(tmpdir)
-            canal_seg = run_deepseg("sc_canal_t2", ctx.raw_path, work_dir / "deepseg")
+            canal_seg = ctx.sct_canal_seg_path
+            if canal_seg is None:
+                canal_seg = run_sct_deepseg("canal", ctx.raw_path, work_dir / "deepseg")
             rows = run_process_segmentation(
                 canal_seg,
                 discfile=ctx.levels_path,
@@ -62,7 +65,7 @@ def compute(ctx: MeasurementContext, prior_results: dict[str, Any] | None = None
                 vert="2:7",
                 perslice=True,
             )
-    except SCTError as e:
+    except (SCTError, SCTSegmentationError) as e:
         raise MeasurementError(str(e)) from e
 
     grouped = _group_by_level(rows)
@@ -101,7 +104,7 @@ def compute(ctx: MeasurementContext, prior_results: dict[str, Any] | None = None
         flags=flags,
         metadata={
             "levels": [LEVELS[n] for n in sorted(grouped)],
-            "method": "SCT sc_canal_t2 + sct_process_segmentation perslice + 3-slice stable minimum",
+            "method": "SCT canal + sct_process_segmentation perslice + 3-slice stable minimum",
             "measurement_name": "dural_sac_AP_min",
         },
     )

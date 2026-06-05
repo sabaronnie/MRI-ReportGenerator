@@ -13,10 +13,12 @@ from services.measurements.sct import ShapeMetricRow
 def _ctx(tmp_path, *, raw=True, levels=True) -> MeasurementContext:
     raw_path = tmp_path / "input_iso.nii.gz" if raw else None
     levels_path = tmp_path / "step1_levels.nii.gz" if levels else None
+    cord_seg_path = tmp_path / "sct_spinalcord_seg.nii.gz"
     if raw_path is not None:
         raw_path.write_bytes(b"fake")
     if levels_path is not None:
         levels_path.write_bytes(b"fake")
+    cord_seg_path.write_bytes(b"fake")
     return MeasurementContext(
         seg_path=None,
         seg_data=np.zeros((5, 5, 5), dtype=np.int32),
@@ -24,6 +26,7 @@ def _ctx(tmp_path, *, raw=True, levels=True) -> MeasurementContext:
         voxel_spacing_mm=(1.0, 1.0, 1.0),
         levels_path=levels_path,
         raw_path=raw_path,
+        sct_cord_seg_path=cord_seg_path,
     )
 
 
@@ -45,7 +48,6 @@ def test_requires_dependency(tmp_path):
 
 def test_aligns_to_focal_slice_and_uses_nearest_fallback(monkeypatch, tmp_path):
     ctx = _ctx(tmp_path)
-    monkeypatch.setattr(cord_ap, "run_deepseg", lambda task, raw_path, output_dir: tmp_path / "cord_seg.nii.gz")
     monkeypatch.setattr(
         cord_ap,
         "run_process_segmentation",
@@ -68,3 +70,17 @@ def test_aligns_to_focal_slice_and_uses_nearest_fallback(monkeypatch, tmp_path):
     assert result.intermediate["source_slice"]["C6"] == 20
     assert result.intermediate["slice_delta"]["C6"] == 1
     assert result.flags["cord_slice_misaligned"]["C6"] is True
+
+
+def test_uses_precomputed_sct_mask_without_raw(monkeypatch, tmp_path):
+    ctx = _ctx(tmp_path, raw=False)
+    monkeypatch.setattr(
+        cord_ap,
+        "run_process_segmentation",
+        lambda *args, **kwargs: [
+            ShapeMetricRow(slice_index=12, vertebral_level=5, metrics={"diameter_AP": 6.0}, raw={}),
+        ],
+    )
+
+    result = cord_ap.compute(ctx, _prior({"C5": 12}))
+    assert result.measurements["cord_AP"]["C5"] == pytest.approx(6.0)

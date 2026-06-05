@@ -46,6 +46,8 @@ class MeasurementContext:
     voxel_spacing_mm: tuple[float, float, float]   # (LR, PA, IS) in mm
     levels_path: Path | None = None
     raw_path: Path | None = None
+    sct_canal_seg_path: Path | None = None
+    sct_cord_seg_path: Path | None = None
     raw_data: np.ndarray | None = None
     manifest: dict = field(default_factory=dict)
 
@@ -174,6 +176,8 @@ def load_context(
     seg_path: Path | str,
     raw_path: Path | str | None = None,
     levels_path: Path | str | None = None,
+    sct_canal_seg_path: Path | str | None = None,
+    sct_cord_seg_path: Path | str | None = None,
     source_spacing_mm: Any = None,
 ) -> MeasurementContext:
     """Load a TotalSpineSeg step2_output (and optionally the raw MRI) into a measurement context.
@@ -209,6 +213,8 @@ def load_context(
         raw_data = np.asarray(raw_img.dataobj).astype(np.float32)
 
     levels_path_resolved = None if levels_path is None else Path(levels_path).resolve()
+    sct_canal_seg_resolved = None if sct_canal_seg_path is None else Path(sct_canal_seg_path).resolve()
+    sct_cord_seg_resolved = None if sct_cord_seg_path is None else Path(sct_cord_seg_path).resolve()
 
     return MeasurementContext(
         seg_path=seg_path,
@@ -217,11 +223,19 @@ def load_context(
         voxel_spacing_mm=spacing,
         levels_path=levels_path_resolved,
         raw_path=raw_path_resolved,
+        sct_canal_seg_path=sct_canal_seg_resolved,
+        sct_cord_seg_path=sct_cord_seg_resolved,
         raw_data=raw_data,
         manifest={
             "seg_shape": list(seg_data.shape),
             "voxel_spacing_mm": list(spacing),
             "levels_path": str(levels_path_resolved) if levels_path_resolved is not None else None,
+            "sct_canal_seg_path": (
+                str(sct_canal_seg_resolved) if sct_canal_seg_resolved is not None else None
+            ),
+            "sct_cord_seg_path": (
+                str(sct_cord_seg_resolved) if sct_cord_seg_resolved is not None else None
+            ),
             "resolution_quality": _resolution_quality(
                 source_spacing, seg_file_spacing_mm, spacing
             ),
