@@ -105,13 +105,44 @@ def run_group5_case(step2_path, lesion_path=None, case_id=None, screen_z=2.0):
     return assemble_case_contract(seg, axcodes, zooms, lesion=lesion, case_id=cid, screen_z=screen_z)
 
 
+def run_group5_batch(step2_dir, lesion_dir=None, out_dir=None, screen_z=2.0):
+    """Run Group 5 over a FOLDER of TSS step2 masks (+ optional folder of SCIseg lesion masks),
+    pairing by subject. Writes <case>.flags.json per case into out_dir when given; returns the
+    list of contract dicts. Used to produce the whole healthy cohort at once (5.1 closure / demo)."""
+    import glob
+    step2 = sorted(glob.glob(os.path.join(step2_dir, "*step2*.nii.gz")))
+    lesion = sorted(glob.glob(os.path.join(lesion_dir, "*lesion*.nii.gz"))) if lesion_dir else []
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
+    contracts = []
+    for key, s, l in pair_cases(step2, lesion):
+        c = run_group5_case(s, l, case_id=key, screen_z=screen_z)
+        if out_dir:
+            with open(os.path.join(out_dir, key + ".flags.json"), "w") as f:
+                json.dump(c, f, indent=2)
+        contracts.append(c)
+    return contracts
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description="Group 5 end-to-end runner -> flags JSON")
-    p.add_argument("step2", help="TotalSpineSeg step2_output .nii.gz")
-    p.add_argument("--lesion", help="SCIseg lesion mask .nii.gz (optional; enables 5.1)")
-    p.add_argument("--case-id", help="case identifier (default: from the step2 filename)")
-    p.add_argument("-o", "--out", help="write JSON here (default: stdout)")
+    p.add_argument("step2", help="TSS step2 .nii.gz, OR a folder of them for batch mode")
+    p.add_argument("--lesion", help="SCIseg lesion mask .nii.gz (single) or folder of masks (batch); enables 5.1")
+    p.add_argument("--case-id", help="case identifier (single mode; default: from the step2 filename)")
+    p.add_argument("-o", "--out", help="output JSON file (single) or output folder (batch)")
     args = p.parse_args(argv)
+
+    if os.path.isdir(args.step2):                       # batch: folder of step2 masks
+        contracts = run_group5_batch(args.step2, args.lesion, args.out)
+        n = len(contracts)
+        flagged = sum(1 for c in contracts for lv in c["levels"] if lv["fracture"]["flagged"])
+        assessed = sum(1 for c in contracts if any(lv["myelomalacia"]["assessed"] for lv in c["levels"]))
+        myo_pos = sum(1 for c in contracts for lv in c["levels"] if lv["myelomalacia"].get("present"))
+        print(f"# batch: {n} cases" + (f" -> {args.out}/" if args.out else " (no -o; JSON not written)"))
+        print(f"#   compression-flagged levels: {flagged}")
+        print(f"#   myelomalacia: " + ("not assessed (no lesion masks)" if not assessed
+                                       else f"{myo_pos} positive level(s) across {assessed} assessed case(s)"))
+        return
 
     c = run_group5_case(args.step2, args.lesion, args.case_id)
     txt = json.dumps(c, indent=2)
