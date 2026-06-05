@@ -22,6 +22,7 @@ from .geometric import (
     segmental_angles,
     spondylolisthesis,
 )
+from .interpretation import build_interpreted_measurements
 
 
 MEASUREMENT_DURATION = Histogram(
@@ -62,6 +63,8 @@ def run_all(ctx: MeasurementContext, enabled: list[str] | None = None) -> dict[s
 
     report: dict[str, Any] = {"components": {}, "measurements": {}, "flags": {}}
     prior: dict[str, Any] = {}
+    measurement_sources: dict[str, str] = {}
+    flag_sources: dict[str, str] = {}
 
     for name in ordered:
         component = COMPONENTS[name]
@@ -74,8 +77,10 @@ def run_all(ctx: MeasurementContext, enabled: list[str] | None = None) -> dict[s
 
             for measurement_key, per_level in result.measurements.items():
                 report["measurements"].setdefault(measurement_key, {}).update(per_level)
+                measurement_sources[measurement_key] = name
             for flag_key, per_level in result.flags.items():
                 report["flags"].setdefault(flag_key, {}).update(per_level)
+                flag_sources[flag_key] = name
                 for level, raised in per_level.items():
                     if raised:
                         PATHOLOGY_FLAGS.labels(measurement=name, flag=flag_key).inc()
@@ -95,6 +100,13 @@ def run_all(ctx: MeasurementContext, enabled: list[str] | None = None) -> dict[s
                 "duration_s": elapsed,
                 "error": str(e),
             }
+    report["interpretations"] = {
+        "measurements": build_interpreted_measurements(
+            report,
+            measurement_sources=measurement_sources,
+            flag_sources=flag_sources,
+        )
+    }
     return report
 
 

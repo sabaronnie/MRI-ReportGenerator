@@ -71,10 +71,32 @@ Response:
       "ap_width_outlier":  {"C3": false, ...},
       "wedge_fracture":    {"C3": false, ...},
       "biconcave_fracture":{"C3": false, ...}
+    },
+    "interpretations": {
+      "measurements": [
+        {
+          "measurement": "AP_width",
+          "level": "C3",
+          "value": 19.0,
+          "unit": "mm",
+          "status": "review_only",
+          "severity": null,
+          "flag": false,
+          "demographics_used": {},
+          "quality_flags": [],
+          "caveat": null
+        }
+      ]
     }
   }
 }
 ```
+
+`interpretations.measurements` is the first Phase 4 scaffold: a standard per-measurement container that keeps the API stable while the full threshold engine is still being built. The current behavior is intentionally conservative:
+
+- values with a non-quality pathology flag from their source component are marked `outside_reference`
+- values without threshold logic yet are marked `review_only`
+- citation provenance is intentionally not duplicated in every row; it belongs in the central threshold/rule catalog
 
 ## Prometheus metrics
 
