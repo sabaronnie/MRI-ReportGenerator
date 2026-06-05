@@ -1,0 +1,116 @@
+Hi, this is Ronnie.
+
+Thanks for the careful validation pass. This is helpful, and I agree the right frame here is "make sure you are running my code correctly" rather than reading the first healthy-set outputs as a verdict.
+
+Short version first:
+- For Group 1, please treat `Standarization-Ronnie` as the canonical branch to rerun against, not Mohammad's copy. The current checked-out branch here is `Standarization-Ronnie` at commit `4102f0648b5ecae91ec5294416f85f383839557c`.
+- Yes, Groups 3 and 4 do exist in my worktree. They are under `services/measurements/cord/` and `services/measurements/geometric/`, plus the matching Colab scripts.
+- I do not think `tilt_outlier` should be counted as a clinical false-positive finding on healthy necks. Its intended meaning is much closer to a geometry / segmentation caution flag.
+- I do not have a healthy-cohort validation package or ICC / Bland-Altman results in this repo yet. What is in-repo today is engineering validation on synthetic tests plus implementation scaffolding and Colab/service runners.
+
+Answers inline to your numbered questions:
+
+1. Canonical morphometry / spondylolisthesis version and entry point
+
+My canonical code in this repo is the `Standarization-Ronnie` branch, specifically:
+- `services/measurements/geometric/cervical_body_morphometry.py`
+- `services/measurements/geometric/spondylolisthesis.py`
+- `services/measurements/context.py`
+
+Relevant implementation history in this branch:
+- `9c28acd` implemented spondylolisthesis
+- `6ab3a2f` added the sub-voxel boundary refinement
+- later commits kept building on that same measurement stack
+
+Please do rerun against this branch rather than Mohammad's worktree copy. The older `genant_6point.py` file is effectively the precursor; the branch's canonical producer now is `cervical_body_morphometry.py`.
+
+On entry point: calling `load_context(...)` and then each component's `compute(ctx, prior_results)` directly is acceptable as long as you preserve dependencies and pass the right context inputs. The orchestrator mainly adds dependency ordering, error collection, Prometheus instrumentation, and the flattened report schema. So for Group 1, `cervical_body_morphometry -> spondylolisthesis` is a fair direct run. For Group 3, the dependency chain is `functional_canal_ap -> cord_ap -> sac`, and the context must include `levels_path` plus either `raw_path` or precomputed SCT masks.
+
+2. Flag semantics: clinical abnormality vs quality / caution
+
+How I would classify the current flags:
+- `tilt_outlier`: quality / caution flag, not a stand-alone clinical abnormality flag. In the plan it is described as "unusual axis orientation; likely segmentation issue."
+- `ap_width_outlier`: caution / review flag. It means outside the typical range sanity window used by the geometry pipeline; I would not treat it as a diagnosis by itself.
+- `wedge_fracture`: intended pathology-style review flag.
+- `biconcave_fracture`: intended pathology-style review flag.
+- `spondylolisthesis_present`: intended pathology-style review flag, with an explicit supine-MRI caveat.
+
+Important nuance: the current interpretation scaffold in code auto-recognizes quality flags by names like `low_confidence`, `misaligned`, `approximate`, etc. Because `tilt_outlier` does not contain one of those markers, the scaffold may currently treat it more like a pathology flag than I intend. So on your healthy-set analysis, I would not count `tilt_outlier` the same way you would count `wedge_fracture` or `spondylolisthesis_present`.
+
+3. Is `tilt_deg` measured against image vertical? Is ~28 degrees expected?
+
+`tilt_deg` is measured against the global superior-inferior axis after canonical reorientation, not the raw pixel-grid "screen vertical" from the original file. Concretely, the code computes the angle between the vertebra's local SI axis and the global SI direction in the sagittal PA-SI plane.
+
+Given that definition, the fact that your healthy set is clustering around ~28 degrees is a strong sign that the current `20` degree threshold is too aggressive for cervical anatomy / positioning, or that the local axis being extracted is not behaving as intended on these masks. Either way, I would interpret that result as "threshold / geometry issue to recalibrate," not "83% of healthy vertebrae are clinically abnormal."
+
+4. Anterior vs posterior height expectation
+
+I would not expect a healthy cervical series to have a systematic strong anterior-greater-than-posterior signature that contradicts established lordotic wedging. Mild anterior-less-than-posterior in healthy cervical bodies is plausible and consistent with the literature direction you mention.
+
+So if your independently validated method reads the same healthy necks as posterior > anterior while my current morphometry is producing anterior > posterior, I would treat that as something real to reconcile, not as a harmless convention difference to ignore. The first suspects I would check are:
+- corner placement on tilted bodies
+- body isolation / posterior-element trimming
+- how the local PCA frame is chosen on oblique or irregular slices
+
+5. Healthy slip expectation and the 1 mm / 2 mm cutoffs
+
+The current code constants are:
+- `NEUTRAL_THRESHOLD_MM = 1.0`
+- `SPONDY_PRESENT_THRESHOLD_MM = 2.0`
+
+So yes: in the current implementation, below 1 mm is effectively neutral, and 2 mm or more is flagged as `spondylolisthesis_present`.
+
+Conceptually, on healthy supine MRI I would expect slip to stay near zero and mostly below the present threshold. I would not expect 50% positives on healthy adjacent pairs. If you are seeing SD about 3.4 mm and range about +/-9.6 mm on healthy data, I would treat that as evidence that the upstream corner stability / body-isolation geometry still needs work before trusting those flags.
+
+6. Groups 3 and 4 status / locations
+
+Yes, they are implemented in this worktree.
+
+Group 3:
+- `services/measurements/cord/functional_canal_ap.py`
+- `services/measurements/cord/cord_ap.py`
+- `services/measurements/cord/sac.py`
+- tests: `services/measurements/tests/test_functional_canal_ap.py`, `test_cord_ap.py`, `test_sac.py`
+- Colab: `colab/04_group3_stenosis_colab.py`
+- Colab rerun helper: `colab/04_group3_stenosis_rerun_colab.py`
+
+Group 4:
+- `services/measurements/geometric/c3c7_cobb_angle.py`
+- `services/measurements/geometric/lordosis_classification.py`
+- `services/measurements/geometric/segmental_angles.py`
+- `services/measurements/geometric/posterior_tangent_angle.py`
+- tests: `services/measurements/tests/test_c3c7_cobb_angle.py`, `test_lordosis_classification.py`, `test_segmental_angles.py`, `test_posterior_tangent_angle.py`
+- Colab: `colab/05_group4_alignment_colab.py`
+
+These are also registered in `services/measurements/orchestrator.py`, so if you use the service path they are part of the measurement registry.
+
+For Group 3 specifically, the current implementation uses SCT-backed canal and cord measurements with same-slice SAC derivation:
+- 3.1 `dural_sac_AP_min`
+- 3.2 `cord_AP`
+- 3.3 `SAC`
+
+7. What validation exists today
+
+What I can honestly claim from this repo today is limited:
+- synthetic unit tests exist for the measurement components
+- the session log documents engineering smoke-test work and one Duke-case comparison workflow target
+- the plans define future clinical-validation targets, but those targets are not completed results yet
+
+What I do NOT have in this repo yet:
+- a healthy-cohort normative validation package
+- ICC or Bland-Altman results
+- an in-git known-good patient case with expected outputs
+
+So if Andrew's Group 5 chat wants to judge the current code fairly, I would frame it as an engineering / pre-clinical prototype with partial component implementation and test coverage, not as a clinically validated finished measurement engine.
+
+What else Group 5 should know to run this correctly
+
+1. The measurement context assumes canonical RAS and will resample / standardize geometry through `load_context(...)`. Please do not bypass that.
+2. The geometry code was designed around TotalSpineSeg `--iso` style outputs and explicitly expects the TSS cervical labels/disc labels used in this repo.
+3. Group 3 is not step2-only in the narrow sense. It also needs `step1_levels.nii.gz` and either `input_iso.nii.gz` or precomputed SCT canal/cord masks.
+4. Supine-MRI caveats matter for both spondylolisthesis and lordosis/alignment outputs.
+5. The current interpretation layer is only a scaffold. Some flags are named in a way that affects whether the scaffold treats them as quality flags versus pathology flags.
+
+About the requested zip
+
+I can point Andrew to the canonical code paths above, but there is no patient `.nii.gz` example or packaged known-good case checked into this repo. If you want the handoff to include a trusted case, that would have to come from Drive or another non-git source.
