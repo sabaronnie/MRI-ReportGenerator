@@ -26,11 +26,12 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 **Files changed:** `group5/run_group5_pipeline.py` (+test), `group5/README.md`, `group5/AUDIT_groups1-4_measurements.md`, `DEVELOPMENT_JOURNEY.md`; handoffs under `../handoffs/` (not in repo). Tier-1 harnesses live in `~/dev/group5-proto/` (import teammate worktrees; not committed).
 
-**Pending / next action:**
-1. **Launch the corner/endplate-method research prompt** (the fix for Ronnie's keystone) — Andrew gives it to another chat.
-2. **Colab:** (a) SCIseg on 12 healthy cords → `out_sg_lesion/` closes 5.1; (b) a future SCT run to validate Ronnie's G3.
-3. **Mohammad's reply** → re-validate his disc code correctly.
-4. Keep appending DEVELOPMENT_JOURNEY + committing granularly.
+**Pending / next action (state at end of 2026-06-06, Andrew asleep):**
+- **RUNNING in parallel (separate chats):** (1) corner/endplate-method research = the fix for Ronnie's keystone; (2) Group-6/Phase-4 threshold research = the cited threshold table our Group 6 will hard-code (handoffs in `../handoffs/research-prompts/`).
+- **RUNNING: Colab** = SCIseg on the 12 healthy cords → download to `out_sg_lesion/` to close 5.1.
+- **QUEUED: Group 6 takeover.** Group 6 = the interpretation/validation layer (Ronnie's "Phase 4"); we're taking it over. Context + plan saved in memory `group6_takeover_context.md`. **TRIGGER: when the Phase-4 threshold research returns → FLAG Andrew to start Group 6.**
+- **PENDING: Mohammad's reply** → re-validate his disc code correctly.
+- Commit convention (2026-06-06): plain 1-2 sentence messages, NO signatures/trailers. Keep appending DEVELOPMENT_JOURNEY + committing granularly.
 
 ---
 
