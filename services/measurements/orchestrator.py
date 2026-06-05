@@ -14,7 +14,7 @@ from prometheus_client import Counter, Histogram
 
 from .cord import cord_ap, functional_canal_ap, sac
 from .context import MeasurementContext, MeasurementError
-from .geometric import cervical_body_morphometry, spondylolisthesis
+from .geometric import c3c7_cobb_angle, cervical_body_morphometry, spondylolisthesis
 
 
 MEASUREMENT_DURATION = Histogram(
@@ -38,6 +38,7 @@ PATHOLOGY_FLAGS = Counter(
 COMPONENTS = {
     cervical_body_morphometry.NAME: cervical_body_morphometry,
     spondylolisthesis.NAME: spondylolisthesis,
+    c3c7_cobb_angle.NAME: c3c7_cobb_angle,
     functional_canal_ap.NAME: functional_canal_ap,
     cord_ap.NAME: cord_ap,
     sac.NAME: sac,
