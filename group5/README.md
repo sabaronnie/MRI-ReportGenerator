@@ -23,6 +23,8 @@ the repo, to keep heavy imaging data off git) and imported here.
   Glues 5.2 + 5.1 + the contract; the only new logic (assembly loop + lesion→level mapping) is TDD'd.
   ```
   python run_group5_pipeline.py <step2.nii.gz> [--lesion <lesion_seg.nii.gz>] [--case-id ID] [-o out.json]
+  # batch a whole cohort (pairs step2 <-> lesion masks by subject, one JSON per case):
+  python run_group5_pipeline.py <step2_dir> [--lesion <lesion_dir>] -o <out_dir>
   ```
   Without `--lesion`, myelomalacia reads "not assessed"; with it, every level is assessed and flagged
   where the cord lesion overlaps that level's superior–inferior span.
