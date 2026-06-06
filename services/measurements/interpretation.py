@@ -176,6 +176,74 @@ def _catalog_row(measurement: str, level: str, value: float, ev: Any) -> dict[st
     ).to_dict()
 
 
+# Syndrome indicators (plan §4.3). PROVISIONAL combination rules -- advisory only, never a
+# diagnosis. The exact combination logic + the radiculopathy evidence base are pending the
+# Phase-4 research; these are documented placeholders flagged for review.
+_MYELOPATHY_ADVISORY = (
+    "pattern consistent with possible cervical myelopathy; clinical correlation required"
+)
+_RADICULOPATHY_ADVISORY = (
+    "pattern that may relate to radiculopathy; foraminal dimensions are not measured on "
+    "sagittal MRI, so this is weak -- clinical correlation required"
+)
+
+
+def detect_syndromes(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Provisional syndrome-pattern indicators from interpreted rows (plan §4.3).
+
+    PLACEHOLDER: advisory only, never diagnostic. The exact combination rules (and the
+    radiculopathy evidence base on sagittal-only MRI) are pending the Phase-4 research, so each
+    finding is marked `provisional` and carries a caveat.
+
+    Myelopathy (provisional): canal narrowing (dural_sac_AP_min flagged) AND SAC high-risk AND a
+    cord signal anomaly (myelomalacia flagged) at the same level.
+    Radiculopathy (provisional, weaker): a disc bulge flagged with a disc-height-index signal at
+    the same level -- DHI is currently a review-only gap, so this is a documented stub.
+    """
+    by_level: dict[str, dict[str, dict[str, Any]]] = {}
+    for r in rows:
+        by_level.setdefault(str(r["level"]), {})[r["measurement"]] = r
+
+    def flagged(level_map: dict[str, dict[str, Any]], name: str) -> bool:
+        row = level_map.get(name)
+        return bool(row and row.get("flag"))
+
+    syndromes: list[dict[str, Any]] = []
+    for level, m in by_level.items():
+        if flagged(m, "dural_sac_AP_min") and flagged(m, "SAC") and flagged(m, "myelomalacia"):
+            syndromes.append(
+                {
+                    "syndrome": "possible_myelopathy",
+                    "level": level,
+                    "status": "review_only",
+                    "advisory": _MYELOPATHY_ADVISORY,
+                    "contributing": ["dural_sac_AP_min", "SAC", "myelomalacia"],
+                    "provisional": True,
+                    "caveat": (
+                        "Provisional combination rule (canal narrowing + SAC<3mm + cord signal); "
+                        "exact rule pending Phase-4 research. Advisory only, never diagnostic."
+                    ),
+                }
+            )
+        if flagged(m, "posterior_bulge_mm") and "DHI" in m:
+            syndromes.append(
+                {
+                    "syndrome": "possible_radiculopathy",
+                    "level": level,
+                    "status": "review_only",
+                    "advisory": _RADICULOPATHY_ADVISORY,
+                    "contributing": ["posterior_bulge_mm", "DHI"],
+                    "provisional": True,
+                    "caveat": (
+                        "Provisional + WEAK: sagittal MRI does not measure foraminal dimensions "
+                        "and DHI has no validated cervical cut. Pending Phase-4. Advisory only."
+                    ),
+                }
+            )
+    syndromes.sort(key=lambda s: (s["syndrome"], s["level"]))
+    return syndromes
+
+
 def _matching_flags(
     *,
     flags: dict[str, dict[str, bool]],

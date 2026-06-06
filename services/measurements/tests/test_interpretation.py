@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from services.measurements.interpretation import (
     build_interpreted_measurements,
+    detect_syndromes,
     interpret_group5_contract,
 )
 
@@ -132,3 +133,29 @@ def test_interpret_group5_contract_maps_fracture_and_myelomalacia():
 
     assert by[("vb_hahp_ratio", "C6")]["status"] == "within_reference"
     assert ("myelomalacia", "C6") not in by   # not assessed -> no row (surfaced via not_assessed)
+
+
+def test_detect_myelopathy_syndrome_when_all_criteria_present():
+    # Provisional rule (plan §4.3): canal narrowing + SAC high-risk + cord signal anomaly at the
+    # same level. Advisory only, never a diagnosis. Exact combination rule pending Phase-4.
+    rows = [
+        {"measurement": "dural_sac_AP_min", "level": "C5", "flag": True},
+        {"measurement": "SAC", "level": "C5", "flag": True},
+        {"measurement": "myelomalacia", "level": "C5", "flag": True},
+    ]
+    syndromes = detect_syndromes(rows)
+    myelo = [s for s in syndromes if s["syndrome"] == "possible_myelopathy" and s["level"] == "C5"]
+    assert len(myelo) == 1
+    assert myelo[0]["status"] == "review_only"      # advisory, not a diagnosis
+    assert myelo[0]["provisional"] is True
+    assert "clinical correlation" in myelo[0]["advisory"].lower()
+
+
+def test_no_myelopathy_syndrome_when_a_criterion_is_missing():
+    rows = [
+        {"measurement": "dural_sac_AP_min", "level": "C5", "flag": True},
+        {"measurement": "SAC", "level": "C5", "flag": False},     # SAC not high-risk
+        {"measurement": "myelomalacia", "level": "C5", "flag": True},
+    ]
+    syndromes = detect_syndromes(rows)
+    assert not any(s["syndrome"] == "possible_myelopathy" for s in syndromes)
