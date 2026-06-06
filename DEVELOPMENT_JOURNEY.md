@@ -135,7 +135,21 @@ keep it honest and specific (numbers, dates, evidence, citations). Chronological
 - **Lesson:** fixing the *measurement method* (corner→line) corrected the **direction** project-wide, but
   *segmentation/body-isolation quality* is the remaining lever for endpoint *precision* — two separable layers.
 
+## J9 — Line-fit pipeline validated on 12 healthy necks vs the research targets (honest scorecard)
+| Output | Target | Result on 12 healthy | Verdict |
+|---|---|---|---|
+| Ha/Hp (heights) | <1.0, ~0.90–0.94 | 0.94, posterior>anterior | ✅ meets target (J1) |
+| Cobb sign | lordosis-positive | positive (was −21° kyphotic) | ✅ **sign bug fixed** |
+| Cobb precision (mid-cervical) | — | C3–C5 +2.2 ± 6.7° | ✅ stable |
+| Cobb precision (C2–C7 incl. endpoints) | MAE <5°, +9–11° | SD ~16°, 9/12 measurable | ⚠️ endpoints need SPINEPS + radiologist GT |
+| Spondylolisthesis slip | SD <1.5 mm | SD ~2.9 mm, ~3 mm bias | ⚠️ improved vs 3.7 mm but NOT at target |
+- **Net:** corner→line fixed the **gross/directional** failures (Cobb sign, heights) — the headline bugs from
+  J6 are gone. The remaining gap is **precision at the C6/C7 endpoints + slip calibration**, and both trace to
+  the *same two levers* the research named: (1) better body isolation (SPINEPS corpus, a Colab pilot) and
+  (2) 1–2 radiologist-labelled cases to calibrate magnitude/sign. Honestly logged: slip is committed as
+  EXPERIMENTAL (not screening-ready) rather than shipped biased.
+
 ---
 *Open methodology gaps tracked elsewhere:* teammate threshold/citation fixes (disc DHI<0.30, bulge flat-wall,
-Pfirrmann cut-points) — see `group5/AUDIT_groups1-4_measurements.md`; the corner-geometry fix — see the
-research handoff under `../handoffs/`; the SPINEPS-corpus pilot for C6/C7 precision — next Colab task.
+Pfirrmann cut-points) — see `group5/AUDIT_groups1-4_measurements.md`; C6/C7 precision + slip → the SPINEPS-corpus
+Colab pilot + radiologist ground truth (next).
