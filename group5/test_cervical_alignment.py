@@ -9,7 +9,27 @@ import math
 
 import numpy as np
 
-from cervical_alignment import cobb_from_tangents, vertebra_inf_tangent
+from cervical_alignment import cobb_from_tangents, vertebra_inf_tangent, slip_mm
+
+
+def _two_stacked(upper_ap=(4, 16), lower_ap=(4, 16)):
+    """Two stacked cervical bodies (C5 over C6, P-S-R) + a posterior canal."""
+    seg = np.zeros((24, 34, 6), dtype=int)
+    seg[lower_ap[0]:lower_ap[1], 3:15, 1:5] = 16    # C6 lower (low SI)
+    seg[upper_ap[0]:upper_ap[1], 18:30, 1:5] = 15   # C5 upper (high SI)
+    seg[17:22, 3:30, 1:5] = 2                        # canal posterior to both
+    return seg
+
+
+def test_slip_aligned_bodies_near_zero():
+    s = slip_mm(_two_stacked(), ("P", "S", "R"), (1.0, 1.0, 4.0), 15, 16)
+    assert s is not None and abs(s) < 1.5
+
+
+def test_slip_anterior_shift_detected():
+    # upper body shifted 3 voxels anteriorly -> a real slip of ~3 mm
+    s = slip_mm(_two_stacked(upper_ap=(1, 13)), ("P", "S", "R"), (1.0, 1.0, 4.0), 15, 16)
+    assert s is not None and 1.5 <= abs(s) <= 4.5
 
 
 def test_cobb_parallel_endplates_is_zero():

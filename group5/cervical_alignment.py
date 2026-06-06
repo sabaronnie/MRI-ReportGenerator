@@ -47,9 +47,10 @@ def cobb_from_tangents(t1, t2):
     return ang
 
 
-def _vertebra_endplate(seg3d, label, canal, axcodes, zooms):
+def _vertebra_endplate(seg3d, label, canal, axcodes, zooms, margin=0.15):
     """Full endplate_lines dict (tangents + slopes + corners) for one vertebra label, or None.
-    Canal-cut body isolation -> mid-sagittal slice -> endplate_lines."""
+    Canal-cut body isolation -> mid-sagittal slice -> endplate_lines. `margin` sets how far in from
+    the body edge the corners are read (small margin -> true posterior/anterior edge, for slip)."""
     ap, si, lr, anterior = vertebra_axes_from_orientation(axcodes)
     vert = np.asarray(seg3d) == label
     if not vert.any():
@@ -62,7 +63,7 @@ def _vertebra_endplate(seg3d, label, canal, axcodes, zooms):
     remaining = sorted(a for a in range(body.ndim) if a != lr)
     return endplate_lines(
         slice2d, ap_axis=remaining.index(ap), si_axis=remaining.index(si),
-        ap_spacing=float(zooms[ap]), si_spacing=float(zooms[si]), anterior=anterior,
+        ap_spacing=float(zooms[ap]), si_spacing=float(zooms[si]), anterior=anterior, margin=margin,
     )
 
 
@@ -80,10 +81,40 @@ def _reliable_tangent(el, prefer="inf", max_img_slope=ENDPLATE_MAX_IMG_SLOPE):
     return None
 
 
+def _endplate_reliable(el):
+    """True if the body's endplate orientation is trustworthy (a sane, non-vertical tangent exists)."""
+    return _reliable_tangent(el) is not None
+
+
 def vertebra_inf_tangent(seg3d, label, canal, axcodes, zooms):
     """Inferior-endplate tangent (unit vector in image ap,si mm) for one vertebra label, or None."""
     el = _vertebra_endplate(seg3d, label, canal, axcodes, zooms)
     return el["inf_tangent"] if el else None
+
+
+def slip_mm(seg3d, axcodes, zooms, upper_label, lower_label, canal_label=2):
+    """EXPERIMENTAL spondylolisthesis slip (mm), line-derived (NOT validated for screening).
+
+    Uses the posterior corners of the fitted endplate lines (line-derived per de Dios 2023, not
+    single-corner extrema): image-AP offset between the upper body's posterior-inferior corner and
+    the lower body's posterior-superior corner. Returns None if either body's orientation is
+    unreliable (the C6/C7-obscured case).
+
+    STATUS (validated on 12 healthy necks): the line-derived approach modestly improves the spread
+    (pooled SD ~2.9 mm vs the corner-extrema method's 3.7 mm) but still carries a systematic ~3 mm
+    offset on real lordotic necks (both this AP-difference and a perpendicular-to-lower-wall variant
+    are biased), so it does NOT yet meet the <1.5 mm de Dios noise floor and must NOT be used as a
+    screening flag yet. Closing the gap needs the proper de Dios posterior-surface measurement in the
+    lower-body frame + better C6/C7 body isolation (SPINEPS corpus) + 1-2 radiologist-labelled cases
+    to calibrate the sign/offset. Magnitude is what the healthy-cohort SD check uses.
+    """
+    seg = np.asarray(seg3d)
+    canal = seg == canal_label
+    up = _vertebra_endplate(seg, upper_label, canal, axcodes, zooms)
+    lo = _vertebra_endplate(seg, lower_label, canal, axcodes, zooms)
+    if not (_endplate_reliable(up) and _endplate_reliable(lo)):
+        return None
+    return float(up["corners"]["PI"][0] - lo["corners"]["PS"][0])   # image-AP offset (mm), uncalibrated
 
 
 def cobb_angle(seg3d, axcodes, zooms, top_label, bottom_label, canal_label=2):
