@@ -113,6 +113,26 @@ _VB_HAHP_CAVEAT = (
 )
 
 
+# Spondylolisthesis slip (spondy_slip_mm). No supine-MRI presence threshold exists;
+# >=2 mm is borrowed from upright radiographs -- conservative but under-sensitive on
+# supine MRI. de Dios cervical-MRI MDC = 1.5 mm (the 1-2 mm band is within noise);
+# White 3.5 mm = radiographic INSTABILITY, not presence. See memory
+# cervical_spondylolisthesis_threshold_verified.
+_SLIP_NEUTRAL_CUT = 1.0   # current code NEUTRAL_THRESHOLD_MM
+_SLIP_PRESENT_CUT = 2.0   # current code SPONDY_PRESENT_THRESHOLD_MM
+_SLIP_CITATION = (
+    "Murakami 2020 (PMID 32591548); Murata 2019 (PMID 30899028); de Dios 2023 "
+    "(cervical-MRI slip, MDC 1.5 mm); White 1975 (PMID 1132209, 3.5 mm = instability)"
+)
+_SLIP_CAVEAT = (
+    "No supine-MRI presence threshold exists; >=2 mm is an upright-radiograph borrow -- "
+    "conservative but UNDER-SENSITIVE supine (~38% of slips missed; Alvarez 2022, "
+    "PMID 35276718). de Dios cervical-MRI MDC = 1.5 mm, so the 1-2 mm band is within "
+    "measurement noise. White 3.5 mm = radiographic instability, not presence. Supine MRI "
+    "under-measures functional slip. Finding for physician review; clinical correlation required."
+)
+
+
 THRESHOLDS: dict[str, ThresholdSpec] = {
     "vb_hahp_ratio": ThresholdSpec(
         key="vb_hahp_ratio",
@@ -129,6 +149,23 @@ THRESHOLDS: dict[str, ThresholdSpec] = {
         provenance_note=(
             "Replaces the in-code 70% wedge rule; cohort z-screen at mean-2*SD. "
             "Genant 20/25/40% grade stays separate."
+        ),
+    ),
+    "spondy_slip_mm": ThresholdSpec(
+        key="spondy_slip_mm",
+        clinical_name="vertebral slip magnitude (anterolisthesis / retrolisthesis)",
+        unit="mm",
+        tag="raw",
+        bands=(
+            Band("neutral", None, _SLIP_NEUTRAL_CUT, "within"),
+            Band("borderline", _SLIP_NEUTRAL_CUT, _SLIP_PRESENT_CUT, "within"),
+            Band("slip_present_screen", _SLIP_PRESENT_CUT, None, "outside"),
+        ),
+        citation=_SLIP_CITATION,
+        modality_caveat=_SLIP_CAVEAT,
+        provenance_note=(
+            "Current code: neutral <1 mm, present >=2 mm. Our line-derived slip is still "
+            "EXPERIMENTAL (SD ~2.9 mm on healthy) -> magnitude only, not screening-ready."
         ),
     ),
 }
