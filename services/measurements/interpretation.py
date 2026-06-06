@@ -134,6 +134,48 @@ def build_interpreted_measurements(
     return interpreted
 
 
+def interpret_group5_contract(contract: dict[str, Any]) -> list[dict[str, Any]]:
+    """Interpret the Group 5 -> Group 6 findings contract (group5/flags_contract.py JSON).
+
+    Maps each level's vertebral-body compression screen (Ha/Hp ratio) and, when assessed, its
+    myelomalacia screen into the same InterpretedMeasurement container, driven by the catalog.
+    Group 6 consumes the contract's JSON shape, not Group 5's code (they live on different
+    branches). A not-assessed myelomalacia screen emits no row -- it is surfaced via the
+    contract's `not_assessed` list in the report.
+    """
+    rows: list[dict[str, Any]] = []
+    for level_entry in contract.get("levels", []):
+        level = str(level_entry.get("level", ""))
+        fracture = level_entry.get("fracture") or {}
+        if "ratio" in fracture:
+            ratio = fracture["ratio"]
+            rows.append(_catalog_row("vb_hahp_ratio", level, ratio, classify("vb_hahp_ratio", ratio)))
+        myelo = level_entry.get("myelomalacia") or {}
+        if myelo.get("assessed") and myelo.get("present") is not None:
+            present_val = 1.0 if myelo["present"] else 0.0
+            rows.append(
+                _catalog_row("myelomalacia", level, present_val, classify("myelomalacia", present_val))
+            )
+    rows.sort(key=lambda row: (row["measurement"], row["level"]))
+    return rows
+
+
+def _catalog_row(measurement: str, level: str, value: float, ev: Any) -> dict[str, Any]:
+    """Build an InterpretedMeasurement row directly from a catalog ThresholdEval."""
+    return InterpretedMeasurement(
+        measurement=measurement,
+        level=str(level),
+        value=float(value),
+        unit=ev.unit,
+        status=ev.status,
+        severity=ev.severity,
+        flag=ev.flag,
+        demographics_used={},
+        quality_flags=[],
+        caveat=ev.caveat,
+    ).to_dict()
+
+
 def _matching_flags(
     *,
     flags: dict[str, dict[str, bool]],

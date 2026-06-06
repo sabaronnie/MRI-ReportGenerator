@@ -7,7 +7,10 @@ fields and the status vocabulary are unchanged.
 
 from __future__ import annotations
 
-from services.measurements.interpretation import build_interpreted_measurements
+from services.measurements.interpretation import (
+    build_interpreted_measurements,
+    interpret_group5_contract,
+)
 
 
 def test_builds_simplified_interpretation_container():
@@ -99,3 +102,33 @@ def test_quality_caution_flags_are_not_treated_as_pathology():
     assert "ap_width_outlier" in row["quality_flags"]
     assert row["status"] != "outside_reference"
     assert row["flag"] is False
+
+
+def test_interpret_group5_contract_maps_fracture_and_myelomalacia():
+    # Group 6 consumes the Group-5 findings contract (group5/flags_contract.py JSON shape) and
+    # interprets the compression-screen ratio + the myelomalacia screen via the catalog.
+    contract = {
+        "levels": [
+            {
+                "level": "C5",
+                "fracture": {"ratio": 0.60, "Ha_mm": 6.0, "Hp_mm": 10.0},
+                "myelomalacia": {"assessed": True, "present": True},
+            },
+            {
+                "level": "C6",
+                "fracture": {"ratio": 0.94, "Ha_mm": 9.4, "Hp_mm": 10.0},
+                "myelomalacia": {"assessed": False, "present": None},
+            },
+        ]
+    }
+    rows = interpret_group5_contract(contract)
+    by = {(r["measurement"], r["level"]): r for r in rows}
+
+    assert by[("vb_hahp_ratio", "C5")]["status"] == "outside_reference"
+    assert by[("vb_hahp_ratio", "C5")]["severity"] == "compression_screen_positive"
+    assert by[("vb_hahp_ratio", "C5")]["flag"] is True
+    assert by[("myelomalacia", "C5")]["status"] == "outside_reference"
+    assert by[("myelomalacia", "C5")]["flag"] is True
+
+    assert by[("vb_hahp_ratio", "C6")]["status"] == "within_reference"
+    assert ("myelomalacia", "C6") not in by   # not assessed -> no row (surfaced via not_assessed)
