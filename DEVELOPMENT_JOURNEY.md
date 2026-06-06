@@ -116,7 +116,26 @@ keep it honest and specific (numbers, dates, evidence, citations). Chronological
   verification run finish despite hardware failure. The adversarial layer also **caught fabricated author
   names** on real PMIDs (Pan→Wang, Brynolf→de Dios, Kang→Marques) — cite only the corrected identifiers.
 
+## J8 — Implementing the fix: endplate-line Cobb fixes the sign; endpoints still need SPINEPS
+- **What we built:** `vertebral_fracture.endplate_lines` (expose the fitted sup/inf endplate lines + corners
+  via robust **Theil-Sen**) and `cervical_alignment.cobb_angle` (Cobb from the inferior-endplate lines,
+  lordosis-positive, with a C7-obscured reliability guard). TDD, 62 tests green.
+- **Validated on the 12 healthy necks — the headline bug is fixed:** Cobb now reads **lordotic** (positive)
+  vs Ronnie's corner method which read **−21° ± 27° (kyphotic garbage)**. Mid-cervical is stable and sensible
+  (**C3–C5 +2.2 ± 6.7°**, C3–C6 +1.0 ± 8.9°). So the line-fit direction works.
+- **Honest residual (don't overclaim):** the **C6/C7 endpoints** are still noisy (C2–C7 SD ~16°, 9/12
+  measurable after the guard). Root cause is **not** the line fit — it's the **canal-cut body isolation
+  mis-shaping the C6/C7 body at the cervicothoracic junction**, so PCA orients it wrongly. The reliability
+  guard (reject near-vertical endplate tangents) correctly turns those into "C7 not measurable" rather than a
+  garbage value (the literature-honest C7-obscured outcome), but it caps coverage.
+- **The prescribed upgrade (research-backed):** replace canal-cut body isolation with the **SPINEPS corpus
+  label** (learned body/arch split, corpus DSC 0.948) — a Colab/install pilot. That, plus 1–2 radiologist Cobb
+  cases for magnitude, is what takes the endpoints from "sign-correct" to "MAE <5°." Same upstream fix also
+  benefits spondylolisthesis (shares the endpoint body-isolation).
+- **Lesson:** fixing the *measurement method* (corner→line) corrected the **direction** project-wide, but
+  *segmentation/body-isolation quality* is the remaining lever for endpoint *precision* — two separable layers.
+
 ---
 *Open methodology gaps tracked elsewhere:* teammate threshold/citation fixes (disc DHI<0.30, bulge flat-wall,
 Pfirrmann cut-points) — see `group5/AUDIT_groups1-4_measurements.md`; the corner-geometry fix — see the
-research handoff under `../handoffs/`.
+research handoff under `../handoffs/`; the SPINEPS-corpus pilot for C6/C7 precision — next Colab task.
