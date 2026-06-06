@@ -116,3 +116,63 @@ def test_dhi_has_no_validated_cut_and_is_review_only():
     assert r.severity is None
     assert r.flag is False
     assert "debunked" in (r.citation + " " + (r.caveat or "")).lower()
+
+
+# ---- Canal / cord / stenosis -----------------------------------------------------
+# dural_sac_AP_min: SOFT-TISSUE dural sac via SCT, NOT osseous canal -> do not conflate
+# with bony CT/radiograph thresholds. Bands >13/10-13/<10 mm are a provisional clinical
+# convention pending Phase-4 MRI confirmation. cord_AP: normative comparison delegated to
+# SCT -normalize-hc (Valosek 2024); no fixed cut. SAC <3 mm = high risk (radiograph-origin,
+# verify). Torg <0.8 = developmental stenosis (radiograph-origin).
+
+
+def test_dural_sac_above_13_is_normal():
+    r = classify("dural_sac_AP_min", 14.0)
+    assert r.status == "within_reference"
+    assert r.severity == "normal"
+    assert r.flag is False
+
+
+def test_dural_sac_10_to_13_is_borderline():
+    r = classify("dural_sac_AP_min", 11.5)
+    assert r.status == "within_reference"
+    assert r.severity == "borderline"
+    assert r.flag is False
+
+
+def test_dural_sac_below_10_flags_with_soft_tissue_caveat():
+    r = classify("dural_sac_AP_min", 8.0)
+    assert r.status == "outside_reference"
+    assert r.flag is True
+    assert "soft-tissue" in r.caveat.lower()
+
+
+def test_cord_ap_is_delegated_to_sct_normalize_hc():
+    r = classify("cord_AP", 7.0)
+    assert r.status == "review_only"
+    assert r.severity is None
+    assert r.flag is False
+    assert "PAM50" in r.citation
+
+
+def test_sac_below_3mm_is_high_risk():
+    r = classify("SAC", 2.5)
+    assert r.status == "outside_reference"
+    assert r.severity == "high_risk"
+    assert r.flag is True
+    assert "radiograph" in r.caveat.lower()
+
+
+def test_sac_at_or_above_3mm_is_normal():
+    r = classify("SAC", 4.0)
+    assert r.status == "within_reference"
+    assert r.severity == "normal"
+    assert r.flag is False
+
+
+def test_torg_below_08_flags_developmental_stenosis():
+    r = classify("Torg_Pavlov_ratio", 0.7)
+    assert r.status == "outside_reference"
+    assert r.severity == "developmental_stenosis_screen"
+    assert r.flag is True
+    assert "Torg" in r.citation

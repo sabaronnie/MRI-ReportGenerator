@@ -183,6 +183,52 @@ _DHI_CAVEAT = (
 )
 
 
+# Canal / cord / stenosis.
+# dural_sac_AP_min: SOFT-TISSUE dural sac (SCT), not osseous canal. Bands are a provisional
+# clinical convention pending Phase-4 MRI confirmation. memory groups_1_4_validation_datasets.
+_DURAL_NORMAL_CUT = 13.0
+_DURAL_STENOSIS_CUT = 10.0
+_DURAL_CITATION = (
+    "Nell 2019 (PMC6764695, C2-C7 healthy age/sex percentiles); stenosis bands >13/10-13/<10 mm "
+    "are a clinical convention (Ulbrich 2014; Thelen 2019/SHIP) of OSSEOUS-canal / radiograph "
+    "origin -- pending Phase-4 MRI soft-tissue confirmation"
+)
+_DURAL_CAVEAT = (
+    "Measures SOFT-TISSUE dural-sac AP via SCT, NOT the osseous canal -- do not conflate with "
+    "bony CT/radiograph canal thresholds. Value is a stable across-slice minimum, not a single "
+    "manual caliper point. Bands provisional (pending Phase-4). Finding for physician review."
+)
+# cord_AP: normative comparison delegated to SCT -normalize-hc (Valosek 2024 / PAM50).
+_CORD_AP_CITATION = (
+    "Valosek 2024 PAM50 healthy-control database via SCT -normalize-hc (age/sex). No fixed mm "
+    "cut hard-coded here"
+)
+_CORD_AP_CAVEAT = (
+    "Cord AP normative comparison is delegated to SCT -normalize-hc (Valosek 2024); a reduced-vs-"
+    "adjacent (>2 SD) rule for the myelopathy indicator is cross-level and handled in interpretation."
+)
+# SAC <3 mm = high compression risk (radiograph-origin, verify). Torg <0.8 developmental stenosis.
+_SAC_CUT = 3.0
+_SAC_CITATION = (
+    "SAC <3 mm = high compression risk (plan-cited Fehlings 2015 / Nouri 2016) -- radiograph-origin, "
+    "verify for MRI (pending Phase-4); Nell 2019 (PMC6764695) healthy percentiles"
+)
+_SAC_CAVEAT = (
+    "SAC <3 mm high-risk cutoff is radiograph-origin; verify for MRI. Derived from same-slice "
+    "subtraction -> reliability depends on slice alignment. Stronger as a risk flag than a full "
+    "severity ladder. Finding for physician review."
+)
+_TORG_CUT = 0.8
+_TORG_CITATION = (
+    "Torg 1987 / Pavlov 1987: ratio <0.8 = developmental canal stenosis -- RADIOGRAPH origin; "
+    "MRI thresholds may need adjustment (pending Phase-4)"
+)
+_TORG_CAVEAT = (
+    "Torg-Pavlov ratio is radiograph-derived and has a known high false-positive rate in large "
+    "vertebral bodies; MRI adaptation pending. Finding for physician review."
+)
+
+
 THRESHOLDS: dict[str, ThresholdSpec] = {
     "vb_hahp_ratio": ThresholdSpec(
         key="vb_hahp_ratio",
@@ -254,6 +300,56 @@ THRESHOLDS: dict[str, ThresholdSpec] = {
         citation=_DHI_CITATION,
         modality_caveat=_DHI_CAVEAT,
         provenance_note="GAP: in-code DHI<0.30 debunked; no validated absolute cervical cut -> review-only.",
+    ),
+    "dural_sac_AP_min": ThresholdSpec(
+        key="dural_sac_AP_min",
+        clinical_name="functional canal / dural-sac AP minimum (SCT)",
+        unit="mm",
+        tag="raw",
+        bands=(
+            Band("normal", _DURAL_NORMAL_CUT, None, "within"),
+            Band("borderline", _DURAL_STENOSIS_CUT, _DURAL_NORMAL_CUT, "within"),
+            Band("stenosis_provisional", None, _DURAL_STENOSIS_CUT, "outside"),
+        ),
+        citation=_DURAL_CITATION,
+        modality_caveat=_DURAL_CAVEAT,
+        provenance_note="Soft-tissue dural sac; bands provisional pending Phase-4 MRI confirmation.",
+    ),
+    "cord_AP": ThresholdSpec(
+        key="cord_AP",
+        clinical_name="spinal cord AP diameter",
+        unit="mm",
+        tag="raw",
+        bands=None,
+        citation=_CORD_AP_CITATION,
+        modality_caveat=_CORD_AP_CAVEAT,
+        provenance_note="Normative comparison delegated to SCT -normalize-hc; no single-value cut.",
+    ),
+    "SAC": ThresholdSpec(
+        key="SAC",
+        clinical_name="space available for the cord (canal AP - cord AP)",
+        unit="mm",
+        tag="derived",
+        bands=(
+            Band("normal", _SAC_CUT, None, "within"),
+            Band("high_risk", None, _SAC_CUT, "outside"),
+        ),
+        citation=_SAC_CITATION,
+        modality_caveat=_SAC_CAVEAT,
+        provenance_note="SAC<3 mm high-risk; radiograph-origin, verify (pending Phase-4).",
+    ),
+    "Torg_Pavlov_ratio": ThresholdSpec(
+        key="Torg_Pavlov_ratio",
+        clinical_name="Torg-Pavlov ratio (canal AP / vertebral-body AP)",
+        unit="ratio",
+        tag="derived",
+        bands=(
+            Band("normal", _TORG_CUT, None, "within"),
+            Band("developmental_stenosis_screen", None, _TORG_CUT, "outside"),
+        ),
+        citation=_TORG_CITATION,
+        modality_caveat=_TORG_CAVEAT,
+        provenance_note="Planned; radiograph-origin <0.8; MRI adjustment pending Phase-4.",
     ),
 }
 
