@@ -163,7 +163,36 @@ keep it honest and specific (numbers, dates, evidence, citations). Chronological
   wired into the contract. **This closes Group 5's last open sub-part** (5.2 validated, 5.3 scoped out,
   5.4 deferred, 5→6 contract + runner done).
 
+## J11 — The SPINEPS-corpus endpoint-precision pilot: hypothesis tested, NOT supported (Group 4 / teammates' G4)
+- **The hypothesis (from J8):** swap canal-cut body isolation for the SPINEPS **corpus** label (learned
+  body/arch split, corpus DSC ~0.95) to take the C6/C7 Cobb endpoints from "sign-correct" to "MAE <5°."
+- **How we tested it:** ran SPINEPS (Colab T4, model `T2w_semantic_v1.0.9`) on the 12 healthy Spine-Generic
+  necks → semantic `seg-spine` + instance `seg-vert`. **Verified the real label IDs before trusting them**
+  (corpus = 49; instances follow VerSe numbering C2=2..C7=7 — IDs vary by model version, so this gate
+  mattered). Built a TDD'd consumer (`cervical_alignment.spineps_body` / `spineps_cobb_angle`: body =
+  corpus ∩ instance, fed through the SAME endplate-line Cobb as the canal-cut path) + a side-by-side runner
+  (`run_spineps_alignment.py`). 9 alignment tests; the shared endplate tail was refactored out (`_endplate_from_body`).
+- **The result — it did NOT improve precision; it was worse:**
+  | Span | SPINEPS SD | canal-cut SD |
+  |---|---|---|
+  | C2–C7 (endpoints) | ±26.0° | ±16.6° |
+  | C3–C5 (mid, the *stable* region) | ±12.1° | ±6.7° |
+  | C6–C7 | ±31.3° | ±18.5° |
+- **Diagnostic (why):** the corpus bodies are NOT fragmented (healthy 5k–35k voxels); per-vertebra
+  inferior-endplate angles mostly AGREE with canal-cut (within a few °), but several individual vertebrae
+  diverge 7–13° (e.g. amu03 C5 −4.4° vs −17.7°). Because Cobb **differences** two vertebrae, one bad
+  per-vertebra fit blows up the angle → the wider spread + the wild values (amu02 −47°, beijingGE03 +65°).
+- **The honest conclusion:** the J8 corpus-swap is **not** the endpoint-precision fix. And — crucially — with
+  **no radiologist ground truth** we can only measure PRECISION (spread on healthy), not ACCURACY: canal-cut
+  is more *precise*, but "tighter on healthy" ≠ "more correct." So the real unblock stays **radiologist GT**
+  (as J7–J9 said), which would adjudicate canal-cut vs SPINEPS per vertebra. We deliberately resisted tuning
+  the method to make SPINEPS *look* tighter — without GT that is chasing precision, not truth.
+- **Why it's not wasted:** the consumer is built + TDD'd and ready to re-run this comparison the moment 1–2
+  labelled cases exist. It doesn't block the product either — Group 6 reports Cobb as a review-only descriptive
+  class (lordotic/straightened/kyphotic) with the supine + endpoint caveats, not a hard-flagged magnitude.
+
 ---
 *Open methodology gaps tracked elsewhere:* teammate threshold/citation fixes (disc DHI<0.30, bulge flat-wall,
-Pfirrmann cut-points) — see `group5/AUDIT_groups1-4_measurements.md`; C6/C7 Cobb precision + slip → the
-SPINEPS-corpus Colab pilot + radiologist ground truth (next, for the teammates' G1/G4).
+Pfirrmann cut-points) — see `group5/AUDIT_groups1-4_measurements.md`; C6/C7 Cobb precision + slip → **radiologist
+ground truth** (the SPINEPS-corpus pilot was run and did NOT close the gap — see J11; canal-cut remains our
+most-precise method pending GT).
