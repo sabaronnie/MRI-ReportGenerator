@@ -315,7 +315,9 @@ def endplate_lines(mask2d, ap_axis=0, si_axis=1, ap_spacing=1.0, si_spacing=1.0,
     }
     return {"corners": corners,
             "inf_tangent": unit(u_ap + mb * u_si),
-            "sup_tangent": unit(u_ap + mt * u_si)}
+            "sup_tangent": unit(u_ap + mt * u_si),
+            "inf_slope": float(mb),      # endplate slope in the body's OWN frame; |slope| large = bad fit
+            "sup_slope": float(mt)}
 
 
 def measure_vertebra(vb_mask3d, axcodes, zooms, isolate_body=True):
