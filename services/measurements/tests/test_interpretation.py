@@ -1,4 +1,9 @@
-"""Tests for the Phase 4 interpretation container scaffold."""
+"""Tests for the Phase 4 interpretation container + catalog-driven status/severity.
+
+status/severity/flag for catalogued measurements (e.g. SAC) now come from thresholds.py;
+measurements not in the catalog fall back to the prior flag-only heuristic. The container
+fields and the status vocabulary are unchanged.
+"""
 
 from __future__ import annotations
 
@@ -51,7 +56,7 @@ def test_builds_simplified_interpretation_container():
             "value": 2.7,
             "unit": "mm",
             "status": "outside_reference",
-            "severity": None,
+            "severity": "high_risk",
             "flag": True,
             "demographics_used": {},
             "quality_flags": ["sac_slice_misaligned"],
@@ -62,8 +67,8 @@ def test_builds_simplified_interpretation_container():
             "level": "C6",
             "value": 4.5,
             "unit": "mm",
-            "status": "review_only",
-            "severity": None,
+            "status": "within_reference",
+            "severity": "normal",
             "flag": False,
             "demographics_used": {},
             "quality_flags": [],

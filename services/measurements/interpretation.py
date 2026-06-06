@@ -11,6 +11,8 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Any
 
+from .thresholds import THRESHOLDS, classify
+
 
 QUALITY_FLAG_MARKERS = (
     "low_confidence",
@@ -95,15 +97,27 @@ def build_interpreted_measurements(
             )
             has_pathology_flag = any(flag_name not in quality_flags for flag_name in pathology_flags)
 
+            # Catalogued measurements get status/severity/flag from the cited threshold
+            # catalog (thresholds.py); its citation lives centrally there and is joined per
+            # measurement by the report. Measurements not yet in the catalog fall back to the
+            # prior flag-only heuristic.
+            if measurement_name in THRESHOLDS:
+                ev = classify(measurement_name, raw_value)
+                status, severity, flag = ev.status, ev.severity, ev.flag
+            else:
+                status = "outside_reference" if has_pathology_flag else "review_only"
+                severity = None
+                flag = has_pathology_flag
+
             interpreted.append(
                 InterpretedMeasurement(
                     measurement=measurement_name,
                     level=str(level),
                     value=float(raw_value),
                     unit=_infer_unit(measurement_name),
-                    status="outside_reference" if has_pathology_flag else "review_only",
-                    severity=None,
-                    flag=has_pathology_flag,
+                    status=status,
+                    severity=severity,
+                    flag=flag,
                     demographics_used={},
                     quality_flags=quality_flags,
                     caveat=caveat,
