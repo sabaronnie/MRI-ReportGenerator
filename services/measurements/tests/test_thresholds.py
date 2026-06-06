@@ -176,3 +176,46 @@ def test_torg_below_08_flags_developmental_stenosis():
     assert r.severity == "developmental_stenosis_screen"
     assert r.flag is True
     assert "Torg" in r.citation
+
+
+# ---- Alignment (Cobb / lordosis class; segmental + posterior-tangent gaps) --------
+# Cobb is C3-C7 SUPINE -> apply supine offset; endpoint precision not yet at target ->
+# alignment is a descriptive class for review, not hard-flagged. Segmental-angle and
+# posterior-tangent have no validated cervical per-level norm -> review-only gaps.
+
+
+def test_cobb_lordotic_is_within_reference():
+    r = classify("Cobb_C3_C7", 15.0)
+    assert r.status == "within_reference"
+    assert r.severity == "lordotic"
+    assert r.flag is False
+    assert "NASSJ" in r.citation
+    assert "supine" in r.caveat.lower()
+
+
+def test_cobb_straightened_is_review_only():
+    r = classify("Cobb_C3_C7", 5.0)
+    assert r.status == "review_only"
+    assert r.severity == "straightened"
+    assert r.flag is False
+
+
+def test_cobb_kyphotic_is_review_only_not_hard_flagged():
+    r = classify("Cobb_C3_C7", -5.0)
+    assert r.status == "review_only"
+    assert r.severity == "kyphotic"
+    assert r.flag is False
+
+
+def test_segmental_angle_is_a_pending_gap():
+    r = classify("segmental_angle", 3.0)
+    assert r.status == "review_only"
+    assert r.severity is None
+    assert r.flag is False
+    assert "pending" in r.caveat.lower()
+
+
+def test_posterior_tangent_is_a_pending_gap():
+    r = classify("posterior_tangent_C3_C7", 2.0)
+    assert r.status == "review_only"
+    assert r.flag is False

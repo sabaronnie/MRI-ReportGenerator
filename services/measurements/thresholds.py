@@ -229,6 +229,30 @@ _TORG_CAVEAT = (
 )
 
 
+# Global cervical Cobb (Cobb_C3_C7). Lordosis-positive; healthy ~10-35 deg (NASSJ 2025).
+# Our code is C3-C7 inferior-inferior and SUPINE -> apply supine->standing offset; endpoint
+# precision not yet at target (J8-J9) -> reported as a descriptive class for review, not
+# hard-flagged. memory cervical_corner_endplate_method.
+_COBB_LORDOTIC_CUT = 10.0
+_COBB_STRAIGHT_CUT = 0.0
+_COBB_CITATION = (
+    "NASSJ 2025 (PMC12744292, asymptomatic C2-C7 ~18.7 deg, range ~10-35 deg); plan also "
+    "cites Yukawa 2018 (~13.9 +/- 12.3 deg). Lordosis-positive."
+)
+_COBB_CAVEAT = (
+    "Our Cobb is C3-C7 inferior-inferior and SUPINE (MRI reads ~5 deg less lordotic than "
+    "standing radiographs) -> apply a supine->standing offset before comparing to standing "
+    "norms; papers often report C2-C7. C6/C7 endpoint precision is not yet at target "
+    "(SD ~16 deg; pending SPINEPS corpus + radiologist calibration) -> alignment is reported "
+    "as a descriptive class for review, not hard-flagged."
+)
+# Per-level segmental angle + posterior tangent: no validated cervical per-level norm found.
+_GAP_PENDING_CAVEAT = (
+    "NOT FOUND: no validated per-level cervical normative range; pending Phase-4 research. "
+    "Reported for physician review only."
+)
+
+
 THRESHOLDS: dict[str, ThresholdSpec] = {
     "vb_hahp_ratio": ThresholdSpec(
         key="vb_hahp_ratio",
@@ -350,6 +374,43 @@ THRESHOLDS: dict[str, ThresholdSpec] = {
         citation=_TORG_CITATION,
         modality_caveat=_TORG_CAVEAT,
         provenance_note="Planned; radiograph-origin <0.8; MRI adjustment pending Phase-4.",
+    ),
+    "Cobb_C3_C7": ThresholdSpec(
+        key="Cobb_C3_C7",
+        clinical_name="global cervical Cobb angle (C3-C7, lordosis-positive)",
+        unit="deg",
+        tag="derived",
+        bands=(
+            Band("lordotic", _COBB_LORDOTIC_CUT, None, "within"),
+            Band("straightened", _COBB_STRAIGHT_CUT, _COBB_LORDOTIC_CUT, "review"),
+            Band("kyphotic", None, _COBB_STRAIGHT_CUT, "review"),
+        ),
+        citation=_COBB_CITATION,
+        modality_caveat=_COBB_CAVEAT,
+        provenance_note=(
+            "Sign fixed (was -21 deg kyphotic); magnitude/endpoints pending SPINEPS + radiologist "
+            "GT. The label side = lordosis_classification."
+        ),
+    ),
+    "segmental_angle": ThresholdSpec(
+        key="segmental_angle",
+        clinical_name="per-level segmental angle",
+        unit="deg",
+        tag="raw",
+        bands=None,
+        citation=None,
+        modality_caveat=_GAP_PENDING_CAVEAT,
+        provenance_note="GAP: no per-level cervical segmental-angle norm; focal-kyphosis cut pending Phase-4.",
+    ),
+    "posterior_tangent_C3_C7": ThresholdSpec(
+        key="posterior_tangent_C3_C7",
+        clinical_name="posterior tangent angle (C3-C7)",
+        unit="deg",
+        tag="derived",
+        bands=None,
+        citation=None,
+        modality_caveat=_GAP_PENDING_CAVEAT,
+        provenance_note="GAP: secondary cross-check metric; no normative range adopted (pending Phase-4).",
     ),
 }
 
