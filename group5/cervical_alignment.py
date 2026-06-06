@@ -47,15 +47,17 @@ def cobb_from_tangents(t1, t2):
     return ang
 
 
-def _vertebra_endplate(seg3d, label, canal, axcodes, zooms, margin=0.15):
-    """Full endplate_lines dict (tangents + slopes + corners) for one vertebra label, or None.
-    Canal-cut body isolation -> mid-sagittal slice -> endplate_lines. `margin` sets how far in from
-    the body edge the corners are read (small margin -> true posterior/anterior edge, for slip)."""
+def _endplate_from_body(body, axcodes, zooms, margin=0.15):
+    """Fit endplate lines on an already-isolated 3D vertebral-BODY mask, or None.
+
+    Shared tail for both body-isolation sources (canal-cut and SPINEPS corpus): pick the body's
+    mid-sagittal slice, then fit the superior/inferior endplate lines. `margin` sets how far in
+    from the body edge the corners are read.
+    """
     ap, si, lr, anterior = vertebra_axes_from_orientation(axcodes)
-    vert = np.asarray(seg3d) == label
-    if not vert.any():
+    body = np.asarray(body, dtype=bool)
+    if not body.any():
         return None
-    body = extract_body_via_canal(vert, canal, axcodes) if canal.any() else vert
     mid = mid_sagittal_index(body, lr)
     sl = [slice(None)] * body.ndim
     sl[lr] = mid
@@ -65,6 +67,17 @@ def _vertebra_endplate(seg3d, label, canal, axcodes, zooms, margin=0.15):
         slice2d, ap_axis=remaining.index(ap), si_axis=remaining.index(si),
         ap_spacing=float(zooms[ap]), si_spacing=float(zooms[si]), anterior=anterior, margin=margin,
     )
+
+
+def _vertebra_endplate(seg3d, label, canal, axcodes, zooms, margin=0.15):
+    """Full endplate_lines dict for one vertebra label via CANAL-CUT body isolation, or None.
+    `margin` sets how far in from the body edge the corners are read (small margin -> true
+    posterior/anterior edge, for slip)."""
+    vert = np.asarray(seg3d) == label
+    if not vert.any():
+        return None
+    body = extract_body_via_canal(vert, canal, axcodes) if canal.any() else vert
+    return _endplate_from_body(body, axcodes, zooms, margin)
 
 
 def _reliable_tangent(el, prefer="inf", max_img_slope=ENDPLATE_MAX_IMG_SLOPE):
@@ -130,6 +143,52 @@ def cobb_angle(seg3d, axcodes, zooms, top_label, bottom_label, canal_label=2):
     canal = seg == canal_label
     t_top = _reliable_tangent(_vertebra_endplate(seg, top_label, canal, axcodes, zooms))
     t_bot = _reliable_tangent(_vertebra_endplate(seg, bottom_label, canal, axcodes, zooms))
+    if t_top is None or t_bot is None:
+        return None
+    return LORDOSIS_SIGN * cobb_from_tangents(t_top, t_bot)
+
+
+# ---- SPINEPS corpus-body source (learned body/arch split; the J8 endpoint-precision upgrade) ----
+# Cervical vertebra instances under the VerSe numbering SPINEPS emits (verified on real output,
+# model T2w_semantic_v1.0.9): C2=2, C3=3, C4=4, C5=5, C6=6, C7=7.
+CERVICAL_INSTANCES = {"C2": 2, "C3": 3, "C4": 4, "C5": 5, "C6": 6, "C7": 7}
+SPINEPS_CORPUS_LABEL = 49
+
+
+def spineps_body(seg_spine, seg_vert, instance_label, corpus_label=SPINEPS_CORPUS_LABEL):
+    """Vertebral BODY mask from SPINEPS outputs: corpus subregion INTERSECT this vertebra instance.
+
+    seg_spine : SPINEPS semantic mask (vertebra corpus = corpus_label, default 49).
+    seg_vert  : SPINEPS instance mask (each vertebra a distinct label; VerSe C2=2..C7=7).
+    The intersection keeps only the load-bearing body, dropping the posterior arch automatically
+    (a learned body/arch split, corpus DSC ~0.95) -- the upgrade over canal-cut isolation that
+    mis-shapes C6/C7 at the cervicothoracic junction (J8). VERIFY corpus_label/instances on the
+    first mask of any new SPINEPS model version (IDs vary by version).
+    """
+    return (np.asarray(seg_spine) == corpus_label) & (np.asarray(seg_vert) == instance_label)
+
+
+def _spineps_vertebra_endplate(seg_spine, seg_vert, instance_label, axcodes, zooms,
+                               corpus_label=SPINEPS_CORPUS_LABEL, margin=0.15):
+    """endplate_lines dict for one vertebra instance via SPINEPS corpus-body isolation, or None."""
+    body = spineps_body(seg_spine, seg_vert, instance_label, corpus_label)
+    return _endplate_from_body(body, axcodes, zooms, margin)
+
+
+def spineps_cobb_angle(seg_spine, seg_vert, axcodes, zooms, top_instance, bottom_instance,
+                       corpus_label=SPINEPS_CORPUS_LABEL):
+    """Cobb angle (deg, lordosis-positive) between two vertebrae using the SPINEPS corpus body.
+
+    Same inferior-endplate-line method + reliability fallback as `cobb_angle`, but the body comes
+    from the SPINEPS corpus instead of the canal cut. Returns None if either endplate is
+    unmeasurable. NOTE the same supine->standing offset caveat as `cobb_angle`.
+    """
+    t_top = _reliable_tangent(
+        _spineps_vertebra_endplate(seg_spine, seg_vert, top_instance, axcodes, zooms, corpus_label)
+    )
+    t_bot = _reliable_tangent(
+        _spineps_vertebra_endplate(seg_spine, seg_vert, bottom_instance, axcodes, zooms, corpus_label)
+    )
     if t_top is None or t_bot is None:
         return None
     return LORDOSIS_SIGN * cobb_from_tangents(t_top, t_bot)

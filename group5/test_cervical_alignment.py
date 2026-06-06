@@ -9,7 +9,13 @@ import math
 
 import numpy as np
 
-from cervical_alignment import cobb_from_tangents, vertebra_inf_tangent, slip_mm
+from cervical_alignment import (
+    cobb_from_tangents,
+    vertebra_inf_tangent,
+    slip_mm,
+    spineps_body,
+    spineps_cobb_angle,
+)
 
 
 def _two_stacked(upper_ap=(4, 16), lower_ap=(4, 16)):
@@ -56,3 +62,41 @@ def test_vertebra_inf_tangent_uniform_body_is_horizontal():
     t = vertebra_inf_tangent(seg, 13, seg == 2, ("P", "S", "R"), (0.5, 1.0, 4.0))
     assert t is not None
     assert abs(t[1] / t[0]) < 0.2     # uniform body -> inferior endplate ~ along image AP
+
+
+# ---- SPINEPS corpus-body consumer (Group 4 endpoint-precision pilot) --------------
+# Body = (seg-spine == corpus_label, default 49) & (seg-vert == vertebra instance).
+# Verified on real SPINEPS output (model T2w_semantic_v1.0.9): corpus=49, instances follow
+# VerSe numbering C2=2..C7=7. Feeds the SAME endplate_lines/cobb path as the canal-cut method.
+
+
+def test_spineps_body_is_corpus_intersect_instance_excluding_arch():
+    spine = np.zeros((4, 20, 20), dtype=int)
+    vert = np.zeros((4, 20, 20), dtype=int)
+    vert[1:3, 2:18, 5:15] = 3            # whole vertebra instance 3 (body + arch)
+    spine[1:3, 2:10, 5:15] = 49          # corpus (anterior body block)
+    spine[1:3, 14:18, 5:15] = 41         # posterior arch subregion (not corpus)
+    body = spineps_body(spine, vert, instance_label=3)
+    assert body[1:3, 2:10, 5:15].all()           # body kept
+    assert not body[1:3, 14:18, 5:15].any()      # arch excluded (corpus==49 only)
+    assert int(body.sum()) == 2 * 8 * 10
+
+
+def test_spineps_cobb_parallel_bodies_near_zero():
+    # two axis-aligned corpus slabs (C5 over C6) -> endplates parallel -> Cobb ~ 0
+    spine = np.zeros((6, 40, 44), dtype=int)
+    vert = np.zeros((6, 40, 44), dtype=int)
+    spine[1:5, 8:28, 4:18] = 49;  vert[1:5, 8:28, 4:18] = 6     # C6 (lower)
+    spine[1:5, 8:28, 24:38] = 49; vert[1:5, 8:28, 24:38] = 5    # C5 (upper)
+    c = spineps_cobb_angle(spine, vert, ("R", "A", "S"), (1.0, 1.0, 1.0),
+                           top_instance=5, bottom_instance=6)
+    assert c is not None and abs(c) < 3.0
+
+
+def test_spineps_cobb_none_when_instance_absent():
+    spine = np.zeros((6, 40, 44), dtype=int)
+    vert = np.zeros((6, 40, 44), dtype=int)
+    spine[1:5, 8:28, 4:18] = 49; vert[1:5, 8:28, 4:18] = 6     # only C6 present
+    c = spineps_cobb_angle(spine, vert, ("R", "A", "S"), (1.0, 1.0, 1.0),
+                           top_instance=5, bottom_instance=6)
+    assert c is None
