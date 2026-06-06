@@ -95,6 +95,27 @@ keep it honest and specific (numbers, dates, evidence, citations). Chronological
   starting candidate (it reads the same healthy necks correctly). G3 (canal/cord) couldn't be validated
   locally — it's SCT-backed and needs a Colab run.
 
+## J7 — The corner fix, validated by the literature: endplate-LINE fitting beats corner extrema
+- **The question (from J6):** is our candidate fix (canal-cut body isolation + fit lines to the full
+  endplate boundary, drop tails) actually the right method, or just our preference?
+- **How we answered it:** an adversarial method-research workflow (2026-06-06; 108 agents, primary sources
+  only) — **cross-validated by a second blind 238-agent run, same verdict** → high confidence.
+- **The verdict — our direction is the validated state of the art:** the one head-to-head cervical study,
+  Wang 2023 (cervical CT, PMC10685593), shows **line-fitting beats four-corner extrema: ICC 0.97 vs 0.75,
+  MAE 3.23° vs 5.42°.** Mechanism (why extrema fail): cervical endplates are **concave + sloped** (Chen 2013,
+  PMC3698350) so the most-posterior voxel in a flat band lands on the concave interior = a mislocated corner
+  — the literal cause of the backwards Ha/Hp and kyphotic Cobb in J6. Corroborated by Zhong 2024 (cervical
+  T2 MRI centroid-line Cobb, ICC 97.9%) and de Dios 2023 (cervical-MRI slip from a posterior-surface line,
+  MDC 1.5 mm — our broken slip SD 3.7 mm was ~7× the SEM).
+- **The recipe (now implementing on our TSS masks):** fit lines (robust Theil-Sen) to the full sup/inf
+  endplate boundary → derive corners, heights, Cobb (C2-inf→C7-inf, lordosis-positive, supine offset), and
+  slip (posterior-surface line) from the lines. Targets: corner <2.5 mm, Cobb MAE <5°/+9–11° healthy supine,
+  Ha/Hp <1.0, slip SD <1.5 mm. Tooling upgrade to pilot later: SPINEPS + TPTBox (Apache-2.0).
+- **Process lesson worth recording:** the workflow **survived a laptop death mid-run via resume** (108 agents
+  completed after the machine came back) — multi-agent research is crash-resilient, which let a long
+  verification run finish despite hardware failure. The adversarial layer also **caught fabricated author
+  names** on real PMIDs (Pan→Wang, Brynolf→de Dios, Kang→Marques) — cite only the corrected identifiers.
+
 ---
 *Open methodology gaps tracked elsewhere:* teammate threshold/citation fixes (disc DHI<0.30, bulge flat-wall,
 Pfirrmann cut-points) — see `group5/AUDIT_groups1-4_measurements.md`; the corner-geometry fix — see the
