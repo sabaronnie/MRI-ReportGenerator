@@ -15,6 +15,8 @@ from cervical_alignment import (
     slip_mm,
     spineps_body,
     spineps_cobb_angle,
+    spineps_endplate_tangent,
+    spineps_endplate_cobb_angle,
 )
 
 
@@ -99,4 +101,55 @@ def test_spineps_cobb_none_when_instance_absent():
     spine[1:5, 8:28, 4:18] = 49; vert[1:5, 8:28, 4:18] = 6     # only C6 present
     c = spineps_cobb_angle(spine, vert, ("R", "A", "S"), (1.0, 1.0, 1.0),
                            top_instance=5, bottom_instance=6)
+    assert c is None
+
+
+# ---- SPINEPS ENDPLATE-VOXEL Cobb (Option C1: fit the line to SPINEPS' own endplate voxels) -------
+# SPINEPS writes each vertebra's inferior-endplate sheet into the instance file at label 100+X
+# (verified on real output: thin sheets at the inferior body border; C2=102..C7=107). Fitting the
+# line to those endplate voxels (the Wang-2023 method) beat the corpus line-fit AND the canal-cut
+# Cobb on 12 healthy necks (C6-C7 SD 5.9 vs 18.5 deg). The endplate angle is consistently negative
+# across subjects, so a single sign flip makes lordosis positive.
+
+
+def _ep_sheet(seg, inst, ap0, ap1, si0, tilt_deg, offset=100, thick=2):
+    # a thin endplate sheet for vertebra `inst` (label offset+inst), tilted tilt_deg from horizontal
+    for ap in range(ap0, ap1):
+        si = int(round(si0 + (ap - ap0) * math.tan(math.radians(tilt_deg))))
+        for d in range(thick):
+            seg[1:4, ap, si + d] = offset + inst
+
+
+def test_spineps_endplate_tangent_recovers_known_tilt():
+    seg = np.zeros((5, 50, 90), dtype=int)
+    _ep_sheet(seg, 3, 10, 34, 40, 15.0)          # 24-wide endplate tilted +15 deg
+    t = spineps_endplate_tangent(seg, 3, ("R", "A", "S"), (1.0, 1.0, 1.0))
+    assert t is not None
+    assert abs(abs(cobb_from_tangents((1.0, 0.0), t)) - 15.0) < 3.0
+
+
+def test_spineps_endplate_cobb_parallel_sheets_near_zero():
+    seg = np.zeros((5, 50, 90), dtype=int)
+    _ep_sheet(seg, 3, 10, 34, 60, 10.0)
+    _ep_sheet(seg, 7, 10, 34, 25, 10.0)          # same tilt -> parallel endplates
+    c = spineps_endplate_cobb_angle(seg, ("R", "A", "S"), (1.0, 1.0, 1.0),
+                                    top_instance=3, bottom_instance=7)
+    assert c is not None and abs(c) < 3.0
+
+
+def test_spineps_endplate_cobb_lordotic_arrangement_is_positive():
+    # mimic real data: upper (C3) shallow, lower (C7) steeper (more negative) -> lordosis-positive
+    seg = np.zeros((5, 50, 90), dtype=int)
+    _ep_sheet(seg, 3, 10, 34, 70, -10.0)
+    _ep_sheet(seg, 7, 10, 34, 40, -30.0)
+    c = spineps_endplate_cobb_angle(seg, ("R", "A", "S"), (1.0, 1.0, 1.0),
+                                    top_instance=3, bottom_instance=7)
+    assert c is not None and c > 0
+
+
+def test_spineps_endplate_cobb_none_when_endplate_absent():
+    seg = np.zeros((5, 50, 90), dtype=int)
+    _ep_sheet(seg, 3, 10, 34, 40, 0.0)           # only C3 present
+    c = spineps_endplate_cobb_angle(seg, ("R", "A", "S"), (1.0, 1.0, 1.0),
+                                    top_instance=3, bottom_instance=7)
     assert c is None

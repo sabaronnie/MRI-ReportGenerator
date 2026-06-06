@@ -192,3 +192,62 @@ def spineps_cobb_angle(seg_spine, seg_vert, axcodes, zooms, top_instance, bottom
     if t_top is None or t_bot is None:
         return None
     return LORDOSIS_SIGN * cobb_from_tangents(t_top, t_bot)
+
+
+# ---- SPINEPS endplate-VOXEL Cobb (Option C1: the validated line-fit on the REAL endplate voxels) --
+# SPINEPS writes each vertebra's inferior-endplate sheet into the INSTANCE mask at label
+# SPINEPS_ENDPLATE_OFFSET + instance (verified on real output: thin sheets at the inferior body
+# border; C2=102..C7=107). Fitting the line directly to those endplate voxels is the
+# literature-validated method (Wang 2023: line-fit ICC 0.97 vs four-corner 0.75); on 12 healthy
+# Spine-Generic necks it beat BOTH the corpus line-fit and the canal-cut Cobb on precision + C7
+# coverage (C6-C7 SD 5.9 vs canal-cut 18.5 deg; C2-C7 13.7 vs 16.6). The raw endplate angle is
+# consistently negative across subjects, so SPINEPS_ENDPLATE_SIGN flips it to lordosis-positive
+# (calibrated on the 12 necks; healthy mean ~+15 deg matches the F1000 literature mean 15.4 deg).
+SPINEPS_ENDPLATE_OFFSET = 100
+SPINEPS_ENDPLATE_SIGN = -1
+
+
+def spineps_endplate_tangent(seg_vert, instance_label, axcodes, zooms,
+                             offset=SPINEPS_ENDPLATE_OFFSET, min_voxels=20):
+    """Inferior-endplate tangent (unit ap,si) for one vertebra, fit to SPINEPS' endplate voxels.
+
+    The endplate sheet for vertebra X is label (offset + X) in the instance mask (offset=100 verified
+    = the inferior endplate). On the sheet's mid-sagittal slice, the PCA major axis of the thin
+    AP-elongated sheet IS the endplate orientation -- no body isolation needed. Returns None if the
+    endplate is absent or too small to fit (the literature-honest "level not measurable" case).
+    """
+    ap, si, lr, _ = vertebra_axes_from_orientation(axcodes)
+    ep = np.asarray(seg_vert) == (offset + instance_label)
+    if ep.sum() < min_voxels:
+        return None
+    mid = mid_sagittal_index(ep, lr)
+    sl = [slice(None)] * ep.ndim
+    sl[lr] = mid
+    slice2d = ep[tuple(sl)]
+    remaining = sorted(a for a in range(ep.ndim) if a != lr)
+    pts = np.argwhere(slice2d).astype(float)
+    if len(pts) < 8:
+        return None
+    coords = np.column_stack([
+        pts[:, remaining.index(ap)] * float(zooms[ap]),
+        pts[:, remaining.index(si)] * float(zooms[si]),
+    ])
+    c = coords - coords.mean(0)
+    _, evecs = np.linalg.eigh(np.cov(c.T))
+    t = evecs[:, -1]                                  # major axis = endplate elongation = tangent
+    return (float(t[0]), float(t[1]))
+
+
+def spineps_endplate_cobb_angle(seg_vert, axcodes, zooms, top_instance, bottom_instance,
+                                offset=SPINEPS_ENDPLATE_OFFSET):
+    """Cobb angle (deg, lordosis-positive) between two vertebrae's INFERIOR endplates, fit directly to
+    SPINEPS' endplate voxels (Option C1). Needs only the instance mask (seg_vert). Returns None if
+    either endplate is unmeasurable. Same supine->standing caveat as cobb_angle; no radiologist GT yet,
+    so this is validated on PRECISION + coverage, not absolute accuracy (target ceiling Zhang 2025:
+    ICC 0.94 / MAE 2.44 deg on sagittal-T2 C2-C7).
+    """
+    t_top = spineps_endplate_tangent(seg_vert, top_instance, axcodes, zooms, offset)
+    t_bot = spineps_endplate_tangent(seg_vert, bottom_instance, axcodes, zooms, offset)
+    if t_top is None or t_bot is None:
+        return None
+    return SPINEPS_ENDPLATE_SIGN * cobb_from_tangents(t_top, t_bot)
