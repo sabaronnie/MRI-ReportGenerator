@@ -75,3 +75,27 @@ def test_builds_simplified_interpretation_container():
             "caveat": "Derived metric; confirm with segmentation QC.",
         },
     ]
+
+
+def test_quality_caution_flags_are_not_treated_as_pathology():
+    # tilt_outlier / ap_width_outlier are geometry/segmentation CAUTION flags (owner-confirmed),
+    # not stand-alone abnormalities. H_anterior is not catalogued, so the row falls back to the
+    # flag heuristic; with only quality flags present it must NOT read as outside_reference.
+    report = {
+        "components": {"morph": {"metadata": {}}},
+        "measurements": {"H_anterior": {"C5": 11.0}},
+        "flags": {
+            "tilt_outlier": {"C5": True},
+            "ap_width_outlier": {"C5": True},
+        },
+    }
+    rows = build_interpreted_measurements(
+        report,
+        measurement_sources={"H_anterior": "morph"},
+        flag_sources={"tilt_outlier": "morph", "ap_width_outlier": "morph"},
+    )
+    row = rows[0]
+    assert "tilt_outlier" in row["quality_flags"]
+    assert "ap_width_outlier" in row["quality_flags"]
+    assert row["status"] != "outside_reference"
+    assert row["flag"] is False

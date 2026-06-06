@@ -14,12 +14,18 @@ from typing import Any
 from .thresholds import THRESHOLDS, classify
 
 
+# Substring markers that classify a flag as a QUALITY / caution flag (geometry or
+# segmentation health) rather than a clinical abnormality. "outlier" and "unreliable" were
+# added so tilt_outlier / ap_width_outlier / *_unreliable are treated as caution, not
+# pathology (owner-confirmed -- see Ronnie's validation reply + groups_1_4_code_audit).
 QUALITY_FLAG_MARKERS = (
     "low_confidence",
     "misaligned",
     "approximate",
     "resolution",
     "warning",
+    "outlier",
+    "unreliable",
 )
 
 UNIT_BY_MEASUREMENT = {
