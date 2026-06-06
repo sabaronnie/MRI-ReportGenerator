@@ -11,6 +11,25 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-06 (cont.) — Group 5 DONE; corner-fix implemented; MASTER handoff written
+
+**Branch:** `groups-5-6` (all pushed, 0 unpushed, HEAD 46d4bdc)
+
+**What was done:**
+- **5.1 CLOSED → Group 5 DONE.** Ran SCIseg (Colab) on 11 healthy cords → 10/11 clean, 1 FP (sub-amu02 77mm³@C7) = ~91% specificity; end-to-end paired pipeline maps lesion→cervical level (verified). All four sub-parts + the 5→6 contract + the single/batch runner are complete.
+- **Teammates' G1/G4 corner-fix IMPLEMENTED (direction done).** `vertebral_fracture.endplate_lines` (Theil-Sen endplate lines + corners) + new `group5/cervical_alignment.py` (endplate-line Cobb, lordosis-positive, C7 reliability guard; experimental slip). Validated on 12 necks: Cobb SIGN FIXED (lordotic vs Ronnie's −21° kyphotic), mid-cervical C3–C5 +2.2±6.7° stable; C2–C7 endpoint SD ~16° + slip ~3mm bias = NOT at target → need SPINEPS-corpus + radiologist GT. Journaled J7–J10.
+- **SPINEPS pilot notebook ready** (`group5/colab_spineps_spinegeneric.ipynb`) — BLOCKED on Colab GPU daily quota (wait for reset / Kaggle).
+- Committed granularly throughout, plain messages, no signatures. Validation harnesses committed under group5/validation/.
+
+**Files changed:** group5/{vertebral_fracture,cervical_alignment,run_group5_pipeline,flags_contract,myelomalacia_specificity,run_sciseg_specificity}.py + tests, README, colab_spineps_spinegeneric.ipynb, validation/*, DEVELOPMENT_JOURNEY.md (J7–J10).
+
+**Pending / next action (THE handoff):** full project execution is being passed to a new chat — see
+**`../handoffs/chat-handoffs/HANDOFF-MASTER-execution-2026-06-06.md`** (complete: state, code, data, research, rules).
+Immediate next: (1) SPINEPS Colab pilot when GPU resets → C6/C7 endpoint-precision test; (2) Group 6 takeover when the
+Phase-4 threshold research returns (separate chat). 5.1 lesion masks live in `~/dev/group5-proto/out_sg_lesion/`.
+
+---
+
 ## 2026-06-06 — Andrew (Group 5 to ~done + tier-1 validation of teammates' code + new practices)
 
 **Branch:** `groups-5-6`
