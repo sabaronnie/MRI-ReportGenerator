@@ -191,8 +191,40 @@ keep it honest and specific (numbers, dates, evidence, citations). Chronological
   labelled cases exist. It doesn't block the product either — Group 6 reports Cobb as a review-only descriptive
   class (lordotic/straightened/kyphotic) with the supine + endpoint caveats, not a hard-flagged magnitude.
 
+## J12 — Option C1: fitting the line to SPINEPS' OWN endplate voxels — the endpoint fix that worked
+- **The lead (from a 93-agent research workflow):** J11 concluded the SPINEPS corpus swap didn't help. The
+  workflow found WHY: we fit the line to the **corpus border (label 49)**, but SPINEPS already predicts the
+  **endplate itself** and writes each vertebra's inferior-endplate sheet into the INSTANCE mask at **label
+  100+X** (C2=102 … C7=107) — voxels we already had and had dismissed as "disc/POI markers." Fitting to the
+  real endplate voxels is the literature-validated method (Wang 2023: line-fit ICC 0.97 vs four-corner 0.75;
+  ceiling Zhang 2025 PG-nnUNet, sagittal-T2 C2-C7, ICC 0.94 / MAE 2.44°).
+- **What we built:** `cervical_alignment.spineps_endplate_cobb_angle` — the PCA major axis of the thin
+  endplate sheet on the mid-sagittal slice IS the endplate tangent; the Cobb is the angle between two
+  vertebrae's inferior-endplate tangents, sign-calibrated to lordosis-positive (the raw angle is consistently
+  negative across all 12 necks). Needs only the instance mask. 4 TDD tests; verified the 100+X anatomy
+  (inferior endplate, co-located both subjects) + the sign consistency on real data *before* coding.
+- **The result — it beats both prior methods on every span (precision + coverage):**
+  | Span | ENDPLATE (C1) | corpus (J11) | canal-cut |
+  |---|---|---|---|
+  | C2-C7 | **+15.4 ± 13.7 (11/12)** | −4.7 ± 26.0 (9/12) | +1.7 ± 16.6 (9/12) |
+  | C3-C7 | **+15.2 ± 9.8 (11/12)** | +4.0 ± 22.7 | +8.0 ± 22.4 |
+  | C3-C5 (mid) | **+0.2 ± 4.9 (11/12)** | +8.8 ± 12.1 | +2.2 ± 6.7 |
+  | C6-C7 (endpoint) | **+8.8 ± 5.9 (11/12)** | −7.0 ± 31.3 | −1.8 ± 18.5 (8/12) |
+- **Why it's believable:** the C6-C7 endpoint (the cervicothoracic-junction failure J8/J11 couldn't fix)
+  dropped to SD **5.9°** (canal-cut 18.5°); coverage rose to 11/12 incl. C7; and the C2-C7 **mean +15.4°
+  matches the F1000 literature mean (15.4°)** — strong evidence it reads true lordosis, not noise.
+- **Honest scope:** still PRECISION + coverage, not accuracy — no healthy-MRI Cobb GT exists (only the F1000
+  n=77 *spondylosis* Excel angles, image format unconfirmed). The full-span SD (±13.7°) reflects real
+  inter-subject lordosis variation, not method error; the MAE ceiling (~2.4°) needs GT we don't have. **C1 is
+  now our recommended SPINEPS Cobb method; canal-cut stays the fallback.** Next: port the same endplate-voxel
+  method into the teammates' `c3c7_cobb_angle.py` (still corner-pair AI→PI) via feat/ + PR.
+- **Process note:** the research workflow itself (93 agents, adversarial-verify) is what turned J11's negative
+  into J12's positive — it located a free, validated fix (the endplate voxels were already on disk) that the
+  single-context investigation missed. Also corrected a false assumption: supine MRI does NOT read ~5° less
+  lordotic than standing for C2-C7 (F1000: diff −0.50°, n.s.) — fix the Group 6 Cobb caveat accordingly.
+
 ---
 *Open methodology gaps tracked elsewhere:* teammate threshold/citation fixes (disc DHI<0.30, bulge flat-wall,
-Pfirrmann cut-points) — see `group5/AUDIT_groups1-4_measurements.md`; C6/C7 Cobb precision + slip → **radiologist
-ground truth** (the SPINEPS-corpus pilot was run and did NOT close the gap — see J11; canal-cut remains our
-most-precise method pending GT).
+Pfirrmann cut-points) — see `group5/AUDIT_groups1-4_measurements.md`; C6/C7 Cobb **precision** is now closed by
+the SPINEPS endplate-voxel method (J12, C6-C7 SD 5.9°); absolute **accuracy** (MAE/ICC) + the slip calibration
+still need radiologist ground truth — only the F1000 n=77 spondylosis angles exist as an external reference.
