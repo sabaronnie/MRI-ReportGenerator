@@ -68,3 +68,51 @@ def test_slip_at_or_above_two_mm_flags_with_supine_caveat():
     assert r.flag is True
     assert "de Dios" in r.citation
     assert "supine" in r.caveat.lower()
+
+
+# ---- Disc bulge / grade / height index -------------------------------------------
+# Disc bulge: reference line is the TILTED CHORD between adjacent posterior VB corners;
+# our flat back-wall under-reports on lordotic necks (confirmed bug). >1 mm = bulge,
+# >1.35 mm = cord-compression risk (Nakashima, PMID 25584950, AUC 0.87 -- MODERATE conf).
+# Disc grade: Miyazaki 2008 cervical grading (PMID 18525490), NOT lumbar Pfirrmann;
+# ratio->grade cut-points have no kappa/AUC -> research-grade heuristic, review-only.
+# DHI: in-code <0.30 is DEBUNKED; no validated absolute cervical DHI cut -> review-only gap.
+
+
+def test_disc_bulge_below_one_mm_is_no_bulge():
+    r = classify("posterior_bulge_mm", 0.5)
+    assert r.status == "within_reference"
+    assert r.severity == "no_bulge"
+    assert r.flag is False
+
+
+def test_disc_bulge_one_to_135_is_bulge_present():
+    r = classify("posterior_bulge_mm", 1.2)
+    assert r.status == "outside_reference"
+    assert r.severity == "bulge_present"
+    assert r.flag is True
+
+
+def test_disc_bulge_above_135_is_cord_risk_with_tilted_chord_caveat():
+    r = classify("posterior_bulge_mm", 1.5)
+    assert r.status == "outside_reference"
+    assert r.severity == "cord_risk"
+    assert r.flag is True
+    assert "Nakashima" in r.citation
+    assert "tilted chord" in r.caveat.lower()
+
+
+def test_pfirrmann_grade_is_research_grade_review_only():
+    r = classify("pfirrmann_grade", 4)
+    assert r.status == "review_only"
+    assert r.severity == "grade_IV"
+    assert r.flag is False
+    assert "Miyazaki" in r.citation
+
+
+def test_dhi_has_no_validated_cut_and_is_review_only():
+    r = classify("DHI", 0.25)
+    assert r.status == "review_only"
+    assert r.severity is None
+    assert r.flag is False
+    assert "debunked" in (r.citation + " " + (r.caveat or "")).lower()

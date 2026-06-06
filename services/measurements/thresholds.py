@@ -133,6 +133,56 @@ _SLIP_CAVEAT = (
 )
 
 
+# Disc bulge (posterior_bulge_mm). >1 mm = bulge, >1.35 mm = cord-compression risk
+# (Nakashima, PMID 25584950, AUC 0.87 -- MODERATE confidence, PDF check pending). In-code
+# >=2 mm is too lax (~70 yo mean). Reference line must be the tilted chord between adjacent
+# posterior VB corners; our flat back-wall under-reports. memory disc_bulge_norm_verified.
+_BULGE_PRESENT_CUT = 1.0
+_BULGE_CORD_RISK_CUT = 1.35
+_BULGE_CITATION = (
+    "Nakashima 2015 (PMID 25584950, n=1211; >1 mm = bulge, >1.35 mm = cord-compression "
+    "risk, AUC 0.87 -- MODERATE confidence, PDF confirmation pending); Matsumoto Grade "
+    "0/1/2 (PMC3065617) = cervical-native ordinal"
+)
+_BULGE_CAVEAT = (
+    "Reference line = TILTED CHORD between adjacent posterior VB corners; our current flat "
+    "vertical back-wall UNDER-reports bulge on lordotic necks (confirmed bug, fix pending). "
+    "In-code >=2 mm cutoff is too lax (~70 yo mean). Axial imaging defines true "
+    "protrusion/herniation. Finding for physician review; clinical correlation required."
+)
+
+# Disc signal grade (pfirrmann_grade). Cervical Miyazaki 2008 grading, NOT lumbar
+# Pfirrmann; CSF-normalized ratio is cervical-validated, but the ratio->grade cut-points
+# have no published kappa/AUC -> research-grade heuristic. memory cervical_disc_grading_verified.
+_PFIRRMANN_CITATION = (
+    "Miyazaki 2008 (PMID 18525490) cervical modified grading (NOT lumbar Pfirrmann); "
+    "CSF-normalized ratio cervical-validated (Liu 2023 PMID 37156851, Watanabe 2025 "
+    "PMID 39645168). DOI / Grade I-V table PDF check pending (human-gated)"
+)
+_PFIRRMANN_CAVEAT = (
+    "Research-grade heuristic: the ratio->discrete-grade cut-points have NO published "
+    "kappa/AUC for cervical and were hand-tuned to 10 Duke scans. The grade is surfaced "
+    "for physician review, not a validated classification."
+)
+_PFIRRMANN_GRADE_LABELS = {1: "grade_I", 2: "grade_II", 3: "grade_III", 4: "grade_IV", 5: "grade_V"}
+
+# Disc height index (DHI). The in-code DHI<0.30 is DEBUNKED (uncited, animal-lumbar
+# borrow). No validated absolute cervical DHI cut-point exists; use a >30% inter-level
+# drop (Suzuki 2018) or absolute disc height <3 mm (van Santbrink) instead -- both need
+# cross-level context, handled in interpretation, not this single-value catalog.
+# memory disc_height_dhi_norms.
+_DHI_CITATION = (
+    "DHI<0.30 DEBUNKED (uncited, animal-lumbar borrow). Reduced disc height = >30% drop "
+    "vs adjacent (Suzuki 2018) or absolute <3 mm (van Santbrink 2026); closest cervical "
+    "DHI formula = Machino 2021 (PMID 34098133, paywalled). No validated absolute cervical "
+    "DHI cut-point -- pending Phase-4."
+)
+_DHI_CAVEAT = (
+    "No validated absolute cervical DHI threshold; interpret via >30% inter-level drop or "
+    "absolute disc height <3 mm instead. Review-only."
+)
+
+
 THRESHOLDS: dict[str, ThresholdSpec] = {
     "vb_hahp_ratio": ThresholdSpec(
         key="vb_hahp_ratio",
@@ -167,6 +217,43 @@ THRESHOLDS: dict[str, ThresholdSpec] = {
             "Current code: neutral <1 mm, present >=2 mm. Our line-derived slip is still "
             "EXPERIMENTAL (SD ~2.9 mm on healthy) -> magnitude only, not screening-ready."
         ),
+    ),
+    "posterior_bulge_mm": ThresholdSpec(
+        key="posterior_bulge_mm",
+        clinical_name="posterior disc bulge excursion",
+        unit="mm",
+        tag="raw",
+        bands=(
+            Band("no_bulge", None, _BULGE_PRESENT_CUT, "within"),
+            Band("bulge_present", _BULGE_PRESENT_CUT, _BULGE_CORD_RISK_CUT, "outside"),
+            Band("cord_risk", _BULGE_CORD_RISK_CUT, None, "outside"),
+        ),
+        citation=_BULGE_CITATION,
+        modality_caveat=_BULGE_CAVEAT,
+        provenance_note="Replaces in-code >=2 mm / ratio>=1.10 flag; also needs the tilted-chord fix.",
+    ),
+    "pfirrmann_grade": ThresholdSpec(
+        key="pfirrmann_grade",
+        clinical_name="cervical disc signal grade (Miyazaki, modified Pfirrmann)",
+        unit="grade",
+        tag="derived",
+        bands=tuple(
+            Band(_PFIRRMANN_GRADE_LABELS[g], float(g), float(g) + 1, "review")
+            for g in (1, 2, 3, 4, 5)
+        ),
+        citation=_PFIRRMANN_CITATION,
+        modality_caveat=_PFIRRMANN_CAVEAT,
+        provenance_note="Rename from lumbar 'pfirrmann' to cervical Miyazaki grading; keep CSF normalization.",
+    ),
+    "DHI": ThresholdSpec(
+        key="DHI",
+        clinical_name="disc height index",
+        unit="ratio",
+        tag="derived",
+        bands=None,
+        citation=_DHI_CITATION,
+        modality_caveat=_DHI_CAVEAT,
+        provenance_note="GAP: in-code DHI<0.30 debunked; no validated absolute cervical cut -> review-only.",
     ),
 }
 
