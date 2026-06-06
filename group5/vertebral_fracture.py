@@ -14,6 +14,7 @@ Cervical caveats (this project is cervical):
 """
 import numpy as np
 from scipy import ndimage
+from scipy.stats import theilslopes
 
 # Healthy cervical Ha/Hp (anterior/posterior body height ratio), measured on OUR pipeline
 # from the Spine-Generic healthy cohort: 0.94 +/- 0.13 (mean +/- SD, n=60 C3-C7, 12 subjects,
@@ -210,23 +211,47 @@ def endplate_line_heights(mask2d, ap_axis=0, si_axis=1, ap_spacing=1.0, si_spaci
 
     margin : where along the body's AP axis to read each wall (fraction in from the end).
     """
+    fit = _endplate_fit(mask2d, ap_axis, si_axis, ap_spacing, si_spacing, anterior, nbins, robust=False)
+    if fit is None:
+        return {"Ha": 0.0, "Hm": 0.0, "Hp": 0.0}
+    mt, bt, mb, bb, lo, rng = fit["mt"], fit["bt"], fit["mb"], fit["bb"], fit["lo"], fit["rng"]
+    gap = lambda ap_pos: abs(float((mt * ap_pos + bt) - (mb * ap_pos + bb)))
+    return {
+        "Ha": gap(lo + (1 - margin) * rng),         # anterior = high a
+        "Hm": gap(lo + 0.5 * rng),
+        "Hp": gap(lo + margin * rng),
+    }
+
+
+def _endplate_fit(mask2d, ap_axis=0, si_axis=1, ap_spacing=1.0, si_spacing=1.0,
+                  anterior="low", nbins=12, robust=False):
+    """Shared core for the endplate-line measurements: PCA-orient the body, bin along its AP axis,
+    drop thin tails, and fit straight lines to the superior and inferior endplate boundaries.
+    Returns the fit (PCA basis in image-mm coords + line params in the oriented frame) or None.
+    The oriented frame is sign-fixed: `a` increases toward anterior, `s` toward +image-SI, so the
+    basis is consistent across vertebrae (needed for a consistent Cobb sign). robust=True uses
+    Theil-Sen (resistant to osteophyte tails) instead of least squares.
+    """
     m = np.asarray(mask2d, dtype=bool)
     pts = np.argwhere(m).astype(float)
     if len(pts) < 20:
-        return {"Ha": 0.0, "Hm": 0.0, "Hp": 0.0}
+        return None
     coords = np.column_stack([pts[:, ap_axis] * ap_spacing, pts[:, si_axis] * si_spacing])
-    c = coords - coords.mean(0)
+    mean = coords.mean(0)
+    c = coords - mean
     _, evecs = np.linalg.eigh(np.cov(c.T))
     iap = int(np.argmax(np.abs(evecs[0, :])))      # eigenvector most aligned with image-AP
     u_ap, u_si = evecs[:, iap], evecs[:, 1 - iap]
     ant_vec = np.array([-1.0, 0.0]) if anterior == "low" else np.array([1.0, 0.0])
     if u_ap @ ant_vec < 0:
         u_ap = -u_ap                               # 'a' increases toward anterior
+    if u_si[1] < 0:
+        u_si = -u_si                               # 's' increases toward +image-SI (consistent)
     a, s = c @ u_ap, c @ u_si
     lo, hi = float(a.min()), float(a.max())
     rng = hi - lo
     if rng <= 0:
-        return {"Ha": 0.0, "Hm": 0.0, "Hp": 0.0}
+        return None
     edges = np.linspace(lo, hi, nbins + 1)
     ac, top, bot = [], [], []
     for i in range(nbins):
@@ -237,22 +262,60 @@ def endplate_line_heights(mask2d, ap_axis=0, si_axis=1, ap_spacing=1.0, si_spaci
         top.append(float(s[sel].max()))
         bot.append(float(s[sel].min()))
     if len(ac) < 4:
-        return {"Ha": 0.0, "Hm": 0.0, "Hp": 0.0}
+        return None
     ac, top, bot = np.array(ac), np.array(top), np.array(bot)
-    # Drop abruptly-thin bins (posterior tail / rounded tip) from the endplate fit; they
-    # are far below the body's median height. A gradual wedge stays above the cut and is kept.
+    # Drop abruptly-thin bins (posterior tail / rounded tip); a gradual wedge stays above the cut.
     bin_h = top - bot
     keep = bin_h >= 0.4 * np.median(bin_h)
     if keep.sum() >= 4:
         ac, top, bot = ac[keep], top[keep], bot[keep]
-    mt, bt = np.polyfit(ac, top, 1)                 # superior endplate line
-    mb, bb = np.polyfit(ac, bot, 1)                 # inferior endplate line
-    gap = lambda ap_pos: abs(float((mt * ap_pos + bt) - (mb * ap_pos + bb)))
-    return {
-        "Ha": gap(lo + (1 - margin) * rng),         # anterior = high a
-        "Hm": gap(lo + 0.5 * rng),
-        "Hp": gap(lo + margin * rng),
+    if robust:
+        mt, bt = theilslopes(top, ac)[:2]           # superior endplate line (Theil-Sen)
+        mb, bb = theilslopes(bot, ac)[:2]           # inferior endplate line
+    else:
+        mt, bt = np.polyfit(ac, top, 1)
+        mb, bb = np.polyfit(ac, bot, 1)
+    return {"u_ap": u_ap, "u_si": u_si, "mean": mean,
+            "mt": float(mt), "bt": float(bt), "mb": float(mb), "bb": float(bb),
+            "lo": lo, "hi": hi, "rng": rng}
+
+
+def endplate_lines(mask2d, ap_axis=0, si_axis=1, ap_spacing=1.0, si_spacing=1.0,
+                   anterior="low", nbins=12, margin=0.15):
+    """Expose the fitted superior/inferior endplate lines + the 4 corners, for Cobb and slip.
+
+    Built on the same PCA + line-fit core validated for heights, but returns the geometry the
+    angular/directional measurements need -- the literature-validated way is to derive corners and
+    angles from the ENDPLATE LINE, not from corner extrema (Wang 2023: line-fit ICC 0.97 vs 0.75,
+    because cervical endplates are concave/sloped). Robust Theil-Sen fit. Returns None if unmeasurable.
+
+    Returns {"corners": {AS,PS,AI,PI -> (ap_mm, si_mm)},
+             "inf_tangent": unit (ap,si) direction of the inferior endplate line,
+             "sup_tangent": unit (ap,si) direction of the superior endplate line}.
+    The angle between two vertebrae's inferior tangents is their inter-endplate (Cobb) angle.
+    """
+    fit = _endplate_fit(mask2d, ap_axis, si_axis, ap_spacing, si_spacing, anterior, nbins, robust=True)
+    if fit is None:
+        return None
+    u_ap, u_si, mean = fit["u_ap"], fit["u_si"], fit["mean"]
+    mt, bt, mb, bb, lo, rng = fit["mt"], fit["bt"], fit["mb"], fit["bb"], fit["lo"], fit["rng"]
+
+    def to_img(av, sv):                              # oriented (a,s) -> image (ap_mm, si_mm)
+        p = mean + av * u_ap + sv * u_si
+        return (float(p[0]), float(p[1]))
+
+    def unit(v):
+        n = float(np.hypot(v[0], v[1]))
+        return (float(v[0] / n), float(v[1] / n)) if n else (float(v[0]), float(v[1]))
+
+    a_ant, a_post = lo + (1 - margin) * rng, lo + margin * rng
+    corners = {
+        "AS": to_img(a_ant, mt * a_ant + bt), "AI": to_img(a_ant, mb * a_ant + bb),
+        "PS": to_img(a_post, mt * a_post + bt), "PI": to_img(a_post, mb * a_post + bb),
     }
+    return {"corners": corners,
+            "inf_tangent": unit(u_ap + mb * u_si),
+            "sup_tangent": unit(u_ap + mt * u_si)}
 
 
 def measure_vertebra(vb_mask3d, axcodes, zooms, isolate_body=True):

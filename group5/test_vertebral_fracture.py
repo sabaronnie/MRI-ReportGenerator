@@ -9,6 +9,8 @@ the caller; normal cervical Ha/Hp ~= 0.97, so the 20% loss rule clears normal ea
 """
 import numpy as np
 
+import math
+
 from vertebral_fracture import (
     heights_from_sagittal_mask,
     classify_genant,
@@ -19,8 +21,60 @@ from vertebral_fracture import (
     extract_vertebral_body,
     extract_body_via_canal,
     endplate_line_heights,
+    endplate_lines,
     fracture_confusion,
 )
+
+
+def _tan_slope(t):
+    return t[1] / t[0]
+
+
+def _signed_angle_deg(u, v):
+    return math.degrees(math.atan2(u[0] * v[1] - u[1] * v[0], u[0] * v[0] + u[1] * v[1]))
+
+
+def _sheared_block(shear, height=12, ap0=5, ap1=32, si0=12):
+    """Uniform body sheared so its endplates slope by `shear` (SI per AP) in the image frame."""
+    m = np.zeros((44, 60), dtype=bool)
+    for ap in range(ap0, ap1):
+        sh = int(round(shear * (ap - ap0)))
+        m[ap, si0 + sh:si0 + sh + height] = True
+    return m
+
+
+def test_endplate_lines_axis_aligned_tangent_is_horizontal():
+    m = np.zeros((30, 20), dtype=bool)
+    m[5:25, 4:16] = True
+    el = endplate_lines(m, ap_axis=0, si_axis=1, anterior="low")
+    assert el is not None
+    assert abs(_tan_slope(el["inf_tangent"])) < 0.15          # endplate ~ along image AP
+    assert abs(_signed_angle_deg(el["inf_tangent"], el["sup_tangent"])) < 5   # sup ∥ inf
+
+
+def test_endplate_lines_shear_tilts_the_tangent():
+    el = endplate_lines(_sheared_block(0.5), ap_axis=0, si_axis=1, anterior="low")
+    assert abs(abs(_tan_slope(el["inf_tangent"])) - 0.5) < 0.15   # tangent slope ~ the shear
+
+
+def test_endplate_lines_angle_between_two_bodies_is_their_tilt_difference():
+    # the Cobb primitive: angle between two inferior endplates = difference of their tilts
+    a = endplate_lines(_sheared_block(0.0), ap_axis=0, si_axis=1, anterior="low")
+    b = endplate_lines(_sheared_block(0.4), ap_axis=0, si_axis=1, anterior="low")
+    expected = math.degrees(math.atan(0.4))                   # ~21.8 deg
+    got = abs(_signed_angle_deg(a["inf_tangent"], b["inf_tangent"]))
+    assert abs(got - expected) < 7
+
+
+def test_endplate_lines_corners_present_and_ordered():
+    m = np.zeros((30, 20), dtype=bool)
+    m[5:25, 4:16] = True
+    el = endplate_lines(m, ap_axis=0, si_axis=1, anterior="low")
+    for k in ("AS", "PS", "AI", "PI"):
+        assert k in el["corners"]
+    # superior corners sit above inferior corners (larger SI), per side
+    assert el["corners"]["AS"][1] > el["corners"]["AI"][1]
+    assert el["corners"]["PS"][1] > el["corners"]["PI"][1]
 
 
 def _wedge_volume_psr():
