@@ -149,7 +149,21 @@ keep it honest and specific (numbers, dates, evidence, citations). Chronological
   (2) 1–2 radiologist-labelled cases to calibrate magnitude/sign. Honestly logged: slip is committed as
   EXPERIMENTAL (not screening-ready) rather than shipped biased.
 
+## J10 — 5.1 myelomalacia closed: SCIseg specificity measured + integrated end-to-end
+- **What we did:** ran SCIseg (`sct_deepseg lesion_sci_t2`, Colab GPU) on the healthy Spine-Generic cords
+  (11/12 completed before the Colab limit), then scored lesion burden locally.
+- **Specificity result (Andrew's "on healthy, flags nothing" criterion):** **10/11 cords completely clean
+  (0 lesion voxels); 1 false positive** (sub-amu02, a 77 mm³ component mapped to C7 — a single SCIseg FP /
+  possible edge artifact at the cervicothoracic junction). So healthy specificity ≈ **91% (10/11)** in our
+  hands — SCIseg is a good-but-imperfect engine, now MEASURED rather than assumed.
+- **Integration verified end-to-end:** `run_group5_pipeline.py --lesion` auto-pairs the SCIseg masks to the
+  TSS cases by subject and maps each cord lesion to the cervical level it overlaps (sub-amu02 → myelomalacia
+  present at C7 only; clean cases all-negative). The 5→6 flags contract now carries real myelomalacia.
+- **5.1 is done:** adopt SCIseg (sensitivity from its publication) + our healthy-specificity check (10/11) +
+  wired into the contract. **This closes Group 5's last open sub-part** (5.2 validated, 5.3 scoped out,
+  5.4 deferred, 5→6 contract + runner done).
+
 ---
 *Open methodology gaps tracked elsewhere:* teammate threshold/citation fixes (disc DHI<0.30, bulge flat-wall,
-Pfirrmann cut-points) — see `group5/AUDIT_groups1-4_measurements.md`; C6/C7 precision + slip → the SPINEPS-corpus
-Colab pilot + radiologist ground truth (next).
+Pfirrmann cut-points) — see `group5/AUDIT_groups1-4_measurements.md`; C6/C7 Cobb precision + slip → the
+SPINEPS-corpus Colab pilot + radiologist ground truth (next, for the teammates' G1/G4).
