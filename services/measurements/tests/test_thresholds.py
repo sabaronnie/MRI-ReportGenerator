@@ -219,3 +219,50 @@ def test_posterior_tangent_is_a_pending_gap():
     r = classify("posterior_tangent_C3_C7", 2.0)
     assert r.status == "review_only"
     assert r.flag is False
+
+
+# ---- Quality / caution metrics (NOT clinical) ------------------------------------
+# Owner (Ronnie) confirmed: ap_width_outlier + tilt_outlier are geometry/segmentation
+# caution flags, never stand-alone abnormalities -> tag="quality", never a clinical flag.
+
+
+def test_ap_width_within_sanity_window_is_within_reference():
+    r = classify("AP_width", 18.0)
+    assert r.status == "within_reference"
+    assert r.severity == "within_sanity"
+    assert r.flag is False
+    assert r.tag == "quality"
+
+
+def test_ap_width_outlier_is_caution_not_a_clinical_flag():
+    r = classify("AP_width", 25.0)
+    assert r.severity == "ap_width_outlier"
+    assert r.status == "review_only"
+    assert r.flag is False          # quality caution, NOT a clinical abnormality
+    assert r.tag == "quality"
+
+
+def test_tilt_deg_is_quality_caution_not_interpretable_clinically():
+    r = classify("tilt_deg", 28.0)
+    assert r.status == "not_interpretable"
+    assert r.flag is False
+    assert r.tag == "quality"
+    assert "caution" in r.caveat.lower()
+
+
+# ---- Signal: myelomalacia screen (Group 5.1, SCIseg) -----------------------------
+
+
+def test_myelomalacia_present_flags_for_review():
+    r = classify("myelomalacia", 1)
+    assert r.status == "outside_reference"
+    assert r.severity == "signal_anomaly_present"
+    assert r.flag is True
+    assert "SCIseg" in r.citation
+
+
+def test_myelomalacia_absent_is_within_reference():
+    r = classify("myelomalacia", 0)
+    assert r.status == "within_reference"
+    assert r.severity == "none"
+    assert r.flag is False

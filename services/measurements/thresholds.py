@@ -253,6 +253,37 @@ _GAP_PENDING_CAVEAT = (
 )
 
 
+# Quality / caution metrics (NOT clinical thresholds). Owner-confirmed (Ronnie): tilt_outlier +
+# ap_width_outlier are geometry/segmentation caution flags, never stand-alone abnormalities.
+# tilt 20 deg too aggressive (~28 deg common healthy). AP-width 12-22 mm is engineering sanity.
+_AP_WIDTH_SANITY_LO = 12.0
+_AP_WIDTH_SANITY_HI = 22.0
+_AP_WIDTH_CITATION = (
+    "Nell 2019 (PMC6764695) healthy per-level AP-width percentiles for clinical comparison; "
+    "the in-code 12-22 mm is an ENGINEERING sanity window, not a clinical pathology threshold"
+)
+_AP_WIDTH_CAVEAT = (
+    "AP-width outlier is a QUALITY/caution flag (segmentation sanity), NOT a clinical abnormality. "
+    "Anterior osteophytes may inflate AP width; MRI-mask-based, not radiologist caliper. For "
+    "clinical comparison use Nell 2019 age/sex percentiles."
+)
+_TILT_CAVEAT = (
+    "Vertebral tilt is a QUALITY/geometry caution metric, NOT a clinical abnormality. The in-code "
+    "20 deg threshold is too aggressive (~28 deg is common on healthy cervical masks; recalibrate) "
+    "-- tilt_outlier is a segmentation/orientation caution, not pathology."
+)
+# Signal: myelomalacia screen (Group 5.1, SCIseg). Binary present/absent; non-diagnostic.
+_MYELO_CITATION = (
+    "SCIseg (sct_deepseg lesion_sci_t2); Naga Karthik 2024 (PMC11065035). Measured healthy "
+    "specificity 10/11 (~91%)"
+)
+_MYELO_CAVEAT = (
+    "Cord T2-hyperintensity SCREEN (SCIseg): a positive level is a finding for physician review "
+    "(pattern consistent with possible myelopathy), NOT a diagnosis; clinical correlation required. "
+    "Binary present/absent; sensitivity rests on SCIseg's publication."
+)
+
+
 THRESHOLDS: dict[str, ThresholdSpec] = {
     "vb_hahp_ratio": ThresholdSpec(
         key="vb_hahp_ratio",
@@ -411,6 +442,44 @@ THRESHOLDS: dict[str, ThresholdSpec] = {
         citation=None,
         modality_caveat=_GAP_PENDING_CAVEAT,
         provenance_note="GAP: secondary cross-check metric; no normative range adopted (pending Phase-4).",
+    ),
+    "AP_width": ThresholdSpec(
+        key="AP_width",
+        clinical_name="vertebral-body AP width",
+        unit="mm",
+        tag="quality",
+        bands=(
+            Band("within_sanity", _AP_WIDTH_SANITY_LO, _AP_WIDTH_SANITY_HI, "within"),
+            Band("ap_width_outlier", None, _AP_WIDTH_SANITY_LO, "review"),
+            Band("ap_width_outlier", _AP_WIDTH_SANITY_HI, None, "review"),
+        ),
+        citation=_AP_WIDTH_CITATION,
+        modality_caveat=_AP_WIDTH_CAVEAT,
+        provenance_note="Sanity window only; clinical norm = Nell 2019 percentiles (cross-level/demographic).",
+    ),
+    "tilt_deg": ThresholdSpec(
+        key="tilt_deg",
+        clinical_name="vertebral-body tilt (vs global SI axis)",
+        unit="deg",
+        tag="quality",
+        bands=None,
+        citation=None,
+        modality_caveat=_TILT_CAVEAT,
+        unknown_status=STATUS_NOT_INTERPRETABLE,
+        provenance_note="Quality caution; recalibrate the 20 deg threshold (too aggressive on cervical).",
+    ),
+    "myelomalacia": ThresholdSpec(
+        key="myelomalacia",
+        clinical_name="cord T2-hyperintensity screen (myelomalacia)",
+        unit="present",
+        tag="derived",
+        bands=(
+            Band("none", None, 0.5, "within"),
+            Band("signal_anomaly_present", 0.5, None, "outside"),
+        ),
+        citation=_MYELO_CITATION,
+        modality_caveat=_MYELO_CAVEAT,
+        provenance_note="Group 5.1 binary screen; carried into Group 6 via the 5->6 flags contract.",
     ),
 }
 
