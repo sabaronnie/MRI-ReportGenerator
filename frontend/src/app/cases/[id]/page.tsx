@@ -7,6 +7,7 @@ import { Impressions } from "@/components/report/impressions";
 import { FindingsTable } from "@/components/report/findings-table";
 import { Disclaimers } from "@/components/report/disclaimers";
 import { NiivueViewer } from "@/components/viewer/niivue-viewer";
+import { ProcessingStatus } from "@/components/processing/processing-status";
 
 export default async function CasePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -14,6 +15,7 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
   const data = await getCase(id).catch(() => null);
   if (!data) notFound();
   const viewer = getViewerSources(id);
+  const processing = data.job.stage !== "ready";
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-8">
@@ -25,35 +27,41 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
         <CaseHeader data={data} canSign={user.role === "radiologist"} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
-        <section>
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Imaging
-          </h2>
-          <NiivueViewer volumeUrl={viewer.volumeUrl} maskUrl={viewer.maskUrl} />
-        </section>
+      {processing ? (
+        <ProcessingStatus caseId={id} initial={data.job} />
+      ) : (
+        <>
+          <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
+            <section>
+              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Imaging
+              </h2>
+              <NiivueViewer volumeUrl={viewer.volumeUrl} maskUrl={viewer.maskUrl} />
+            </section>
 
-        <section className="space-y-6">
-          <div>
-            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Impressions
-            </h2>
-            <Impressions impression={data.report.impression} />
+            <section className="space-y-6">
+              <div>
+                <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  Impressions
+                </h2>
+                <Impressions impression={data.report.impression} />
+              </div>
+              <div>
+                <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  Findings
+                </h2>
+                <div className="overflow-hidden rounded-lg border">
+                  <FindingsTable interpretations={data.interpretations} />
+                </div>
+              </div>
+            </section>
           </div>
-          <div>
-            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Findings
-            </h2>
-            <div className="overflow-hidden rounded-lg border">
-              <FindingsTable interpretations={data.interpretations} />
-            </div>
-          </div>
-        </section>
-      </div>
 
-      <div className="mt-6">
-        <Disclaimers items={data.report.disclaimers} />
-      </div>
+          <div className="mt-6">
+            <Disclaimers items={data.report.disclaimers} />
+          </div>
+        </>
+      )}
     </div>
   );
 }
