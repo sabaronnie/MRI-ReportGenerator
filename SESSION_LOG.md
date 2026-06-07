@@ -11,6 +11,21 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-07 — Andrew (recalibrate to Ronnie's refactor + freeze data contract v0.1 for the frontend chat)
+
+**Branch:** `feat/contract/data-contract-v0.1` (off `main`; 4 commits, UNPUSHED — confirm before push)
+
+**What was done:**
+- **Recalibrated to Ronnie's structural refactor** (now canonical on `origin/main` @ `4ab7b8c`). Verified it is a pure folder/file MOVE + mechanical import/comment-path edits — **no measurement/threshold logic changed** (validated `vertebral_fracture.py`/`myelomalacia_specificity.py` moved byte-identical; `interpretation.py`/`thresholds.py` deltas are one comment line each). All of Andrew's branches (`groups-5-6`, `feat/group6`, `feat/measurements`) were merged into main first. Reset stale local main to origin/main. New layout captured in memory `repo_structure_refactor`.
+- **Test suite on the new tree: 136 pass, 1 FAIL** = `test_group5_fracture_screen.py::...flags_compressed_level` (Ronnie's NEW adapter; synthetic "compressed C4" reads Ha/Hp **1.737** because the fixture's anterior/posterior walls are flipped vs the method's convention). Not our science — flagged to Ronnie via a handoff prompt (Andrew relaying).
+- **Track-1 (frontend/infra coupling) DELIVERED** under `docs/contracts/`: `data-contract-v0.1.md` (measurement/interpretation core FROZEN, case/job/upload/report envelopes PROPOSED), `segmentation-viewer-v0.1.md` (NiiVue: formats, TSS label map, the 1↔2 canal/cord ambiguity), `iep-and-infra-notes.md` (#4 IEP-1/2 contracts, #5 Prometheus metric names, #6 path map), and `samples/case-healthy.json` (a REAL orchestrator run on a healthy Spine-Generic neck wrapped in the proposed envelope).
+
+**Files changed:** `docs/contracts/{data-contract-v0.1,segmentation-viewer-v0.1,iep-and-infra-notes}.md`, `docs/contracts/samples/case-healthy.json`, this log. (memories: `repo_structure_refactor`, `validation_master_todo`, `data_contract_for_frontend`.)
+
+**Pending / next action:** (1) **confirm push** of the contract branch + relay the 3 docs + sample to the frontend chat (unblocks their build). (2) Remaining sample JSONs (severe-stenosis / fracture-flag / moderate) need the unhealthy cohort or hand-crafting. (3) Then back to validation: the G1 **morphometry Ha/Hp + slip endplate-line port** (still the old corner method on main), then the Colab cohort runs. Full roadmap in memory `validation_master_todo`. Andrew has Colab Pro; needs to download MMCSD (Synapse syn63903115) + more Duke for the unhealthy runs.
+
+---
+
 ## 2026-06-06 (cont.) — Group 5 DONE; corner-fix implemented; MASTER handoff written
 
 **Branch:** `groups-5-6` (all pushed, 0 unpushed, HEAD 46d4bdc)
