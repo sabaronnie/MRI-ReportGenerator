@@ -27,11 +27,22 @@ Current output document shape from `build_report_document(...)`:
 - `report_version`
 - `source_contract_version`
 - `title`
+- `case_header`
 - `case`
 - `summary`
 - `findings`
 - `impression`
+- `quality_caveats`
 - `quality_notes`
 - `disclaimers`
 - `metadata`
 - `appendix`
+
+The normalized document model is intended to contain:
+
+- case header
+- findings table rows
+- impression bullets
+- quality / caveat sections
+- disclaimers
+- appendix / provenance data

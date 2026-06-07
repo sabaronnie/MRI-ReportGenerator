@@ -35,11 +35,15 @@ def build_report_document(payload: dict[str, Any]) -> dict[str, Any]:
     table_rows = [_build_table_row(row) for row in interpreted_rows]
     highlighted_rows = [row for row in table_rows if row["flag"]]
     quality_notes = _build_quality_notes(interpreted_rows, components)
+    impression = _build_impression(syndromes, highlighted_rows)
+    provenance = _build_provenance(interpreted_rows)
+    case_header = _build_case_header(payload["case"])
 
     return {
         "report_version": "1.0",
         "source_contract_version": payload["contract_version"],
         "title": "Cervical Spine MRI Analysis Report",
+        "case_header": case_header,
         "case": _normalize_case(payload["case"]),
         "summary": _build_summary(interpreted_rows, syndromes),
         "findings": {
@@ -47,8 +51,12 @@ def build_report_document(payload: dict[str, Any]) -> dict[str, Any]:
             "highlighted_measurements": highlighted_rows,
             "syndromes": syndromes,
         },
-        # Impression text generation is intentionally deferred to the next step.
-        "impression": [],
+        "impression": impression,
+        "quality_caveats": {
+            "measurement_notes": [n for n in quality_notes if n["type"] == "measurement_quality"],
+            "component_notes": [n for n in quality_notes if n["type"] == "component_error"],
+            "general_caveats": _build_general_caveats(interpreted_rows, syndromes),
+        },
         "quality_notes": quality_notes,
         "disclaimers": list(payload["report_context"].get("disclaimers", [])),
         "metadata": {
@@ -58,9 +66,12 @@ def build_report_document(payload: dict[str, Any]) -> dict[str, Any]:
         },
         "appendix": {
             "manifest": dict(payload["manifest"]),
-            "components": components,
-            "measurements": dict(payload["measurements"]),
-            "flags": dict(payload["flags"]),
+            "provenance": provenance,
+            "raw_data": {
+                "components": components,
+                "measurements": dict(payload["measurements"]),
+                "flags": dict(payload["flags"]),
+            },
         },
     }
 
@@ -94,6 +105,28 @@ def _normalize_case(case: dict[str, Any]) -> dict[str, Any]:
         "source_file": {
             "filename": source_file.get("filename"),
         },
+    }
+
+
+def _build_case_header(case: dict[str, Any]) -> dict[str, Any]:
+    normalized = _normalize_case(case)
+    patient_context = normalized["patient_context"]
+    parts = []
+    if patient_context.get("sex"):
+        parts.append(str(patient_context["sex"]).title())
+    if patient_context.get("age_years") is not None:
+        parts.append(f'{patient_context["age_years"]} years')
+    if patient_context.get("height_cm") is not None:
+        parts.append(f'{patient_context["height_cm"]} cm')
+
+    return {
+        "title": "Cervical Spine MRI Analysis Report",
+        "case_id": normalized.get("case_id"),
+        "job_id": normalized.get("job_id"),
+        "submitted_at": normalized.get("submitted_at"),
+        "source_filename": normalized["source_file"].get("filename"),
+        "patient_summary": ", ".join(parts) if parts else None,
+        "patient_context": patient_context,
     }
 
 
@@ -136,6 +169,36 @@ def _build_table_row(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _build_impression(
+    syndromes: list[dict[str, Any]],
+    highlighted_rows: list[dict[str, Any]],
+) -> list[str]:
+    bullets: list[str] = []
+
+    for syndrome in syndromes:
+        level = syndrome.get("level")
+        advisory = syndrome.get("advisory")
+        if advisory:
+            bullets.append(f"{level}: {advisory}" if level else str(advisory))
+
+    for row in highlighted_rows:
+        display_name = row.get("display_name") or row.get("measurement")
+        level = row.get("level")
+        value = row.get("value")
+        unit = row.get("unit") or ""
+        severity = row.get("severity")
+
+        value_str = _format_value(value, unit)
+        if severity:
+            bullets.append(f"{level}: {display_name} {value_str} ({severity}).")
+        else:
+            bullets.append(f"{level}: {display_name} {value_str}.")
+
+    # Preserve order but drop duplicates if a syndrome/advisory and a measurement
+    # happen to generate the same sentence.
+    return list(dict.fromkeys(bullets))
+
+
 def _build_quality_notes(
     interpreted_rows: list[dict[str, Any]],
     components: dict[str, dict[str, Any]],
@@ -168,5 +231,54 @@ def _build_quality_notes(
     return notes
 
 
+def _build_general_caveats(
+    interpreted_rows: list[dict[str, Any]],
+    syndromes: list[dict[str, Any]],
+) -> list[str]:
+    caveats: list[str] = []
+
+    for row in interpreted_rows:
+        caveat = row.get("caveat")
+        if caveat:
+            caveats.append(str(caveat))
+
+    for syndrome in syndromes:
+        caveat = syndrome.get("caveat")
+        if caveat:
+            caveats.append(str(caveat))
+
+    return list(dict.fromkeys(caveats))
+
+
+def _build_provenance(interpreted_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    provenance: list[dict[str, Any]] = []
+    seen: set[str] = set()
+
+    for row in interpreted_rows:
+        key = str(row.get("measurement"))
+        if key in seen:
+            continue
+        seen.add(key)
+        spec = THRESHOLDS.get(key)
+        provenance.append(
+            {
+                "measurement": key,
+                "display_name": spec.clinical_name if spec is not None else _prettify_key(key),
+                "citation": spec.citation if spec is not None else None,
+                "tag": spec.tag if spec is not None else None,
+                "caveat": spec.modality_caveat if spec is not None else None,
+                "provenance_note": spec.provenance_note if spec is not None else None,
+            }
+        )
+
+    return provenance
+
+
 def _prettify_key(key: str) -> str:
     return key.replace("_", " ").strip().title()
+
+
+def _format_value(value: Any, unit: str) -> str:
+    if value is None:
+        return "unavailable"
+    return f"{value} {unit}".strip()

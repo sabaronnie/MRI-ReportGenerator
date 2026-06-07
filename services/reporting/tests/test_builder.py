@@ -73,14 +73,24 @@ def test_build_report_document_consumes_reporting_contract():
     assert document["report_version"] == "1.0"
     assert document["source_contract_version"] == "1.0"
     assert document["case"]["job_id"] == "scan_123"
+    assert document["case_header"]["source_filename"] == "scan.nii.gz"
+    assert document["case_header"]["patient_summary"] == "Male, 42 years, 178 cm"
     assert document["summary"]["measurement_row_count"] == 1
     assert document["summary"]["flagged_measurement_count"] == 1
     assert document["summary"]["syndrome_count"] == 1
     assert document["findings"]["table_rows"][0]["display_name"] == "space available for the cord (canal AP - cord AP)"
     assert document["findings"]["highlighted_measurements"][0]["measurement"] == "SAC"
+    assert document["impression"][0] == (
+        "C5: pattern consistent with possible cervical myelopathy; clinical correlation required"
+    )
+    assert document["impression"][1] == "C5: space available for the cord (canal AP - cord AP) 2.7 mm (high_risk)."
     assert document["quality_notes"][0]["type"] == "measurement_quality"
+    assert document["quality_caveats"]["measurement_notes"][0]["measurement"] == "SAC"
+    assert document["quality_caveats"]["general_caveats"][0] == "Derived metric; confirm with segmentation QC."
     assert document["disclaimers"] == payload["report_context"]["disclaimers"]
-    assert document["appendix"]["measurements"] == payload["measurements"]
+    assert document["appendix"]["raw_data"]["measurements"] == payload["measurements"]
+    assert document["appendix"]["provenance"][0]["measurement"] == "SAC"
+    assert "Fehlings" in document["appendix"]["provenance"][0]["citation"]
 
 
 def test_build_report_document_requires_contract_keys():
