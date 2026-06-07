@@ -1,17 +1,19 @@
 import type { InterpretationStatus } from "@/lib/api/contract";
 
-const MAP: Record<InterpretationStatus, { label: string; className: string }> = {
-  within_reference: { label: "Normal", className: "bg-emerald-100 text-emerald-800" },
-  outside_reference: { label: "Flagged", className: "bg-red-100 text-red-800" },
-  review_only: { label: "Review", className: "bg-amber-100 text-amber-800" },
-  not_interpretable: { label: "N/A", className: "bg-zinc-100 text-zinc-600" },
+const MAP: Record<InterpretationStatus, { label: string; cls: string }> = {
+  within_reference: { label: "Normal", cls: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
+  outside_reference: { label: "Flagged", cls: "bg-rose-50 text-rose-700 ring-rose-200" },
+  review_only: { label: "Review", cls: "bg-amber-50 text-amber-700 ring-amber-200" },
+  not_interpretable: { label: "N/A", cls: "bg-zinc-100 text-zinc-500 ring-zinc-200" },
 };
 
 /** Renders an InterpretedMeasurement.status as a colored pill. Never implies a diagnosis. */
 export function StatusBadge({ status }: { status: InterpretationStatus }) {
   const m = MAP[status] ?? MAP.not_interpretable;
   return (
-    <span className={`inline-flex rounded px-2 py-0.5 text-xs font-medium ${m.className}`}>
+    <span
+      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${m.cls}`}
+    >
       {m.label}
     </span>
   );
