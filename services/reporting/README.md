@@ -40,9 +40,10 @@ Current output document shape from `build_report_document(...)`:
 
 The normalized document model is intended to contain:
 
+- a radiology-style main report (`clinical_report`)
 - case header
 - findings table rows
 - impression bullets
 - quality / caveat sections
 - disclaimers
-- appendix / provenance data
+- a technical appendix / provenance section for explainability

@@ -35,7 +35,13 @@ def build_report_document(payload: dict[str, Any]) -> dict[str, Any]:
     table_rows = [_build_table_row(row) for row in interpreted_rows]
     highlighted_rows = [row for row in table_rows if row["flag"]]
     quality_notes = _build_quality_notes(interpreted_rows, components)
-    impression = _build_impression(syndromes, highlighted_rows)
+    clinical_report = _build_clinical_report(
+        payload=payload,
+        table_rows=table_rows,
+        syndromes=syndromes,
+        components=components,
+    )
+    impression = list(clinical_report["impression"])
     provenance = _build_provenance(interpreted_rows)
     case_header = _build_case_header(payload["case"])
 
@@ -46,6 +52,7 @@ def build_report_document(payload: dict[str, Any]) -> dict[str, Any]:
         "case_header": case_header,
         "case": _normalize_case(payload["case"]),
         "summary": _build_summary(interpreted_rows, syndromes),
+        "clinical_report": clinical_report,
         "findings": {
             "table_rows": table_rows,
             "highlighted_measurements": highlighted_rows,
@@ -121,6 +128,11 @@ def _build_case_header(case: dict[str, Any]) -> dict[str, Any]:
 
     return {
         "title": "Cervical Spine MRI Analysis Report",
+        "exam": "MRI cervical spine",
+        "technique": (
+            "Automated research-use post-processing of sagittal cervical spine MRI "
+            "including segmentation, measurement, interpretation, and structured reporting."
+        ),
         "case_id": normalized.get("case_id"),
         "job_id": normalized.get("job_id"),
         "submitted_at": normalized.get("submitted_at"),
@@ -197,6 +209,60 @@ def _build_impression(
     # Preserve order but drop duplicates if a syndrome/advisory and a measurement
     # happen to generate the same sentence.
     return list(dict.fromkeys(bullets))
+
+
+def _build_clinical_report(
+    *,
+    payload: dict[str, Any],
+    table_rows: list[dict[str, Any]],
+    syndromes: list[dict[str, Any]],
+    components: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    findings_sections: list[dict[str, str]] = []
+
+    alignment_section = _build_alignment_section(payload, components)
+    if alignment_section is not None:
+        findings_sections.append(alignment_section)
+
+    clinical_rows = [row for row in table_rows if _is_clinically_reportable_row(row)]
+    level_findings = _group_rows_by_level(clinical_rows)
+    if level_findings:
+        findings_sections.append(
+            {
+                "heading": "Level-Specific Findings",
+                "body": " ".join(level_findings),
+            }
+        )
+
+    if syndromes:
+        findings_sections.append(
+            {
+                "heading": "Cord / Syndrome Pattern",
+                "body": " ".join(_sentence_case(_build_impression(syndromes, []))),
+            }
+        )
+
+    if not findings_sections:
+        findings_sections.append(
+            {
+                "heading": "Findings",
+                "body": (
+                    "Within the scope of the current automated sagittal-MRI pipeline, "
+                    "no reportable abnormal measurement was flagged."
+                ),
+            }
+        )
+
+    return {
+        "exam": "MRI cervical spine",
+        "technique": (
+            "Automated analysis of sagittal cervical spine MRI. Research-use structured "
+            "interpretation only; not a substitute for radiologist review."
+        ),
+        "findings_sections": findings_sections,
+        "findings_text": "\n\n".join(f"{section['heading']}: {section['body']}" for section in findings_sections),
+        "impression": _build_clinical_impression(payload, clinical_rows, syndromes, components),
+    }
 
 
 def _build_quality_notes(
@@ -282,3 +348,100 @@ def _format_value(value: Any, unit: str) -> str:
     if value is None:
         return "unavailable"
     return f"{value} {unit}".strip()
+
+
+def _build_alignment_section(
+    payload: dict[str, Any],
+    components: dict[str, dict[str, Any]],
+) -> dict[str, str] | None:
+    metadata = components.get("lordosis_classification", {}).get("metadata", {})
+    label = (metadata.get("lordosis_classification") or {}).get("C3-C7")
+    cobb = (payload.get("measurements", {}).get("Cobb_C3_C7") or {}).get("C3-C7")
+    if label is None and cobb is None:
+        return None
+
+    pieces = []
+    if label is not None:
+        pieces.append(f"Cervical alignment is {label}.")
+    if cobb is not None:
+        pieces.append(f"C3-C7 Cobb angle measures {cobb} deg.")
+    caveat = metadata.get("classification_caveat")
+    if caveat:
+        pieces.append(caveat)
+
+    return {
+        "heading": "Alignment",
+        "body": " ".join(pieces),
+    }
+
+
+def _build_clinical_impression(
+    payload: dict[str, Any],
+    clinical_rows: list[dict[str, Any]],
+    syndromes: list[dict[str, Any]],
+    components: dict[str, dict[str, Any]],
+) -> list[str]:
+    bullets: list[str] = []
+
+    for syndrome in syndromes:
+        advisory = syndrome.get("advisory")
+        level = syndrome.get("level")
+        if advisory:
+            bullets.append(f"{level}: {advisory}" if level else str(advisory))
+
+    top_rows = clinical_rows[:4]
+    for row in top_rows:
+        display_name = row.get("display_name") or row.get("measurement")
+        level = row.get("level")
+        severity = row.get("severity")
+        value_str = _format_value(row.get("value"), row.get("unit") or "")
+        if severity:
+            bullets.append(f"{level}: {display_name} {value_str} ({severity}).")
+        else:
+            bullets.append(f"{level}: {display_name} {value_str}.")
+
+    alignment_meta = components.get("lordosis_classification", {}).get("metadata", {})
+    label = (alignment_meta.get("lordosis_classification") or {}).get("C3-C7")
+    cobb = (payload.get("measurements", {}).get("Cobb_C3_C7") or {}).get("C3-C7")
+    if label is not None:
+        if cobb is not None:
+            bullets.append(f"Alignment: {label}; C3-C7 Cobb angle {cobb} deg.")
+        else:
+            bullets.append(f"Alignment: {label}.")
+
+    if not bullets:
+        bullets.append(
+            "Within the scope of the current automated sagittal-MRI pipeline, no reportable abnormality was flagged."
+        )
+
+    return list(dict.fromkeys(bullets))
+
+
+def _is_clinically_reportable_row(row: dict[str, Any]) -> bool:
+    return bool(row.get("flag")) and row.get("tag") != "quality"
+
+
+def _group_rows_by_level(rows: list[dict[str, Any]]) -> list[str]:
+    by_level: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        by_level.setdefault(str(row.get("level")), []).append(row)
+
+    sentences: list[str] = []
+    for level in sorted(by_level.keys()):
+        level_rows = by_level[level]
+        fragments = []
+        for row in level_rows:
+            display_name = row.get("display_name") or row.get("measurement")
+            value_str = _format_value(row.get("value"), row.get("unit") or "")
+            severity = row.get("severity")
+            if severity:
+                fragments.append(f"{display_name} {value_str} ({severity})")
+            else:
+                fragments.append(f"{display_name} {value_str}")
+        if fragments:
+            sentences.append(f"At {level}, " + "; ".join(fragments) + ".")
+    return sentences
+
+
+def _sentence_case(items: list[str]) -> list[str]:
+    return [item[0].upper() + item[1:] if item else item for item in items]
