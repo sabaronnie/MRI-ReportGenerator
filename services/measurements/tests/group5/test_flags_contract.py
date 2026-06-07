@@ -11,7 +11,7 @@ It REUSES the validated classify_genant + cervical_deformity_flag (no logic is r
 """
 import json
 
-from flags_contract import build_flags_contract
+from services.measurements.group5.flags_contract import build_flags_contract
 
 
 def _healthy():

@@ -16,7 +16,7 @@ import sys
 import nibabel as nib
 import numpy as np
 
-from myelomalacia_specificity import healthy_specificity
+from ..myelomalacia_specificity import healthy_specificity
 
 # Clinical-floor default: ignore sub-clinical specks below this lesion volume when flagging.
 # A tunable specificity policy (analogous to the 5.2 screen z); not a clinical claim.

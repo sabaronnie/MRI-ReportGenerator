@@ -11,7 +11,7 @@ false-positive rate. A clinically-meaningful minimum lesion volume is a tunable 
 """
 import numpy as np
 
-from myelomalacia_specificity import lesion_burden, healthy_specificity
+from services.measurements.group5.myelomalacia_specificity import lesion_burden, healthy_specificity
 
 
 def test_lesion_burden_empty_mask_is_zero():

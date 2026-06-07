@@ -22,6 +22,7 @@ from .geometric import (
     segmental_angles,
     spondylolisthesis,
 )
+from .group5 import fracture_screen
 from services.interpretation import build_interpreted_measurements
 
 
@@ -50,6 +51,7 @@ COMPONENTS = {
     lordosis_classification.NAME: lordosis_classification,
     segmental_angles.NAME: segmental_angles,
     posterior_tangent_angle.NAME: posterior_tangent_angle,
+    fracture_screen.NAME: fracture_screen,
     functional_canal_ap.NAME: functional_canal_ap,
     cord_ap.NAME: cord_ap,
     sac.NAME: sac,

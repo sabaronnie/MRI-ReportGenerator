@@ -14,7 +14,7 @@ import math
 
 import numpy as np
 
-from vertebral_fracture import (
+from ..vertebral_fracture import (
     endplate_lines,
     extract_body_via_canal,
     mid_sagittal_index,

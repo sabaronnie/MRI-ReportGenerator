@@ -2,7 +2,7 @@
 
 Flask service running Phase 3 measurement components on a TotalSpineSeg `step2_output`. Each measurement is its own component module; the orchestrator runs them in dependency order, instruments every call with Prometheus, and returns a flat report.
 
-Phase 4 / Group 6 interpretation now lives in the sibling package [`services/interpretation/`](../interpretation/), which this service imports to attach interpreted rows to the raw measurement output.
+Phase 4 / Group 6 interpretation now lives in the sibling package [`services/interpretation/`](../interpretation/), which this service imports to attach interpreted rows to the raw measurement output. Group 5 runtime code now lives under [`services/measurements/group5/`](./group5/) and is integrated into the measurements service rather than only existing as standalone sidecar code.
 
 ## Components currently registered
 
@@ -14,6 +14,7 @@ Phase 4 / Group 6 interpretation now lives in the sibling package [`services/int
 | `lordosis_classification` | 4.2 | Derived `lordotic` / `straightened / low lordosis` / `kyphotic` from `Cobb_C3_C7`, with supine-MRI caveat |
 | `segmental_angles` | 4.3 | `segmental_angle` for `C3-C4` through `C6-C7` from reused inferior/superior endplate corners in the common PA-SI frame |
 | `posterior_tangent_angle` | 4.4 | `posterior_tangent_C3_C7` from reused `PS/PI` posterior-wall corners, plus Cobb divergence metadata for cross-checking |
+| `group5_fracture_screen` | 5.2 | `vb_hahp_ratio` vertebral-body compression/deformity screen for C3-C7, plus a Group 5 findings contract in metadata |
 | `functional_canal_ap` | 3.1 | `dural_sac_AP_min` per cervical vertebra via SCT `canal` + `sct_process_segmentation` |
 | `cord_ap` | 3.2 | `cord_AP` per cervical vertebra via SCT `spinalcord`, aligned to `functional_canal_ap` focal slices |
 | `sac` | 3.3 | `SAC` per cervical vertebra by same-slice subtraction of `dural_sac_AP_min - cord_AP` |

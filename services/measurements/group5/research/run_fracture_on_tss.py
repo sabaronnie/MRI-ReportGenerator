@@ -19,7 +19,7 @@ import sys
 import nibabel as nib
 import numpy as np
 
-from vertebral_fracture import (
+from ..vertebral_fracture import (
     COHORT_HAHP_MEAN,
     COHORT_HAHP_SD,
     cervical_deformity_flag,

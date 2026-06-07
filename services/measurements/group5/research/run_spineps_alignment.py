@@ -17,7 +17,7 @@ import re
 import nibabel as nib
 import numpy as np
 
-from cervical_alignment import cobb_angle, spineps_cobb_angle, spineps_endplate_cobb_angle
+from .cervical_alignment import cobb_angle, spineps_cobb_angle, spineps_endplate_cobb_angle
 
 SPINEPS_DIR = os.path.expanduser("~/dev/group5-proto/out_sg_spineps")
 TSS_DIR = os.path.expanduser("~/dev/group5-proto/out_sg")

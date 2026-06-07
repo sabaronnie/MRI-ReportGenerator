@@ -9,7 +9,7 @@ Two detectors under test:
 """
 import numpy as np
 
-from myelomalacia import detect_cord_signal_abnormality
+from services.measurements.group5.research.myelomalacia import detect_cord_signal_abnormality
 
 
 def test_flags_abnormally_bright_cord_level():
@@ -64,7 +64,7 @@ def _t2_phantom_with_cord_and_csf():
 
 def test_weber_flags_focal_cord_bright_relative_to_csf():
     """A focal lesion: at one level the cord is bright (near CSF). cord/CSF jumps."""
-    from myelomalacia import detect_myelopathy_index
+    from services.measurements.group5.research.myelomalacia import detect_myelopathy_index
 
     mri, cord_mask, csf_mask = _t2_phantom_with_cord_and_csf()
     level_index = np.arange(mri.shape[2])[None, None, :]
@@ -80,7 +80,7 @@ def test_weber_flags_diffuse_cord_brightening_that_local_misses():
     """A DIFFUSELY bright cord (every level near CSF). The cord-vs-cord method sees
     no per-level deviation and misses it; cord-vs-CSF catches it everywhere.
     """
-    from myelomalacia import detect_myelopathy_index
+    from services.measurements.group5.research.myelomalacia import detect_myelopathy_index
 
     mri, cord_mask, csf_mask = _t2_phantom_with_cord_and_csf()
     mri[cord_mask == 1] = 170.0  # whole cord uniformly bright relative to CSF
@@ -98,7 +98,7 @@ def test_weber_csf_reference_robust_to_dark_partial_volume_voxels():
     down by them and false-flags a healthy cord. A robust upper-percentile reference
     uses the true bright CSF and does not.
     """
-    from myelomalacia import detect_myelopathy_index
+    from services.measurements.group5.research.myelomalacia import detect_myelopathy_index
 
     mri = np.zeros((20, 20, 12), dtype=float)
     cord_mask = np.zeros_like(mri, dtype=int)
@@ -123,7 +123,7 @@ def test_focal_lesion_caught_by_bright_tail_but_missed_by_median():
     median detector misses it. Detecting on the bright TAIL (p90) of cord signal
     catches it. This is why median-based detection had 0 sensitivity vs SCIseg.
     """
-    from myelomalacia import detect_focal_hyperintensity
+    from services.measurements.group5.research.myelomalacia import detect_focal_hyperintensity
 
     mri = np.full((20, 20, 12), 100.0)        # uniform healthy cord baseline
     cord_mask = np.zeros((20, 20, 12), dtype=int)

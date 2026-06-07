@@ -6,7 +6,7 @@ The heavy segmentation (TotalSpineSeg) already ran; this just consumes its outpu
 import nibabel as nib
 import numpy as np
 
-from myelomalacia import detect_cord_signal_abnormality, detect_myelopathy_index
+from .myelomalacia import detect_cord_signal_abnormality, detect_myelopathy_index
 
 B = "/Users/andrew/dev/group5-proto"
 img = nib.load(f"{B}/data/duke_000001_T2.nii.gz")

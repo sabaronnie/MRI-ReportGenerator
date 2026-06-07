@@ -20,8 +20,8 @@ import sys
 import nibabel as nib
 import numpy as np
 
-from flags_contract import build_flags_contract
-from vertebral_fracture import (
+from .flags_contract import build_flags_contract
+from .vertebral_fracture import (
     extract_body_via_canal,
     measure_vertebra,
     vertebra_axes_from_orientation,

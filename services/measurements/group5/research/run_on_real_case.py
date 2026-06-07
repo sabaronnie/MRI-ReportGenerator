@@ -20,7 +20,7 @@ import nibabel as nib
 import nibabel.processing as nibproc
 import numpy as np
 
-from myelomalacia import detect_cord_signal_abnormality
+from .myelomalacia import detect_cord_signal_abnormality
 
 BASE = "/Users/andrew/Desktop/AUB/Spring 26/EECE 503n/Project/data/spine-generic/data-single-subject"
 

@@ -11,7 +11,7 @@ import numpy as np
 
 import math
 
-from vertebral_fracture import (
+from services.measurements.group5.vertebral_fracture import (
     heights_from_sagittal_mask,
     classify_genant,
     cervical_deformity_flag,

@@ -94,7 +94,8 @@ class ThresholdEval:
 # healthy Ha/Hp 0.94 ± 0.13 (Spine-Generic, n=60 C3-C7, 12 subjects, 3 vendors);
 # flag at mean - 2*SD (~0.68), borderline at mean - 1*SD (~0.81). The medical Genant
 # grade stays separate (it is the unchanged 20/25/40% standard, handled per vertebra).
-# See memory vb_hahp_norm_verified / vb_hahp_z_threshold; mirrors group5/flags_contract.py.
+# See memory vb_hahp_norm_verified / vb_hahp_z_threshold; mirrors
+# services/measurements/group5/flags_contract.py.
 _VB_HAHP_MEAN = 0.94
 _VB_HAHP_SD = 0.13
 _VB_HAHP_FLAG_CUT = round(_VB_HAHP_MEAN - 2 * _VB_HAHP_SD, 2)       # 0.68

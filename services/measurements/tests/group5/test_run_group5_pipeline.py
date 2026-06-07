@@ -10,7 +10,7 @@ import json
 
 import numpy as np
 
-from run_group5_pipeline import assemble_case_contract, pair_cases
+from services.measurements.group5.pipeline import assemble_case_contract, pair_cases
 
 
 def _two_vertebra_seg():

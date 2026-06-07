@@ -14,7 +14,7 @@ import numpy as np
 WORKTREE = "/Users/andrew/Desktop/AUB/Spring 26/EECE 503n/Project/teammate-worktrees/mohammad/services"
 sys.path.insert(0, WORKTREE)
 
-from measurements.context import load_context
+from services.measurements.context import load_context
 from measurements.geometric import (
     cervical_body_morphometry as morph,
     spondylolisthesis as spondy,

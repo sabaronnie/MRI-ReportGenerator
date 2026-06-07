@@ -13,7 +13,7 @@ measurement logic (classify_genant + cervical_deformity_flag); it re-implements 
 STATUS: v0.1 PROPOSAL. The exact field set is partly a team decision (Group 6 + the AUBMC
 measurement spec). Confirm with the team before freezing the schema.
 """
-from vertebral_fracture import (
+from .vertebral_fracture import (
     COHORT_HAHP_MEAN,
     COHORT_HAHP_SD,
     cervical_deformity_flag,

@@ -1,9 +1,17 @@
 # Group 5 — signal/shape-based abnormal-finding screens (Andrew)
 
+Legacy imported README snapshot from the original standalone Group 5 workspace. The actual code
+now lives under `services/measurements/group5/`, and the original root `group5/` folder has been
+removed.
+
 Screens for abnormal findings the geometric groups (1–4) don't: vertebral-body deformity
 (compression/fracture) and cord signal (myelomalacia). Outputs are **screens that flag findings
 for physician review — never diagnoses.** Developed standalone in `~/dev/group5-proto` (outside
 the repo, to keep heavy imaging data off git) and imported here.
+
+Core runtime code that is now part of the pipeline lives under
+[`services/measurements/group5/`](./). Research/support material from the old standalone layout is
+now colocated in this same area under `research/` and `../tests/group5/`.
 
 > **Data is NOT in git.** All NIfTI/DICOM (Duke, Spine-Generic, RSNA) live locally / on Drive and
 > are `.gitignore`d. Segmentation (TotalSpineSeg / SCIseg) runs on Colab GPU; only the lightweight

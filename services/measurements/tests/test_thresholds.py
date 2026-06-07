@@ -7,7 +7,7 @@ lives here, not scattered per interpretation row (plans/phase-4-interpretation.m
 These first tests cover the vertebral-body Ha/Hp compression screen, the one threshold
 we validated ourselves (Spine-Generic healthy cohort Ha/Hp 0.94 ± 0.13, n=60 C3-C7;
 flag at mean - 2*SD ~ 0.68; borderline at mean - 1*SD ~ 0.81). Citations are the locked
-strings carried by group5/flags_contract.py (Tan 2004 / Lee 2012 / Kaur 2025 / Chen 2013
+strings carried by services/measurements/group5/flags_contract.py (Tan 2004 / Lee 2012 / Kaur 2025 / Chen 2013
 / Nell 2019). See memory vb_hahp_norm_verified / vb_hahp_z_threshold.
 """
 

@@ -106,7 +106,8 @@ def test_quality_caution_flags_are_not_treated_as_pathology():
 
 
 def test_interpret_group5_contract_maps_fracture_and_myelomalacia():
-    # Group 6 consumes the Group-5 findings contract (group5/flags_contract.py JSON shape) and
+    # Group 6 consumes the Group-5 findings contract
+    # (services/measurements/group5/flags_contract.py JSON shape) and
     # interprets the compression-screen ratio + the myelomalacia screen via the catalog.
     contract = {
         "levels": [

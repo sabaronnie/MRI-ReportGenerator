@@ -135,7 +135,7 @@ def build_interpreted_measurements(
 
 
 def interpret_group5_contract(contract: dict[str, Any]) -> list[dict[str, Any]]:
-    """Interpret the Group 5 -> Group 6 findings contract (group5/flags_contract.py JSON).
+    """Interpret the Group 5 -> Group 6 findings contract (services/measurements/group5/flags_contract.py JSON).
 
     Maps each level's vertebral-body compression screen (Ha/Hp ratio) and, when assessed, its
     myelomalacia screen into the same InterpretedMeasurement container, driven by the catalog.

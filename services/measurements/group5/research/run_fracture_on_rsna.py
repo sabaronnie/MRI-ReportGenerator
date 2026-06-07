@@ -28,7 +28,7 @@ import os
 import nibabel as nib
 import numpy as np
 
-from vertebral_fracture import classify_genant, fracture_confusion, measure_vertebra
+from ..vertebral_fracture import classify_genant, fracture_confusion, measure_vertebra
 
 # RSNA segmentation voxel value -> cervical level. C1=1..C7=7; measure C3-C7, exclude C1/C2.
 RSNA_LEVEL = {3: "C3", 4: "C4", 5: "C5", 6: "C6", 7: "C7"}

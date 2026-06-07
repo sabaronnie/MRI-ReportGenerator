@@ -20,7 +20,7 @@ import nibabel as nib
 import nibabel.processing as nibproc
 import numpy as np
 
-from myelomalacia import detect_cord_signal_abnormality, detect_focal_hyperintensity
+from .myelomalacia import detect_cord_signal_abnormality, detect_focal_hyperintensity
 
 TOL = 3
 
