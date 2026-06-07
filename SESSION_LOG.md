@@ -11,6 +11,21 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-08 — Andrew (FULL VALIDATION pass on real cohort + paper start; autonomous run)
+
+**Branch:** `feat/validation/run1-results` (off the fixture-fix branch; committed, NOT pushed)
+
+**What was done (autonomous overnight pass):**
+- **Downloaded MMCSD** (Synapse syn63903115): all 250 sag-T2 + the CSM/CSR + per-level lesion labels (local, gitignored). Segmented 12 healthy + 10 unhealthy (5 CSM/5 CSR) via TSS+SCT (Colab A100) + SPINEPS.
+- **Ran the FULL validation, all groups, with Mann-Whitney stats + matplotlib figures** (`docs/validation/results-full-2026-06-08.md`, figures/): **G3 canal/SAC p=0.0001 (VALIDATED)**; G4 Cobb **C1** healthy +15.2° vs unhealthy +8.8° (directional, p=0.13); **G1 Ha/Hp correctly NULL** (spondylosis≠compression, 0 flags both); **G2 disc DHI+bulge read BACKWARDS = real bug** (DHI denominator over-measured at C2/junctions, exactly as Mohammad predicted) → documented + flagged, NOT blind-fixed (teammate code). G5 already validated.
+- Our methods needed **no fixes** (all passed/null) — validates J1–J12. Journaled **J15 + J16**.
+
+**Files changed:** `docs/validation/results-full-2026-06-08.md` + `figures/*`, `DEVELOPMENT_JOURNEY.md` (J15-16), `research/group5/run_validation_master.py` + `run_g2_disc_validation.py`. (Data/scripts in ~/dev/group5-proto.)
+
+**Pending / next action:** (1) **G2 disc fix** = the one open measurement bug — for Mohammad (root cause given). (2) Scale validation to a RANDOM MMCSD draw (current 10 were lesion-selected). (3) Compression-fracture dataset hunt (G1/G5.2 abnormal arm). (4) **Paper** being drafted under `paper/` (LaTeX, Overleaf-ready, matplotlib+TikZ figures). (5) Branches committed not pushed (confirm-before-push): feat/contract, feat/measurements/fix-fracture-screen-fixture, feat/docs/validation-rationale, feat/chore/gitignore-medical-data, feat/colab/spineps-unhealthy-batch, feat/validation/run1-results.
+
+---
+
 ## 2026-06-06 (cont.) — Group 5 DONE; corner-fix implemented; MASTER handoff written
 
 **Branch:** `groups-5-6` (all pushed, 0 unpushed, HEAD 46d4bdc)
