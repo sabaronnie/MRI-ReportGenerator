@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { Job } from "@/lib/api/contract";
 
@@ -13,32 +13,18 @@ const STAGE_LABEL: Record<string, string> = {
   error: "Error",
 };
 
-/** Polls the job endpoint while a case processes; refreshes the page (→ report) when ready. */
-export function ProcessingStatus({ caseId, initial }: { caseId: string; initial: Job }) {
+/**
+ * Shows live processing progress. Polls by calling router.refresh() on an interval, which re-runs
+ * the server component (reading the same store/EEP that owns the case) and re-passes an advanced `job`.
+ * When the case reaches "ready", the server component renders the report instead and this unmounts.
+ */
+export function ProcessingStatus({ job }: { job: Job }) {
   const router = useRouter();
-  const [job, setJob] = useState<Job>(initial);
 
   useEffect(() => {
-    if (job.stage === "ready" || job.stage === "error") {
-      router.refresh();
-      return;
-    }
-    const t = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/cases/${encodeURIComponent(caseId)}/job`, { cache: "no-store" });
-        if (!res.ok) return;
-        const next: Job = await res.json();
-        setJob(next);
-        if (next.stage === "ready" || next.stage === "error") {
-          clearInterval(t);
-          router.refresh();
-        }
-      } catch {
-        /* transient — keep polling */
-      }
-    }, 1200);
+    const t = setInterval(() => router.refresh(), 1200);
     return () => clearInterval(t);
-  }, [caseId, job.stage, router]);
+  }, [router]);
 
   const stages = job.stages?.length ? job.stages : ["queued", "segmenting", "measuring", "interpreting", "ready"];
   const currentIdx = stages.indexOf(job.stage);

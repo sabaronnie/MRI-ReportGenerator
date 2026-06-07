@@ -28,7 +28,7 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
       </div>
 
       {processing ? (
-        <ProcessingStatus caseId={id} initial={data.job} />
+        <ProcessingStatus job={data.job} />
       ) : (
         <>
           <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
