@@ -6,6 +6,7 @@ This package holds the Phase 4 interpretation layer that sits after raw measurem
 
 - `interpretation.py` — converts raw measurement outputs into standard interpreted rows and provisional syndrome indicators
 - `thresholds.py` — central cited threshold catalog used by the interpretation layer
+- `REPORTING_HANDOFF_CONTRACT.md` — JSON contract that the EEP should pass from interpretation into reporting
 
 ## Current consumers
 

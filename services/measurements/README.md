@@ -49,6 +49,10 @@ The `POST /measure` body is the same zip the segmentation IEP returns: at minimu
 - `input_iso.nii.gz` so the measurement service can fall back to running SCT itself.
 
 Optional repeated form field `measurement=<name>` picks a subset of components.
+Optional case/reporting fields such as `job_id`, `case_id`, `sex`, `age_years`,
+`height_cm`, `report_language`, `include_appendix`, and repeated `disclaimer`
+can be supplied so the response is immediately usable as the interpretation-to-
+reporting handoff contract.
 
 ```bash
 curl -X POST -F "file=@segmentation.zip" http://localhost:8081/measure
@@ -60,42 +64,54 @@ Response:
 
 ```json
 {
+  "contract_version": "1.0",
+  "case": {
+    "job_id": "scan_8f3a2c1d",
+    "case_id": "scan_8f3a2c1d",
+    "submitted_at": "2026-06-07T14:10:00Z",
+    "patient_context": {"sex": "male", "age_years": 42, "height_cm": 178.0},
+    "source_file": {"filename": "segmentation.zip"}
+  },
   "manifest": {"seg_shape": [25, 60, 50], "voxel_spacing_mm": [1.0, 1.0, 1.0], "labels_present": [...]},
-  "report": {
-    "components": {"cervical_body_morphometry": {"status": "ok", "duration_s": 0.012, "metadata": {"levels": ["C3", ...]}}},
-    "measurements": {
-      "AP_width":     {"C3": 19.0, "C4": 19.5, ...},
-      "H_anterior":   {"C3": 17.0, ...},
-      "H_middle":     {"C3": 17.0, ...},
-      "H_posterior":  {"C3": 17.0, ...},
-      "tilt_deg":     {"C3": 0.0,  ...}
-    },
-    "flags": {
-      "ap_width_outlier":  {"C3": false, ...},
-      "wedge_fracture":    {"C3": false, ...},
-      "biconcave_fracture":{"C3": false, ...}
-    },
-    "interpretations": {
-      "measurements": [
-        {
-          "measurement": "AP_width",
-          "level": "C3",
-          "value": 19.0,
-          "unit": "mm",
-          "status": "review_only",
-          "severity": null,
-          "flag": false,
-          "demographics_used": {},
-          "quality_flags": [],
-          "caveat": null
-        }
-      ]
-    }
+  "components": {"cervical_body_morphometry": {"status": "ok", "duration_s": 0.012, "metadata": {"levels": ["C3", "..."]}}},
+  "measurements": {
+    "AP_width": {"C3": 19.0, "C4": 19.5},
+    "SAC": {"C5": 2.7}
+  },
+  "flags": {
+    "ap_width_outlier": {"C3": false},
+    "sac_high_risk": {"C5": true}
+  },
+  "interpretations": {
+    "measurements": [
+      {
+        "measurement": "SAC",
+        "level": "C5",
+        "value": 2.7,
+        "unit": "mm",
+        "status": "outside_reference",
+        "severity": "high_risk",
+        "flag": true,
+        "demographics_used": {},
+        "quality_flags": [],
+        "caveat": "Derived metric; confirm with segmentation QC."
+      }
+    ],
+    "syndromes": []
+  },
+  "report_context": {
+    "modality": "cervical_sagittal_mri",
+    "report_language": "en",
+    "disclaimers": [
+      "This is a research tool, not a medical device. Not for clinical diagnosis.",
+      "Measurements acquired on supine MRI; functional radiographs may differ."
+    ],
+    "include_appendix": true
   }
 }
 ```
 
-`interpretations.measurements` is the first Phase 4 scaffold: a standard per-measurement container that keeps the API stable while the full threshold engine is still being built. The current behavior is intentionally conservative:
+`interpretations.measurements` is the first Phase 4 scaffold: a standard per-measurement container that keeps the API stable while the full threshold engine is still being built. `interpretations.syndromes` carries provisional advisory patterns such as the myelopathy combination rule. The current behavior is intentionally conservative:
 
 - values with a non-quality pathology flag from their source component are marked `outside_reference`
 - values without threshold logic yet are marked `review_only`

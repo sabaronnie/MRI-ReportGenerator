@@ -10,7 +10,8 @@ The /measure endpoint accepts the same zip the segmentation IEP returns (contain
 minimum step2_output.nii.gz). If the zip also contains `sct_canal_seg.nii.gz` and
 `sct_spinalcord_seg.nii.gz`, the SCT-backed measurements will reuse those masks instead of
 rerunning deepseg locally. Optional repeated form field `measurement=<name>` selects a
-subset of registered components; default runs all.
+subset of registered components; default runs all. The JSON response is the stable
+post-interpretation handoff contract consumed by reporting.
 """
 
 from __future__ import annotations
@@ -21,10 +22,13 @@ import tempfile
 import uuid
 import zipfile
 from ast import literal_eval
+from datetime import datetime, timezone
 from pathlib import Path
 
 from flask import Flask, Response, jsonify, request
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+
+from services.interpretation import build_reporting_handoff_contract
 
 from .context import MeasurementError, load_context
 from .orchestrator import COMPONENTS, run_all
@@ -59,7 +63,8 @@ def measure():
     upload = request.files["file"]
     enabled = request.form.getlist("measurement") or None
 
-    job_id = uuid.uuid4().hex[:8]
+    request_job_id = request.form.get("job_id")
+    job_id = request_job_id or f"scan_{uuid.uuid4().hex[:8]}"
     work_dir = Path(tempfile.gettempdir()) / f"mri-meas-{job_id}"
     work_dir.mkdir(parents=True, exist_ok=True)
 
@@ -103,7 +108,16 @@ def measure():
     except MeasurementError as e:
         return jsonify(error=str(e)), 500
 
-    return jsonify(report=report, manifest=ctx.manifest)
+    response_payload = build_reporting_handoff_contract(
+        report,
+        manifest=ctx.manifest,
+        case=_build_case_payload(
+            job_id=job_id,
+            upload_filename=upload.filename,
+        ),
+        report_context=_build_report_context_payload(),
+    )
+    return jsonify(response_payload)
 
 
 def _find_optional_nifti(root: Path, filename: str) -> Path | None:
@@ -143,6 +157,59 @@ def _read_segmentation_manifest(root: Path) -> dict:
     except (SyntaxError, ValueError, OSError):
         return {}
     return parsed
+
+
+def _build_case_payload(*, job_id: str, upload_filename: str | None) -> dict:
+    submitted_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    case_id = request.form.get("case_id") or job_id
+
+    return {
+        "job_id": job_id,
+        "case_id": case_id,
+        "submitted_at": submitted_at,
+        "patient_context": {
+            "sex": request.form.get("sex"),
+            "age_years": _coerce_int(request.form.get("age_years")),
+            "height_cm": _coerce_float(request.form.get("height_cm")),
+        },
+        "source_file": {
+            "filename": upload_filename,
+        },
+    }
+
+
+def _build_report_context_payload() -> dict:
+    disclaimers = request.form.getlist("disclaimer")
+    return {
+        "modality": request.form.get("modality", "cervical_sagittal_mri"),
+        "report_language": request.form.get("report_language", "en"),
+        "disclaimers": disclaimers or None,
+        "include_appendix": _coerce_bool(request.form.get("include_appendix"), default=True),
+    }
+
+
+def _coerce_int(raw: str | None) -> int | None:
+    if raw is None or raw == "":
+        return None
+    try:
+        return int(raw)
+    except ValueError:
+        return None
+
+
+def _coerce_float(raw: str | None) -> float | None:
+    if raw is None or raw == "":
+        return None
+    try:
+        return float(raw)
+    except ValueError:
+        return None
+
+
+def _coerce_bool(raw: str | None, *, default: bool) -> bool:
+    if raw is None or raw == "":
+        return default
+    return raw.strip().lower() not in {"0", "false", "no", "off"}
 
 
 if __name__ == "__main__":

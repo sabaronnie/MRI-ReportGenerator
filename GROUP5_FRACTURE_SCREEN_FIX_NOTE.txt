@@ -1,0 +1,48 @@
+Group 5 fracture-screen test note
+Generated: 2026-06-07
+
+Summary
+- The validated Group 5 science code should not be changed.
+- The fix belongs in the synthetic fixture in `services/measurements/tests/test_group5_fracture_screen.py`.
+- The adapter in `services/measurements/group5/fracture_screen.py` is forwarding orientation correctly.
+
+Answers for Andrew
+
+1. Intended anterior side
+- In this fixture the seg affine is `np.eye(4)`, so `nib.aff2axcodes(ctx.seg_affine)` is `('R', 'A', 'S')`.
+- That means the AP axis is axis 1, and because the code is `A`, anterior is the HIGH index on that axis.
+- So for this RAS synthetic case, larger AP indices are anterior.
+
+2. What is wrong in the current fixture
+- The current C4 fixture draws:
+  - `seg[2:5, 20:25, 6:18] = 14`
+  - `seg[2:5, 25:30, 6:13] = 14`
+- The truncated wall is at AP `25:30`, which is the higher-index side.
+- From code inspection, the adapter does not flip AP: it just passes `axcodes` from the context into `extract_body_via_canal(...)` and `measure_vertebra(...)`.
+- The validated Group 5 module already has orientation tests covering:
+  - `('A', 'S', 'L') -> anterior == "high"`
+  - orientation-invariant `measure_vertebra(...)` behavior across frames
+- So the safe conclusion is: this failure is in the new synthetic adapter fixture, not in the validated measurement logic.
+- For this test, the truncated half needs to be placed on the side the validated screen is actually reading as `Ha`, which means swapping the two C4 AP blocks.
+
+3. File to fix
+- Fix `services/measurements/tests/test_group5_fracture_screen.py`.
+- Do not change:
+  - `services/measurements/group5/fracture_screen.py`
+  - `services/measurements/group5/vertebral_fracture.py`
+  - `measure_vertebra`
+  - `extract_body_via_canal`
+
+4. Corrected fixture coordinates
+- Andrew should swap the two C4 wall blocks.
+- Replace:
+  - `seg[2:5, 20:25, 6:18] = 14`
+  - `seg[2:5, 25:30, 6:13] = 14`
+- With:
+  - `seg[2:5, 20:25, 6:13] = 14`
+  - `seg[2:5, 25:30, 6:18] = 14`
+
+Short version
+- Intended anterior side: larger AP index (`25:30`) in this RAS fixture.
+- File to fix: `services/measurements/tests/test_group5_fracture_screen.py`.
+- Fix: swap the two C4 blocks; do not modify the validated Group 5 measurement code or the adapter.
