@@ -27,9 +27,12 @@ def _synthetic_seg() -> np.ndarray:
     # Healthy C3 body: rectangular.
     seg[2:5, 20:30, 22:34] = 13
 
-    # Compressed C4 body: posterior wall full-height, anterior wall truncated.
-    seg[2:5, 20:25, 6:18] = 14
-    seg[2:5, 25:30, 6:13] = 14
+    # Compressed C4 body: truncate the wall the screen reads as anterior (Ha) so Ha/Hp
+    # drops below the compression-screen cut. Blocks swapped to match the validated
+    # measure_vertebra anterior/posterior convention (Ronnie's adapter forwards orientation
+    # correctly; the prior coordinates put the truncation on the posterior side -> ratio 1.74).
+    seg[2:5, 20:25, 6:13] = 14
+    seg[2:5, 25:30, 6:18] = 14
 
     return seg
 
