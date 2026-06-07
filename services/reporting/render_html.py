@@ -7,7 +7,62 @@ import json
 from typing import Any
 
 
-def render_report_html(document: dict[str, Any]) -> str:
+def render_clinical_report_html(document: dict[str, Any]) -> str:
+    """Render the user-facing radiology-style report.
+
+    This variant intentionally excludes raw structured data, threshold provenance,
+    and the explainability appendix. It is the HTML that should back the
+    user-targeted PDF.
+    """
+    case_header = dict(document.get("case_header") or {})
+    clinical_report = dict(document.get("clinical_report") or {})
+    summary = dict(document.get("summary") or {})
+    findings_sections = list(clinical_report.get("findings_sections") or [])
+    impression = list(document.get("impression") or [])
+    disclaimers = list(document.get("disclaimers") or [])
+
+    return f"""<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{_escape(case_header.get("title") or document.get("title") or "Cervical Spine MRI Analysis Report")}</title>
+    <style>{_base_css()}</style>
+  </head>
+  <body>
+    <section class="page">
+      <div class="eyebrow">Radiology-Style Summary</div>
+      <h1>{_escape(case_header.get("title") or document.get("title") or "Cervical Spine MRI Analysis Report")}</h1>
+      <div class="header-grid">
+        {_meta_cell("Exam", clinical_report.get("exam"))}
+        {_meta_cell("Technique", clinical_report.get("technique"))}
+        {_meta_cell("Case ID", case_header.get("case_id"))}
+        {_meta_cell("Submitted", case_header.get("submitted_at"))}
+        {_meta_cell("Source File", case_header.get("source_filename"))}
+        {_meta_cell("Patient Context", case_header.get("patient_summary"))}
+        {_meta_cell("Summary", _render_summary(summary))}
+      </div>
+
+      <h2>Findings</h2>
+      {_render_findings_sections(findings_sections)}
+
+      <h2>Impression</h2>
+      {_render_ordered_list(impression) if impression else "<p>No impression bullets generated.</p>"}
+
+      <h2>Disclaimers</h2>
+      {_render_unordered_list(disclaimers) if disclaimers else "<p>No disclaimers provided.</p>"}
+    </section>
+  </body>
+</html>
+"""
+
+
+def render_technical_report_html(document: dict[str, Any]) -> str:
+    """Render the explainability-focused technical report.
+
+    This variant keeps the appendix, raw structured outputs, provenance, and
+    quality notes for AI explainability and auditability.
+    """
     case_header = dict(document.get("case_header") or {})
     clinical_report = dict(document.get("clinical_report") or {})
     findings = dict(document.get("findings") or {})
@@ -27,162 +82,8 @@ def render_report_html(document: dict[str, Any]) -> str:
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{_escape(case_header.get("title") or document.get("title") or "Cervical Spine MRI Analysis Report")}</title>
-    <style>
-      :root {{
-        --ink: #162033;
-        --muted: #566173;
-        --line: #d7dee8;
-        --panel: #f6f8fb;
-        --accent: #12395b;
-        --warn: #8a5a00;
-        --flag: #7a1f1f;
-      }}
-      * {{ box-sizing: border-box; }}
-      body {{
-        margin: 0;
-        background: #eef2f7;
-        color: var(--ink);
-        font: 14px/1.45 "Georgia", "Times New Roman", serif;
-      }}
-      .page {{
-        width: 8.5in;
-        min-height: 11in;
-        margin: 24px auto;
-        background: white;
-        padding: 0.7in 0.75in 0.8in;
-        box-shadow: 0 18px 40px rgba(14, 30, 52, 0.14);
-      }}
-      .page + .page {{
-        page-break-before: always;
-      }}
-      .eyebrow {{
-        font: 600 11px/1.2 "Helvetica Neue", Arial, sans-serif;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: var(--muted);
-        margin-bottom: 8px;
-      }}
-      h1 {{
-        font: 700 24px/1.15 "Helvetica Neue", Arial, sans-serif;
-        margin: 0 0 14px;
-        color: var(--accent);
-      }}
-      h2 {{
-        font: 700 13px/1.2 "Helvetica Neue", Arial, sans-serif;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        margin: 22px 0 8px;
-        color: var(--accent);
-      }}
-      h3 {{
-        font: 700 14px/1.2 "Helvetica Neue", Arial, sans-serif;
-        margin: 16px 0 6px;
-      }}
-      p {{
-        margin: 0 0 10px;
-      }}
-      .header-grid {{
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px 18px;
-        padding: 14px 16px;
-        background: linear-gradient(180deg, #fbfcfe 0%, #f2f6fb 100%);
-        border: 1px solid var(--line);
-        border-radius: 10px;
-      }}
-      .meta-label {{
-        font: 600 10px/1.2 "Helvetica Neue", Arial, sans-serif;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--muted);
-        margin-bottom: 3px;
-      }}
-      .meta-value {{
-        font: 14px/1.35 "Helvetica Neue", Arial, sans-serif;
-      }}
-      .section-block {{
-        margin-top: 14px;
-      }}
-      .section-body {{
-        white-space: pre-line;
-      }}
-      ol {{
-        margin: 8px 0 0 20px;
-        padding: 0;
-      }}
-      li {{
-        margin: 0 0 6px;
-      }}
-      ul {{
-        margin: 8px 0 0 18px;
-        padding: 0;
-      }}
-      table {{
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 8px;
-      }}
-      th, td {{
-        border: 1px solid var(--line);
-        padding: 7px 8px;
-        vertical-align: top;
-        text-align: left;
-      }}
-      th {{
-        background: var(--panel);
-        font: 600 11px/1.2 "Helvetica Neue", Arial, sans-serif;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-      }}
-      .pill {{
-        display: inline-block;
-        padding: 2px 7px;
-        border-radius: 999px;
-        background: #edf2f7;
-        font: 600 11px/1.2 "Helvetica Neue", Arial, sans-serif;
-        color: var(--muted);
-      }}
-      .pill-flag {{
-        background: #f9e8e8;
-        color: var(--flag);
-      }}
-      .pill-review {{
-        background: #fff5df;
-        color: var(--warn);
-      }}
-      .pill-within {{
-        background: #e6f5ea;
-        color: #21623c;
-      }}
-      .mono {{
-        font-family: "SFMono-Regular", Menlo, Consolas, monospace;
-        font-size: 12px;
-      }}
-      pre {{
-        margin: 8px 0 0;
-        padding: 12px;
-        border-radius: 8px;
-        border: 1px solid var(--line);
-        background: #fbfcfe;
-        overflow-x: auto;
-        white-space: pre-wrap;
-      }}
-      .small {{
-        color: var(--muted);
-        font-size: 12px;
-      }}
-      @media print {{
-        body {{ background: white; }}
-        .page {{
-          margin: 0;
-          width: auto;
-          min-height: auto;
-          box-shadow: none;
-          padding: 0.5in 0.6in 0.65in;
-        }}
-      }}
-    </style>
+    <title>{_escape(case_header.get("title") or document.get("title") or "Cervical Spine MRI Analysis Report")} - Technical</title>
+    <style>{_base_css()}</style>
   </head>
   <body>
     <section class="page">
@@ -228,6 +129,169 @@ def render_report_html(document: dict[str, Any]) -> str:
   </body>
 </html>
 """
+
+
+def render_report_html(document: dict[str, Any]) -> str:
+    """Backward-compatible alias for the technical/explainability variant."""
+    return render_technical_report_html(document)
+
+
+def _base_css() -> str:
+    return """
+      :root {
+        --ink: #162033;
+        --muted: #566173;
+        --line: #d7dee8;
+        --panel: #f6f8fb;
+        --accent: #12395b;
+        --warn: #8a5a00;
+        --flag: #7a1f1f;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: #eef2f7;
+        color: var(--ink);
+        font: 14px/1.45 "Georgia", "Times New Roman", serif;
+      }
+      .page {
+        width: 8.5in;
+        min-height: 11in;
+        margin: 24px auto;
+        background: white;
+        padding: 0.7in 0.75in 0.8in;
+        box-shadow: 0 18px 40px rgba(14, 30, 52, 0.14);
+      }
+      .page + .page {
+        page-break-before: always;
+      }
+      .eyebrow {
+        font: 600 11px/1.2 "Helvetica Neue", Arial, sans-serif;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+      h1 {
+        font: 700 24px/1.15 "Helvetica Neue", Arial, sans-serif;
+        margin: 0 0 14px;
+        color: var(--accent);
+      }
+      h2 {
+        font: 700 13px/1.2 "Helvetica Neue", Arial, sans-serif;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin: 22px 0 8px;
+        color: var(--accent);
+      }
+      h3 {
+        font: 700 14px/1.2 "Helvetica Neue", Arial, sans-serif;
+        margin: 16px 0 6px;
+      }
+      p {
+        margin: 0 0 10px;
+      }
+      .header-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 18px;
+        padding: 14px 16px;
+        background: linear-gradient(180deg, #fbfcfe 0%, #f2f6fb 100%);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+      .meta-label {
+        font: 600 10px/1.2 "Helvetica Neue", Arial, sans-serif;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 3px;
+      }
+      .meta-value {
+        font: 14px/1.35 "Helvetica Neue", Arial, sans-serif;
+      }
+      .section-block {
+        margin-top: 14px;
+      }
+      .section-body {
+        white-space: pre-line;
+      }
+      ol {
+        margin: 8px 0 0 20px;
+        padding: 0;
+      }
+      li {
+        margin: 0 0 6px;
+      }
+      ul {
+        margin: 8px 0 0 18px;
+        padding: 0;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 8px;
+      }
+      th, td {
+        border: 1px solid var(--line);
+        padding: 7px 8px;
+        vertical-align: top;
+        text-align: left;
+      }
+      th {
+        background: var(--panel);
+        font: 600 11px/1.2 "Helvetica Neue", Arial, sans-serif;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .pill {
+        display: inline-block;
+        padding: 2px 7px;
+        border-radius: 999px;
+        background: #edf2f7;
+        font: 600 11px/1.2 "Helvetica Neue", Arial, sans-serif;
+        color: var(--muted);
+      }
+      .pill-flag {
+        background: #f9e8e8;
+        color: var(--flag);
+      }
+      .pill-review {
+        background: #fff5df;
+        color: var(--warn);
+      }
+      .pill-within {
+        background: #e6f5ea;
+        color: #21623c;
+      }
+      .mono {
+        font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+        font-size: 12px;
+      }
+      pre {
+        margin: 8px 0 0;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: #fbfcfe;
+        overflow-x: auto;
+        white-space: pre-wrap;
+      }
+      .small {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      @media print {
+        body { background: white; }
+        .page {
+          margin: 0;
+          width: auto;
+          min-height: auto;
+          box-shadow: none;
+          padding: 0.5in 0.6in 0.65in;
+        }
+      }
+    """
 
 
 def _render_findings_sections(sections: list[dict[str, Any]]) -> str:

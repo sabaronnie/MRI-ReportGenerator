@@ -12,7 +12,11 @@ Current v1 implementation:
 
 - `builder.py` consumes the post-interpretation handoff contract and emits a
   normalized report document for renderers
-- `render_html.py` and `render_pdf.py` remain lightweight scaffolds for now
+- `render_html.py` renders two variants:
+  - user-facing clinical/radiology-style report
+  - technical/explainability report
+- `render_pdf.py` exposes matching PDF entry points that currently return the
+  print-ready HTML bytes their eventual PDF backend should consume
 
 Input contract:
 
@@ -47,3 +51,11 @@ The normalized document model is intended to contain:
 - quality / caveat sections
 - disclaimers
 - a technical appendix / provenance section for explainability
+
+Output variants:
+
+- Clinical report:
+  user-targeted PDF/HTML with findings, impression, and disclaimers only
+- Technical report:
+  explainability-targeted PDF/HTML with structured findings table, quality notes,
+  threshold provenance, and raw structured data appendix

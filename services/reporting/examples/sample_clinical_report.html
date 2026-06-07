@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cervical Spine MRI Analysis Report</title>
+    <style>
+      :root {
+        --ink: #162033;
+        --muted: #566173;
+        --line: #d7dee8;
+        --panel: #f6f8fb;
+        --accent: #12395b;
+        --warn: #8a5a00;
+        --flag: #7a1f1f;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: #eef2f7;
+        color: var(--ink);
+        font: 14px/1.45 "Georgia", "Times New Roman", serif;
+      }
+      .page {
+        width: 8.5in;
+        min-height: 11in;
+        margin: 24px auto;
+        background: white;
+        padding: 0.7in 0.75in 0.8in;
+        box-shadow: 0 18px 40px rgba(14, 30, 52, 0.14);
+      }
+      .page + .page {
+        page-break-before: always;
+      }
+      .eyebrow {
+        font: 600 11px/1.2 "Helvetica Neue", Arial, sans-serif;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+      h1 {
+        font: 700 24px/1.15 "Helvetica Neue", Arial, sans-serif;
+        margin: 0 0 14px;
+        color: var(--accent);
+      }
+      h2 {
+        font: 700 13px/1.2 "Helvetica Neue", Arial, sans-serif;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin: 22px 0 8px;
+        color: var(--accent);
+      }
+      h3 {
+        font: 700 14px/1.2 "Helvetica Neue", Arial, sans-serif;
+        margin: 16px 0 6px;
+      }
+      p {
+        margin: 0 0 10px;
+      }
+      .header-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 18px;
+        padding: 14px 16px;
+        background: linear-gradient(180deg, #fbfcfe 0%, #f2f6fb 100%);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+      .meta-label {
+        font: 600 10px/1.2 "Helvetica Neue", Arial, sans-serif;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 3px;
+      }
+      .meta-value {
+        font: 14px/1.35 "Helvetica Neue", Arial, sans-serif;
+      }
+      .section-block {
+        margin-top: 14px;
+      }
+      .section-body {
+        white-space: pre-line;
+      }
+      ol {
+        margin: 8px 0 0 20px;
+        padding: 0;
+      }
+      li {
+        margin: 0 0 6px;
+      }
+      ul {
+        margin: 8px 0 0 18px;
+        padding: 0;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 8px;
+      }
+      th, td {
+        border: 1px solid var(--line);
+        padding: 7px 8px;
+        vertical-align: top;
+        text-align: left;
+      }
+      th {
+        background: var(--panel);
+        font: 600 11px/1.2 "Helvetica Neue", Arial, sans-serif;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .pill {
+        display: inline-block;
+        padding: 2px 7px;
+        border-radius: 999px;
+        background: #edf2f7;
+        font: 600 11px/1.2 "Helvetica Neue", Arial, sans-serif;
+        color: var(--muted);
+      }
+      .pill-flag {
+        background: #f9e8e8;
+        color: var(--flag);
+      }
+      .pill-review {
+        background: #fff5df;
+        color: var(--warn);
+      }
+      .pill-within {
+        background: #e6f5ea;
+        color: #21623c;
+      }
+      .mono {
+        font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+        font-size: 12px;
+      }
+      pre {
+        margin: 8px 0 0;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: #fbfcfe;
+        overflow-x: auto;
+        white-space: pre-wrap;
+      }
+      .small {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      @media print {
+        body { background: white; }
+        .page {
+          margin: 0;
+          width: auto;
+          min-height: auto;
+          box-shadow: none;
+          padding: 0.5in 0.6in 0.65in;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <section class="page">
+      <div class="eyebrow">Radiology-Style Summary</div>
+      <h1>Cervical Spine MRI Analysis Report</h1>
+      <div class="header-grid">
+        <div><div class="meta-label">Exam</div><div class="meta-value">MRI cervical spine</div></div>
+        <div><div class="meta-label">Technique</div><div class="meta-value">Automated analysis of sagittal cervical spine MRI. Research-use structured interpretation only; not a substitute for radiologist review.</div></div>
+        <div><div class="meta-label">Case ID</div><div class="meta-value">scan_demo_c5</div></div>
+        <div><div class="meta-label">Submitted</div><div class="meta-value">2026-06-07T14:10:00Z</div></div>
+        <div><div class="meta-label">Source File</div><div class="meta-value">scan.nii.gz</div></div>
+        <div><div class="meta-label">Patient Context</div><div class="meta-value">Male, 42 years, 178 cm</div></div>
+        <div><div class="meta-label">Summary</div><div class="meta-value">4 rows, 3 flagged, 1 syndromes</div></div>
+      </div>
+
+      <h2>Findings</h2>
+      <div class="section-block"><h3>Alignment</h3><p class="section-body">Cervical alignment is straightened / low lordosis. C3-C7 Cobb angle measures -2.0 deg. Approximate classification only: derived from C3-C7 Cobb on supine MRI.</p></div><div class="section-block"><h3>Level-Specific Findings</h3><p class="section-body">At C5, functional canal / dural-sac AP minimum (SCT) 9.8 mm (stenosis_provisional); space available for the cord (canal AP - cord AP) 2.7 mm (high_risk); cord T2-hyperintensity screen (myelomalacia) 1.0 present (signal_anomaly_present).</p></div><div class="section-block"><h3>Cord / Syndrome Pattern</h3><p class="section-body">C5: pattern consistent with possible cervical myelopathy; clinical correlation required</p></div>
+
+      <h2>Impression</h2>
+      <ol><li>C5: pattern consistent with possible cervical myelopathy; clinical correlation required</li><li>C5: functional canal / dural-sac AP minimum (SCT) 9.8 mm (stenosis_provisional).</li><li>C5: space available for the cord (canal AP - cord AP) 2.7 mm (high_risk).</li><li>C5: cord T2-hyperintensity screen (myelomalacia) 1.0 present (signal_anomaly_present).</li><li>Alignment: straightened / low lordosis; C3-C7 Cobb angle -2.0 deg.</li></ol>
+
+      <h2>Disclaimers</h2>
+      <ul><li>This is a research tool, not a medical device. Not for clinical diagnosis.</li><li>Measurements acquired on supine MRI; functional radiographs may differ.</li></ul>
+    </section>
+  </body>
+</html>
