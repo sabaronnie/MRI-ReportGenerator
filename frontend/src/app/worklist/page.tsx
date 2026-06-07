@@ -11,12 +11,12 @@ export default async function WorklistPage() {
   const cases = await listCases();
   const canUpload = user.role !== "viewer";
   return (
-    <div className="mx-auto max-w-6xl px-6 py-8">
-      <div className="mb-6 flex items-baseline justify-between">
+    <div className="mx-auto max-w-6xl px-6 py-10">
+      <div className="mb-6 flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Worklist</h1>
-          <p className="text-sm text-muted-foreground">
-            {cases.length} {cases.length === 1 ? "case" : "cases"}
+          <h1 className="font-serif text-[28px] font-semibold leading-none tracking-tight">Worklist</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {cases.length} {cases.length === 1 ? "case" : "cases"} · cervical-spine MRI
           </p>
         </div>
         {canUpload ? (
@@ -25,7 +25,7 @@ export default async function WorklistPage() {
           </Link>
         ) : null}
       </div>
-      <div className="overflow-hidden rounded-lg border">
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
         <CaseTable cases={cases} />
       </div>
     </div>
