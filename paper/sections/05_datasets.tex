@@ -1,0 +1,44 @@
+\section{Datasets}
+\label{sec:data}
+
+\subsection{Healthy anchor: Spine-Generic}
+Spine-Generic~\cite{spinegeneric} is an open, multi-vendor, multi-site collection of cervical T2
+acquisitions from healthy adult volunteers. We use 12 controls spanning several vendors/sites (amu,
+beijingGE, brnoUhb, fslAchieva) as the healthy anchor. Because these are young healthy subjects, their
+canals are wide and their discs are well-hydrated --- the correct reference for ``normal.''
+
+\subsection{Symptomatic cohort: MMCSD}
+MMCSD~\cite{mmcsd} (Yu~et~al., \emph{Scientific Data}, \texttt{doi:10.1038/s41597-025-05403-z}; Synapse
+\texttt{syn63903115}) contains 250 surgical cervical-spondylosis patients with real NIfTI volumes
+(sagittal T1/T2, axial T2, axial CT) and, critically, \emph{per-case labels}: cervical spondylotic
+myelopathy (CSM, $n=108$), radiculopathy (CSR, $n=122$), or mixed ($n=20$), plus pre/post operative VAS
+neck-pain scores and \emph{per-level lesion flags} (which segments C2--3 \ldots C7--T1 carry a lesion).
+This per-case and per-level labelling is exactly the stratification information that other cervical MRI
+sets lack, which is why MMCSD is our symptomatic cohort. It is distributed under CC~BY-NC-ND~4.0, so it
+is used for non-commercial validation only and neither the images nor any derived masks are redistributed.
+We validate on a balanced starter subset of 10 cases (5 CSM, 5 CSR) selected to carry mid-cervical
+lesions; the implications of this selection are discussed in Section~\ref{sec:limits}.
+
+\subsection{Why MMCSD validates multiple groups, not just one}
+A common misconception is that a ``spondylosis'' dataset only tests spondylolisthesis. Spondyl\emph{osis}
+is the broad degenerative umbrella (disc degeneration, osteophytes, canal stenosis, cord compression,
+loss of lordosis); spondyl\emph{olisthesis} (vertebral slip) is a minor, incidental part of it. MMCSD's
+CSM cases are a canal/cord (Group 3) and cord-signal (Group 5.1) disease, and its CSR cases are a disc
+(Group 2) disease. The cohort therefore exercises Groups 2, 3, 4, and 5; it does \emph{not} exercise the
+vertebral compression axis (Group 1 \hahp{}), because spondylosis does not cause compression fractures.
+
+\subsection{Duke CSpineSeg and the ground-truth gap}
+Duke CSpineSeg~\cite{duke2025} offers clinical cervical T2 with expert vertebra/disc masks but no
+per-case pathology labels and no per-case measurements; it is useful only for distribution-level
+comparison. Across repeated, exhaustive searches (multiple platform sweeps and multi-agent literature
+workflows) we confirmed that \emph{no} public dataset pairs cervical MRI with per-case expert
+measurements --- the persistent ``KIND-B gap.'' The single dataset pairing cervical MRI with expert Cobb
+angles (F1000 ``Data of Cervical Spine,'' $n=77$ spondylosis) stores images as PACS screenshots, not
+segmentable volumes, so it serves only as a distribution reference. This absence is the reason our
+validation is threshold-crossing rather than per-case accuracy.
+
+\subsection{Data governance}
+NIfTI/DICOM volumes and derived masks are never committed to version control; they live in local storage
+and cloud drives outside the repository, and the \texttt{.gitignore} additionally blocks the cohort
+directories, mask folders, and clinical-label spreadsheets. Spine-Generic (open) may be shared as a
+viewer sample; MMCSD and Duke (CC~BY-NC-ND) may not.

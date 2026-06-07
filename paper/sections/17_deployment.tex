@@ -1,0 +1,33 @@
+\section{Deployment and Engineering}
+\label{sec:deploy}
+
+\subsection{Service decomposition}
+The system is built as an external entry point (EEP) over internal processing services (IEPs):
+segmentation, measurements, interpretation, and reporting, each independently containerizable. The
+measurement service registers components in a dependency-ordered registry and instruments each with
+Prometheus metrics (\texttt{measurement\_duration\_seconds}, \texttt{measurement\_results\_total},
+\texttt{measurement\_pathology\_flags\_total}). The segmentation engines run on GPU; the measurement and
+interpretation layers are CPU-only, so the heavy GPU stage is isolated from the light, frequently changing
+measurement logic.
+
+\subsection{The data contract}
+A versioned data contract (v0.1) is the single coupling point between the science track and the
+frontend/infrastructure track: it freezes the shapes of the measurements dictionary, flags dictionary,
+per-component status, and the interpreted-measurement container (with the four-value status vocabulary),
+and proposes the case/job/upload/error/report envelopes. The frontend builds against a mock that matches
+these shapes, and the real measurement code drops in behind them unchanged. A companion contract specifies
+the NIfTI volume$+$mask delivery and label map for an interactive WebGL viewer.
+
+\subsection{Reproducibility and governance}
+Segmentation is reproducible from versioned Colab notebooks (TSS$+$SCT in one session, SPINEPS in a
+separate session because of the numpy pin). The measurement and validation steps are CPU-only and
+reproducible from committed scripts. Patient data (NIfTI/DICOM) and derived masks are never committed;
+licensed datasets (MMCSD, Duke; CC~BY-NC-ND) are used for non-commercial validation only and not
+redistributed, while the openly licensed Spine-Generic sample may be shared (e.g.\ as a viewer fixture).
+
+\subsection{Development discipline}
+The project follows a strict session-handoff protocol (a living \texttt{SESSION\_LOG} and a curated
+\texttt{DEVELOPMENT\_JOURNEY}), granular commits, branch-per-feature with teammate-code changes routed
+through pull requests, and a hard no-secrets/no-patient-data-in-git rule. Every clinical claim carries a
+citation, and uncertain numbers are marked rather than invented --- the same honesty discipline that the
+validation embodies.

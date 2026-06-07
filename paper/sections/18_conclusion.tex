@@ -1,0 +1,29 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+MRI-ReportGenerator is an end-to-end, application-positioned pipeline that turns a single sagittal T2
+cervical MRI into a structured, literature-grounded, no-diagnosis report. Its contribution is disciplined
+engineering rather than a new algorithm: composing three validated segmentation engines, organizing
+measurements into five clinically meaningful groups, grounding every threshold in a cited primary source
+with explicit modality caveats, and --- most importantly --- validating the assembled system honestly.
+
+Because no public dataset pairs cervical MRI with per-case expert measurements, we adopted a
+threshold-crossing design built on the principle that measurements are disease-agnostic geometric/signal
+detectors anchored on healthy norms. On 12 healthy and 10 symptomatic real cervical MRIs, the canal/cord
+group separated strongly ($p=0.0001$), the SPINEPS endplate-voxel Cobb method read correct lordosis and a
+reduced value under pathology, the vertebral compression screen was correctly silent on a non-compression
+cohort, and the validation harness additionally detected and localized a genuine sign-level bug in the
+disc-height index. Four of five groups behave correctly, and our own methods required no fixes ---
+independently confirming the iterative development work.
+
+The honest limitations are clear: small, partly selected samples; a single (severe) disease spectrum; no
+per-case ground truth; an under-tested compression-fracture arm; a disc group pending a fix; and an
+interpretation layer pending its end-to-end run. The path forward is correspondingly concrete: fix the
+disc denominator with its author and re-validate; scale to a random MMCSD draw; pursue an institutional
+read for true accuracy; and complete the interpretation gap-filling and the deployed demonstration.
+
+The broader lesson is methodological. In a domain without ground truth, the most valuable engineering is
+not a clever model but a transparent chain of evidence --- cited thresholds, documented mistakes, kept
+negative results, precision distinguished from accuracy, and a validation that doubles as a bug detector.
+That chain, more than any single number, is what makes an automated clinical measurement tool trustworthy
+enough to put in front of a physician for review.

@@ -1,0 +1,29 @@
+\section{Methods: Segmentation}
+\label{sec:seg}
+
+We delegate segmentation to three pre-trained engines, each producing masks for the structures it is
+strongest on, on a common per-case grid.
+
+\paragraph{TotalSpineSeg (Groups 1, 2, 4).} Run with \texttt{--iso}, TSS produces a step-2 multi-label
+mask with per-vertebra labels (canal $=2$, C1$=11$ \ldots C7$=17$, T1$=21$\ldots) and disc labels
+(C2--C3$=63$ \ldots C6--C7$=67$, C7--T1$=71$), plus a level map and an isotropic input volume. The
+verified label conventions (notably the C7--T1 disc $=71$, and canal $=2$ as used by our measurement
+code) were confirmed against real output.
+
+\paragraph{Spinal Cord Toolbox (Group 3, Group 5.1).} \texttt{sct\_deepseg} segments the dural-sac/canal
+and the spinal cord as binary masks on the isotropic volume; \texttt{sct\_process\_segmentation
+-perslice -vert 2:7 -discfile <levels>} then yields per-slice AP diameters mapped to vertebral levels
+C2--C7. SCIseg (\texttt{sct\_deepseg lesion\_sci\_t2}) provides the cord T2-lesion mask for Group 5.1.
+SCT runs are aligned to the TSS level map so canal and cord measurements share a level index.
+
+\paragraph{SPINEPS (Group 4, C1 method).} SPINEPS predicts vertebra instances \emph{and} writes each
+vertebra's inferior-endplate sheet into the instance mask at label $100+X$ (C2$=102$ \ldots C7$=107$;
+superior endplates at $200+X$). These endplate voxels are the substrate for our best Cobb method
+(Section~\ref{sec:g4}). SPINEPS requires \texttt{numpy==2.0.2}, incompatible with the TSS/nnU-Net stack,
+so it runs in a separate environment/session.
+
+\paragraph{Engineering notes.} Segmentation runs on GPU (Colab A100). A subtle but important failure mode
+we encountered: clearing \texttt{LD\_LIBRARY\_PATH} in a subprocess (a workaround for one tool's bundled
+libraries) silently disabled CUDA for TotalSpineSeg, forcing CPU inference and a $\sim$35$\times$
+slowdown; the fix was to stop overriding the variable so PyTorch could find the CUDA driver. Such
+operational details are part of making a multi-tool pipeline actually run.
