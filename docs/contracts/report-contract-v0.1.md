@@ -130,3 +130,48 @@ A real instance ships in [`docs/contracts/samples/case-healthy.json`](samples/ca
 - Frontend builds the report view against [`docs/contracts/samples/case-healthy.json`](samples/case-healthy.json)'s `report` block + this schema; reads cut values/citations/disclaimers **from the response**, never hardcoded; treats `figure` as possibly `null`.
 - Reporting builds `/render` to emit exactly this `report` object + `artifact_refs`; validates against the same sample.
 - Treat every measurement/flag key as optional (a component can error — data contract §3).
+
+---
+
+## 9. End-to-end request workflow (what fires when a user submits a scan)
+
+```
+USER (browser)            FRONTEND            EEP (front-door)                 IEPs
+   |                         |                   |                              |
+   | login                   | POST /auth/login  |                              |
+   |------------------------>|------------------>| session (role)               |
+   |                         |                   |                              |
+   | drop DICOM.zip / .nii   | POST /cases       | validate + QC, create case,  |
+   |------------------------>|------------------>| enqueue job -> {case_id,      |
+   |                         |   {case_id,queued}| status:"queued"}             |
+   |                         |                   |                              |
+   |                         |                   |== async job ================ |
+   |                         |                   | 1 POST seg  ---------------> | segmentation (TSS[+SCT])
+   |                         |                   |   <-------- masks            |
+   |                         |                   | 2 POST measure ------------> | measurements -> core
+   |                         |                   |   <-------- {measurements,flags,components,interpretations}
+   |                         |                   | 3 POST /render ------------> | reporting -> {report, artifact_refs}
+   |                         |                   |   store artifacts; case.status=ready
+   |                         |                   |                              |
+   | (watch progress)        | GET /cases/{id}/job (poll)  -> stage queued->segmenting->measuring->interpreting->ready
+   | (worklist updates)      | GET /cases                  -> case appears, then flips to "ready" + triage badge
+   |                         |                   |                              |
+   | click the case          | GET /cases/{id}   | full case {case,job,measurements,flags,components,interpretations,report}
+   |   render report view <--|<------------------|                              |
+   |   - findings table  = interpretations.measurements[]                       |
+   |   - impressions     = report.impression[]                                 |
+   |   - disclaimers      = report.disclaimers[]                               |
+   |   interactive viewer    | GET /cases/{id}/volume + /mask  (NiiVue)        |
+   |   static figure (opt)   | GET /cases/{id}/figure.png                      |
+   |   download buttons      | GET /cases/{id}/report.pdf | /report.docx       |
+   |                         |                   |                              |
+   | radiologist signs       | POST /cases/{id}/sign-off   | report.status=signed, case.status=reviewed
+```
+
+**Key point for reporting:** the **frontend never calls `services/reporting/` directly.** Reporting is
+invoked **by the EEP** (step 3, internal `POST /render`) during the async job. The frontend only ever
+talks to the **EEP**, which serves the report (and PDF/DOCX/figure) it got back from reporting.
+
+**Endpoints the frontend uses (the full set):** `POST /auth/login`, `POST /cases`, `GET /cases`,
+`GET /cases/{id}`, `GET /cases/{id}/job`, `GET /cases/{id}/report.pdf`, `GET /cases/{id}/report.docx`,
+`GET /cases/{id}/figure.png`, `GET /cases/{id}/volume`, `GET /cases/{id}/mask`, `POST /cases/{id}/sign-off`.
