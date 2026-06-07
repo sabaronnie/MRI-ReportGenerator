@@ -10,30 +10,33 @@ import {
 } from "@/components/ui/table";
 
 export const metadata = { title: "Admin · Cervical MRI" };
+const HEAD = "text-xs font-medium uppercase tracking-wider text-muted-foreground";
 
 export default async function AdminPage() {
   await requireRole(["admin"]);
   return (
-    <div className="mx-auto max-w-4xl px-6 py-8">
-      <h1 className="text-2xl font-semibold tracking-tight">User management</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Demo directory — wired to a real user store later.
-      </p>
-      <div className="mt-6 overflow-hidden rounded-lg border">
+    <div className="mx-auto max-w-4xl px-6 py-10">
+      <h1 className="font-serif text-[28px] font-semibold tracking-tight">User management</h1>
+      <p className="mt-2 text-sm text-muted-foreground">Demo directory — wired to a real user store later.</p>
+      <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className={HEAD}>Name</TableHead>
+              <TableHead className={HEAD}>Email</TableHead>
+              <TableHead className={HEAD}>Role</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {DEMO_USERS.map((u) => (
-              <TableRow key={u.email}>
+              <TableRow key={u.email} className="hover:bg-accent/30">
                 <TableCell className="font-medium">{u.name}</TableCell>
-                <TableCell className="text-muted-foreground">{u.email}</TableCell>
-                <TableCell>{ROLE_LABEL[u.role]}</TableCell>
+                <TableCell className="font-mono text-xs text-muted-foreground">{u.email}</TableCell>
+                <TableCell>
+                  <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                    {ROLE_LABEL[u.role]}
+                  </span>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
