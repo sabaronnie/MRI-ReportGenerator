@@ -80,3 +80,17 @@ export async function signOffCase(id: string, signedBy: string): Promise<CaseEnv
     body: JSON.stringify({ signed_by: signedBy }),
   });
 }
+
+/** Viewer image sources (NiiVue). Mock: vendored /samples files. Live: EEP volume + TSS mask routes. */
+export function getViewerSources(id: string): { volumeUrl: string; maskUrl?: string } {
+  if (MODE === "mock") {
+    return {
+      volumeUrl: "/samples/sample_volume_T2.nii.gz",
+      maskUrl: "/samples/sample_mask_tss.nii.gz",
+    };
+  }
+  return {
+    volumeUrl: `${EEP_URL}/cases/${encodeURIComponent(id)}/volume`,
+    maskUrl: `${EEP_URL}/cases/${encodeURIComponent(id)}/mask?type=tss`,
+  };
+}

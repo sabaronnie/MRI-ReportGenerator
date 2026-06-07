@@ -1,15 +1,17 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCase } from "@/lib/api/client";
+import { getCase, getViewerSources } from "@/lib/api/client";
 import { CaseHeader } from "@/components/report/case-header";
 import { Impressions } from "@/components/report/impressions";
 import { FindingsTable } from "@/components/report/findings-table";
 import { Disclaimers } from "@/components/report/disclaimers";
+import { NiivueViewer } from "@/components/viewer/niivue-viewer";
 
 export default async function CasePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const data = await getCase(id).catch(() => null);
   if (!data) notFound();
+  const viewer = getViewerSources(id);
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-8">
@@ -26,9 +28,7 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
           <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Imaging
           </h2>
-          <div className="flex aspect-square items-center justify-center rounded-lg border bg-muted/30 text-sm text-muted-foreground">
-            Interactive viewer — next milestone
-          </div>
+          <NiivueViewer volumeUrl={viewer.volumeUrl} maskUrl={viewer.maskUrl} />
         </section>
 
         <section className="space-y-6">
