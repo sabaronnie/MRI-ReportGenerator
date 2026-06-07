@@ -62,9 +62,15 @@ export async function signOffCase(id: string, signedBy: string): Promise<CaseEnv
   if (MODE === "mock") {
     const c = mockStore.get(id);
     if (!c) throw new Error(`case ${id} not found`);
-    c.report.metadata.status = "signed";
-    c.report.metadata.signed_by = signedBy;
-    c.report.metadata.signed_at = new Date().toISOString();
+    const now = new Date().toISOString();
+    c.report.metadata = {
+      generated_at: c.report.metadata?.generated_at ?? now,
+      schema_version: c.report.metadata?.schema_version ?? "report-0.1",
+      reporting_version: c.report.metadata?.reporting_version,
+      status: "signed",
+      signed_by: signedBy,
+      signed_at: now,
+    };
     c.case.status = "reviewed";
     return structuredClone(c);
   }

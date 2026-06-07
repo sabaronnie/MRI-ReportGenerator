@@ -129,13 +129,15 @@ export interface ReportMetadata {
   signed_at: string | null;
 }
 export interface Report {
-  schema_version: string;
+  schema_version?: string;
   impression: Impression[];
   disclaimers: string[];
-  findings_by_level: { source: string; order: Level[]; highlight?: string[] };
-  figure: ReportFigure;
-  exports: ReportExports;
-  metadata: ReportMetadata;
+  // Everything below is 🟡/⚪ in the contract — the reporting service is still a scaffold,
+  // so current pipeline output omits these. Treat as optional (see data-contract §10).
+  findings_by_level?: { source: string; order: Level[]; highlight?: string[] };
+  figure?: ReportFigure;
+  exports?: ReportExports;
+  metadata?: ReportMetadata;
 }
 
 /** The full object returned by `GET /cases/{id}`. */

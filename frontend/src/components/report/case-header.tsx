@@ -5,7 +5,9 @@ import type { CaseEnvelope } from "@/lib/api/contract";
 
 export function CaseHeader({ data }: { data: CaseEnvelope }) {
   const { case: c, report } = data;
-  const signed = report.metadata.status === "signed";
+  const meta = report.metadata;
+  const exports = report.exports;
+  const signed = meta?.status === "signed";
   return (
     <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
       <div>
@@ -17,18 +19,26 @@ export function CaseHeader({ data }: { data: CaseEnvelope }) {
           <StatusPill status={c.status} />
           <span>·</span>
           <span>{c.modality}</span>
-          <span>·</span>
-          <span>report: {report.metadata.status}</span>
-          {signed && report.metadata.signed_by ? <span>· signed by {report.metadata.signed_by}</span> : null}
+          {meta?.status ? (
+            <>
+              <span>·</span>
+              <span>report: {meta.status}</span>
+            </>
+          ) : null}
+          {signed && meta?.signed_by ? <span>· signed by {meta.signed_by}</span> : null}
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <a className={buttonVariants({ variant: "outline", size: "sm" })} href={report.exports.pdf_url}>
-          PDF
-        </a>
-        <a className={buttonVariants({ variant: "outline", size: "sm" })} href={report.exports.docx_url}>
-          DOCX
-        </a>
+        {exports?.pdf_url ? (
+          <a className={buttonVariants({ variant: "outline", size: "sm" })} href={exports.pdf_url}>
+            PDF
+          </a>
+        ) : null}
+        {exports?.docx_url ? (
+          <a className={buttonVariants({ variant: "outline", size: "sm" })} href={exports.docx_url}>
+            DOCX
+          </a>
+        ) : null}
         {/* Sign-off action is wired in the auth/roles milestone (radiologist only). */}
         <Button size="sm" disabled={signed} title="Wired with auth (radiologist only)">
           {signed ? "Signed" : "Sign off"}
