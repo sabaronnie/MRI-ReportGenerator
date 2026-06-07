@@ -8,8 +8,8 @@ This package contains the reusable Group 5 runtime code that is part of the meas
 - `myelomalacia_specificity.py` — SCIseg healthy-specificity scoring helpers
 - `pipeline.py` — end-to-end assembly helper for a step2 mask plus optional lesion mask
 
-Research/support material that used to live in the root `group5/` folder is now colocated here:
+Research/support material that used to live in the root `group5/` folder now lives outside the
+runtime package:
 
-- `research/` — validation helpers, exploratory scripts, and alignment / SCIseg comparison work
-- `../tests/group5/` — legacy Group 5 tests now under the shared measurements test tree
-- `README.group5.md` — the imported standalone Group 5 documentation snapshot
+- `research/group5/` — validation helpers, exploratory scripts, alignment experiments, and the legacy imported README
+- `../tests/group5/` — runtime-facing Group 5 unit tests under the shared measurements test tree

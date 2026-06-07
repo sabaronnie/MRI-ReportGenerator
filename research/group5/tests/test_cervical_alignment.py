@@ -9,7 +9,7 @@ import math
 
 import numpy as np
 
-from services.measurements.group5.research.cervical_alignment import (
+from research.group5.cervical_alignment import (
     cobb_from_tangents,
     vertebra_inf_tangent,
     slip_mm,

@@ -10,8 +10,8 @@ for physician review — never diagnoses.** Developed standalone in `~/dev/group
 the repo, to keep heavy imaging data off git) and imported here.
 
 Core runtime code that is now part of the pipeline lives under
-[`services/measurements/group5/`](./). Research/support material from the old standalone layout is
-now colocated in this same area under `research/` and `../tests/group5/`.
+[`services/measurements/group5/`](../../services/measurements/group5/). This folder now contains
+the non-runtime Group 5 research/support material plus research-only tests.
 
 > **Data is NOT in git.** All NIfTI/DICOM (Duke, Spine-Generic, RSNA) live locally / on Drive and
 > are `.gitignore`d. Segmentation (TotalSpineSeg / SCIseg) runs on Colab GPU; only the lightweight
@@ -88,7 +88,7 @@ now colocated in this same area under `research/` and `../tests/group5/`.
   `not_assessed`. Not revisitable without a contrast-enhanced acquisition.
 
 ## Colab notebooks (GPU segmentation)
-These now live under [`colab/group5/`](../colab/group5/).
+These now live under [`colab/group5/`](../../colab/group5/).
 
 - `colab/group5/colab_segment_tss_fracture.ipynb`, `colab/group5/colab_segment_spinegeneric.ipynb` — TotalSpineSeg (full mode).
 - `colab/group5/colab_sciseg_spinegeneric.ipynb` — SCIseg on the healthy cohort (5.1 specificity).
@@ -96,6 +96,8 @@ These now live under [`colab/group5/`](../colab/group5/).
 - `colab/group5/colab_spineps_spinegeneric.ipynb` — SPINEPS endplate-voxel alignment workflow.
 
 ## Run / test
-- Interpreter: `~/dev/group5-proto/.venv/bin/python`. Tests: `pytest group5/` (run from repo root or the proto).
+- Interpreter: `~/dev/group5-proto/.venv/bin/python`.
+- Runtime tests: `pytest services/measurements/tests/group5`
+- Research tests: `pytest research/group5/tests`
 - Audit of the teammates' Groups 1–4 measurement code (with the verified research fixes):
   `AUDIT_groups1-4_measurements.md`.
