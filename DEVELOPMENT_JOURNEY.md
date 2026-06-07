@@ -267,6 +267,41 @@ keep it honest and specific (numbers, dates, evidence, citations). Chronological
   healthy on MRI did NOT materialize (0% healthy). Full numbers + reproduction:
   `docs/validation/results-run1-2026-06-07.md`.
 
+## J15 — Full-cohort validation with statistics: G3 separates at p=0.0001; G4-C1 directional; G1 correctly null
+- **What we did:** ran every group on the full cohort (12 healthy Spine-Generic + 10 MMCSD unhealthy) and
+  added Mann-Whitney U tests + per-measure figures (`docs/validation/results-full-2026-06-08.md`).
+- **G3 (canal/cord/SAC) — VALIDATED:** canal-AP min healthy 11.7 vs unhealthy 8.6 mm (**p=0.0001**); SAC
+  min 4.7 vs 2.3 mm (**p=0.0001**); cord AP 6.3 vs 5.5 mm (p=0.009). Distributions barely touch. Strong
+  threshold-crossing on real MRI.
+- **G4 Cobb C1 (SPINEPS endplate) — method-validated, directional:** healthy +15.2° (matches F1000
+  literature 15.4°) vs unhealthy +8.8° (loss of lordosis), but p=0.13 (n.s. at n=10/11). C1 dramatically
+  cleaner than canal-cut (which gave a +56° healthy outlier). Validated the C1 *method* on an independent
+  cohort; as a *discriminator* it is directional only (alignment is less specific than stenosis for CSM).
+- **G1 Ha/Hp — correctly NULL:** 0.81 vs 0.80, p=0.92, 0 flags either cohort. Expected and correct —
+  spondylosis is not compression fracture (true negatives), empirically confirming MMCSD doesn't exercise
+  the compression axis. Re-confirms 5.2 specificity on all 12 healthy.
+- **Lesson:** the validation behaves as designed — strong where the disease lives (stenosis→G3), directional
+  where the metric is less specific (alignment→G4), and silent where the cohort has no such pathology
+  (compression→G1). Honest caveat logged: the 10 unhealthy were lesion-selected, so a random MMCSD draw is
+  the next test; n is small; no GT → separation not sens/spec.
+
+## J16 — Validation as a bug detector: G2 disc (DHI + AP bulge) read BACKWARDS → real bug, root-caused
+- **What we found:** on the same cohort, **both** Group-2 disc metrics fail the threshold-crossing test by
+  pointing the WRONG way: DHI healthy 0.23 vs unhealthy 0.26 (healthy looks *more* degenerated, p=0.05,
+  wrong sign), and AP bulge healthy 2.95 vs unhealthy 0.91 mm (healthy looks *more* bulged, p=0.005, wrong
+  sign). A metric that scores healthy worse than pathology is invalid by construction.
+- **Root cause (confirmed via intermediates):** the DHI denominator (adjacent VB middle height) is
+  **over-measured at the junction levels** — healthy `h_upperVB_middle_mm` C2-C3 = 26.6 mm, C7-T1 = 20.5 mm
+  vs the true ~12-13 mm — collapsing DHI and firing `reduced_dhi` 77% on healthy. Mid-cervical VB heights
+  (C3-C6 ≈ 12-14 mm) are fine → the bug is level-specific (C2 / cervicothoracic junction). This is exactly
+  the denominator discrepancy Mohammad predicted in his G2 handoff.
+- **What we did NOT do (and why):** did not blind-rewrite Mohammad's Duke-tuned disc algorithm overnight —
+  per our teammate-code rule, a fix to his code without his review and without GT would be irresponsible.
+  Documented + flagged with the exact evidence + a candidate fix (robustify `measure_adjacent_body_slice`
+  so junction/C2 VB heights aren't over-measured), to be done with him, then re-validate.
+- **Lesson:** the validation harness earned its keep — it caught a real, sign-level measurement bug that a
+  unit test on clean shapes would miss, and localized it to a specific denominator at specific levels.
+
 ---
 *Open methodology gaps tracked elsewhere:* teammate threshold/citation fixes (disc DHI<0.30, bulge flat-wall,
 Pfirrmann cut-points) — see `group5/AUDIT_groups1-4_measurements.md`; C6/C7 Cobb **precision** is now closed by
