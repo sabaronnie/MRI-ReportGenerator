@@ -1,6 +1,7 @@
 import { login } from "@/lib/auth/actions";
 import { DEMO_USERS, ROLE_LABEL } from "@/lib/auth/users";
 import { Reveal, Stagger, StaggerItem } from "@/components/motion/reveal";
+import { Scan } from "lucide-react";
 
 export const metadata = { title: "Sign in · Cervical MRI" };
 
@@ -14,13 +15,7 @@ export default async function LoginPage({
     <div className="mx-auto flex min-h-[78vh] max-w-md flex-col justify-center px-6">
       <Reveal className="mb-8 text-center">
         <span className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-          <svg width="24" height="24" viewBox="0 0 16 16" fill="none" aria-hidden>
-            <line x1="8" y1="2" x2="8" y2="14" stroke="currentColor" strokeWidth="0.9" opacity="0.45" />
-            <ellipse cx="8" cy="3" rx="3" ry="1.35" fill="currentColor" />
-            <ellipse cx="8" cy="6.4" rx="3.5" ry="1.45" fill="currentColor" />
-            <ellipse cx="8" cy="9.8" rx="3.5" ry="1.45" fill="currentColor" />
-            <ellipse cx="8" cy="13" rx="3" ry="1.35" fill="currentColor" />
-          </svg>
+          <Scan className="h-6 w-6" strokeWidth={2} />
         </span>
         <h1 className="font-serif text-3xl font-semibold tracking-tight">Cervical MRI Reporting</h1>
         <p className="mt-2 text-sm text-muted-foreground">Demo accounts — choose a role to continue.</p>

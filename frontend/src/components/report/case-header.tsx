@@ -3,6 +3,7 @@ import { TriageBadge } from "@/components/worklist/triage-badge";
 import { StatusPill } from "@/components/worklist/status-pill";
 import type { CaseEnvelope } from "@/lib/api/contract";
 import { SignOffButton } from "./sign-off-button";
+import { BadgeCheck } from "lucide-react";
 
 export function CaseHeader({ data, canSign }: { data: CaseEnvelope; canSign: boolean }) {
   const { case: c, report } = data;
@@ -42,9 +43,7 @@ export function CaseHeader({ data, canSign }: { data: CaseEnvelope; canSign: boo
         ) : null}
         {signed ? (
           <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden>
-              <path d="M20 6 9 17l-5-5" />
-            </svg>
+            <BadgeCheck className="h-3.5 w-3.5" />
             Signed
           </span>
         ) : canSign ? (

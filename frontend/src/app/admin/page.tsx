@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { BackButton } from "@/components/back-button";
 
 export const metadata = { title: "Admin · Cervical MRI" };
 const HEAD = "text-xs font-medium uppercase tracking-wider text-muted-foreground";
@@ -16,6 +17,9 @@ export default async function AdminPage() {
   await requireRole(["admin"]);
   return (
     <div className="mx-auto max-w-4xl px-6 py-10">
+      <div className="mb-4">
+        <BackButton label="Worklist" />
+      </div>
       <h1 className="font-serif text-[28px] font-semibold tracking-tight">User management</h1>
       <p className="mt-2 text-sm text-muted-foreground">Demo directory — wired to a real user store later.</p>
       <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card shadow-sm">

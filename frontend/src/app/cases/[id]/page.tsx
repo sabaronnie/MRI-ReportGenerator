@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import { BackButton } from "@/components/back-button";
 import { getCase, getViewerSources } from "@/lib/api/client";
 import { requireSession } from "@/lib/auth/session";
 import { CaseHeader } from "@/components/report/case-header";
@@ -19,9 +19,7 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-8">
-      <Link href="/worklist" className="text-sm text-muted-foreground hover:underline">
-        ← Worklist
-      </Link>
+      <BackButton label="Worklist" />
 
       <div className="mt-3">
         <CaseHeader data={data} canSign={user.role === "radiologist"} />

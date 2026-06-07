@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import type { Job } from "@/lib/api/contract";
 
 const STAGE_LABEL: Record<string, string> = {
@@ -38,19 +39,7 @@ export function ProcessingStatus({ job }: { job: Job }) {
         <span className="relative grid h-9 w-9 place-items-center">
           <span className="absolute inset-0 animate-ping rounded-full bg-primary/20" />
           <span className="grid h-9 w-9 place-items-center rounded-full bg-accent text-accent-foreground">
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              className="animate-spin"
-              style={{ animationDuration: "1.4s" }}
-              aria-hidden
-            >
-              <path d="M21 12a9 9 0 1 1-6.22-8.56" />
-            </svg>
+            <Loader2 className="h-4 w-4 animate-spin" style={{ animationDuration: "1.4s" }} />
           </span>
         </span>
         <div>
