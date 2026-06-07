@@ -223,6 +223,28 @@ keep it honest and specific (numbers, dates, evidence, citations). Chronological
   single-context investigation missed. Also corrected a false assumption: supine MRI does NOT read ~5° less
   lordotic than standing for C2-C7 (F1000: diff −0.50°, n.s.) — fix the Group 6 Cobb caveat accordingly.
 
+## J13 — Integrating Group 5 into the measurement service: an anatomy-orientation fixture bug, caught by the test
+- **Context:** during the 2026-06-07 structure refactor, Group 5 was wired into the measurement
+  orchestrator via a new adapter (`services/measurements/group5/fracture_screen.py`) so the validated
+  vertebral-body compression screen emits through the same report path as the other groups. A new
+  synthetic integration test (`test_group5_fracture_screen.py`) shipped red.
+- **The mistake:** the test's synthetic "compressed C4" placed the truncated vertebral wall on the
+  **wrong anterior/posterior side** for the measurement's RAS convention. The screen therefore read
+  Ha=12.5 / Hp=7.2 → ratio **1.737** (healthy-looking) instead of the intended ~0.58, so the
+  compression flag never fired and the test failed.
+- **How we found it / ruled out a regression:** ran the suite on the refactored tree (136/137). Traced
+  the one failure to the *adapter's* new fixture, not the science: the validated `vertebral_fracture.py`
+  moved byte-identical and read the healthy C3 correctly (1.0) in the same test; the adapter only
+  forwards orientation. The dataset owner (Ronnie) confirmed the adapter is correct and the fix belongs
+  in the fixture.
+- **The fix:** swap the two C4 wall blocks so the truncation lands on the side the validated
+  `measure_vertebra` reads as anterior (Ha). Touched the test only — no change to the science or the adapter.
+- **Validated:** the screen now reads Ha/Hp ≈ 0.58 → `outside_reference / compression_screen_positive`;
+  full suite **137/137 green**.
+- **Lesson (recurring):** synthetic fixtures must match the real RAS anatomy/orientation the code assumes —
+  the same class of trap as the canal/body-isolation orientation issues in J2/J6. Integration tests across
+  a service boundary catch convention mismatches that unit tests on clean rectangles don't.
+
 ---
 *Open methodology gaps tracked elsewhere:* teammate threshold/citation fixes (disc DHI<0.30, bulge flat-wall,
 Pfirrmann cut-points) — see `group5/AUDIT_groups1-4_measurements.md`; C6/C7 Cobb **precision** is now closed by
