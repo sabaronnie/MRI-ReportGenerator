@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans, IBM_Plex_Serif, IBM_Plex_Mono } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 import { AppHeader } from "@/components/app-header";
 
@@ -37,6 +38,7 @@ export default function RootLayout({
       <body className="flex min-h-full flex-col bg-background text-foreground antialiased">
         <AppHeader />
         <main className="flex-1">{children}</main>
+        <Toaster richColors position="top-center" toastOptions={{ style: { fontFamily: "var(--font-plex-sans)" } }} />
       </body>
     </html>
   );

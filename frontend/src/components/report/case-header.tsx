@@ -1,8 +1,8 @@
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { TriageBadge } from "@/components/worklist/triage-badge";
 import { StatusPill } from "@/components/worklist/status-pill";
 import type { CaseEnvelope } from "@/lib/api/contract";
-import { signOffAction } from "@/app/cases/[id]/actions";
+import { SignOffButton } from "./sign-off-button";
 
 export function CaseHeader({ data, canSign }: { data: CaseEnvelope; canSign: boolean }) {
   const { case: c, report } = data;
@@ -48,12 +48,7 @@ export function CaseHeader({ data, canSign }: { data: CaseEnvelope; canSign: boo
             Signed
           </span>
         ) : canSign ? (
-          <form action={signOffAction}>
-            <input type="hidden" name="caseId" value={c.case_id} />
-            <Button size="sm" type="submit">
-              Sign off
-            </Button>
-          </form>
+          <SignOffButton caseId={c.case_id} />
         ) : null}
       </div>
     </div>
