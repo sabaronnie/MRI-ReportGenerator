@@ -2,8 +2,9 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { TriageBadge } from "@/components/worklist/triage-badge";
 import { StatusPill } from "@/components/worklist/status-pill";
 import type { CaseEnvelope } from "@/lib/api/contract";
+import { signOffAction } from "@/app/cases/[id]/actions";
 
-export function CaseHeader({ data }: { data: CaseEnvelope }) {
+export function CaseHeader({ data, canSign }: { data: CaseEnvelope; canSign: boolean }) {
   const { case: c, report } = data;
   const meta = report.metadata;
   const exports = report.exports;
@@ -39,10 +40,18 @@ export function CaseHeader({ data }: { data: CaseEnvelope }) {
             DOCX
           </a>
         ) : null}
-        {/* Sign-off action is wired in the auth/roles milestone (radiologist only). */}
-        <Button size="sm" disabled={signed} title="Wired with auth (radiologist only)">
-          {signed ? "Signed" : "Sign off"}
-        </Button>
+        {signed ? (
+          <Button size="sm" disabled>
+            Signed
+          </Button>
+        ) : canSign ? (
+          <form action={signOffAction}>
+            <input type="hidden" name="caseId" value={c.case_id} />
+            <Button size="sm" type="submit">
+              Sign off
+            </Button>
+          </form>
+        ) : null}
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCase, getViewerSources } from "@/lib/api/client";
+import { requireSession } from "@/lib/auth/session";
 import { CaseHeader } from "@/components/report/case-header";
 import { Impressions } from "@/components/report/impressions";
 import { FindingsTable } from "@/components/report/findings-table";
@@ -9,6 +10,7 @@ import { NiivueViewer } from "@/components/viewer/niivue-viewer";
 
 export default async function CasePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const user = await requireSession();
   const data = await getCase(id).catch(() => null);
   if (!data) notFound();
   const viewer = getViewerSources(id);
@@ -20,7 +22,7 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
       </Link>
 
       <div className="mt-3">
-        <CaseHeader data={data} />
+        <CaseHeader data={data} canSign={user.role === "radiologist"} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
