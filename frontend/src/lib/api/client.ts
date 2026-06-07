@@ -6,7 +6,7 @@
  * Components call these functions and never know which mode is active — that is what lets
  * us build the whole UI now and swap to the real EEP later with no component changes.
  */
-import type { CaseEnvelope, CaseSummary, Job } from "./contract";
+import type { CaseEnvelope, CaseSummary, Job, JobStage } from "./contract";
 import healthy from "@/mocks/fixtures/case-healthy.json";
 import stenosis from "@/mocks/fixtures/case-stenosis.json";
 import fracture from "@/mocks/fixtures/case-fracture.json";
@@ -25,6 +25,33 @@ function toSummary(c: CaseEnvelope): CaseSummary {
   return { case_id, status, triage_badge, modality, uploader, created_at, updated_at };
 }
 
+// ── simulated processing (mock upload → queued → … → ready, driven by elapsed time) ──
+const simStart = new Map<string, number>();
+const SIM_TOTAL_MS = 8000;
+const SIM_STEPS: { stage: JobStage; until: number }[] = [
+  { stage: "queued", until: 1500 },
+  { stage: "segmenting", until: 4000 },
+  { stage: "measuring", until: 6500 },
+  { stage: "interpreting", until: 8000 },
+];
+const STAGE_ORDER = ["queued", "segmenting", "measuring", "interpreting", "ready"];
+
+/** Advance a simulated (uploaded) case's job/status from elapsed time. No-op for the fixtures. */
+function advance(c: CaseEnvelope): void {
+  const start = simStart.get(c.case.case_id);
+  if (start === undefined) return;
+  const elapsed = Date.now() - start;
+  let stage: JobStage = "ready";
+  for (const s of SIM_STEPS) {
+    if (elapsed < s.until) {
+      stage = s.stage;
+      break;
+    }
+  }
+  c.job = { stage, stages: STAGE_ORDER, progress: Math.min(1, elapsed / SIM_TOTAL_MS), error: null };
+  c.case.status = stage === "ready" ? "ready" : "processing";
+}
+
 async function eep<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${EEP_URL}${path}`, init);
   if (!res.ok) throw new Error(`EEP ${path} → ${res.status}`);
@@ -34,9 +61,9 @@ async function eep<T>(path: string, init?: RequestInit): Promise<T> {
 /** Worklist: every case, newest first. */
 export async function listCases(): Promise<CaseSummary[]> {
   if (MODE === "mock") {
-    return [...mockStore.values()]
-      .map(toSummary)
-      .sort((a, b) => (a.updated_at < b.updated_at ? 1 : -1));
+    const all = [...mockStore.values()];
+    all.forEach(advance);
+    return all.map(toSummary).sort((a, b) => (a.updated_at < b.updated_at ? 1 : -1));
   }
   return eep<CaseSummary[]>("/cases");
 }
@@ -46,9 +73,33 @@ export async function getCase(id: string): Promise<CaseEnvelope> {
   if (MODE === "mock") {
     const c = mockStore.get(id);
     if (!c) throw new Error(`case ${id} not found`);
+    advance(c);
     return structuredClone(c);
   }
   return eep<CaseEnvelope>(`/cases/${encodeURIComponent(id)}`);
+}
+
+/** Mock upload: clone a baseline case as a new "queued" case and start the simulated pipeline. */
+export async function createCase(filename: string, uploader: string): Promise<{ case_id: string }> {
+  if (MODE === "mock") {
+    const baseline = mockStore.get("demo-healthy-0001");
+    const base = structuredClone(baseline ?? FIXTURES[0]);
+    const now = new Date();
+    const id = `upload-${now.getTime().toString(36)}`;
+    base.case.case_id = id;
+    base.case.status = "queued";
+    base.case.triage_badge = "none";
+    base.case.uploader = uploader;
+    base.case.created_at = now.toISOString();
+    base.case.updated_at = now.toISOString();
+    base.case.series_description = filename;
+    base.job = { stage: "queued", stages: STAGE_ORDER, progress: 0, error: null };
+    mockStore.set(id, base);
+    simStart.set(id, Date.now());
+    return { case_id: id };
+  }
+  // live: the EEP route handler forwards the multipart upload to POST /cases
+  return eep<{ case_id: string }>("/cases", { method: "POST" });
 }
 
 /** Processing status (polled while a case is being analyzed). */
