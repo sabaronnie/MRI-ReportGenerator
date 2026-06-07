@@ -1,0 +1,45 @@
+============================================================================================
+PER-CASE
+============================================================================================
+mmcsd-csm-002    [unhealthy] HaHp med 0.92 flags 0/5 | Cobb  -3.2 | canalAPmin  10.0 cordAPmin  6.1 SACmin   3.4
+mmcsd-csm-004    [unhealthy] HaHp med 0.87 flags 0/5 | Cobb +13.2 | canalAPmin   7.6 cordAPmin  5.4 SACmin   2.1
+mmcsd-csm-005    [unhealthy] HaHp med 0.96 flags 0/5 | Cobb -12.1 | canalAPmin   8.5 cordAPmin  5.6 SACmin   2.2
+mmcsd-csm-007    [unhealthy] HaHp med 1.13 flags 0/5 | Cobb -21.3 | canalAPmin   8.2 cordAPmin  5.3 SACmin   2.1
+mmcsd-csm-009    [unhealthy] HaHp med 0.90 flags 0/5 | Cobb -21.8 | canalAPmin   9.0 cordAPmin  6.5 SACmin   1.7
+mmcsd-csr-001    [unhealthy] HaHp med 1.05 flags 0/5 | Cobb -14.8 | canalAPmin   7.4 cordAPmin  5.2 SACmin   2.2
+mmcsd-csr-003    [unhealthy] HaHp med 1.11 flags 0/5 | Cobb -10.9 | canalAPmin   8.1 cordAPmin  5.5 SACmin   2.7
+mmcsd-csr-006    [unhealthy] HaHp med 0.87 flags 0/5 | Cobb -17.0 | canalAPmin   8.9 cordAPmin  6.0 SACmin   2.3
+mmcsd-csr-008    [unhealthy] HaHp med 0.95 flags 0/5 | Cobb -13.2 | canalAPmin   9.0 cordAPmin  5.9 SACmin   2.5
+mmcsd-csr-012    [unhealthy] HaHp med 0.92 flags 0/5 | Cobb   n/a | canalAPmin   8.7 cordAPmin  5.1 SACmin   3.2
+sub-amu01_T2w    [healthy  ] HaHp med 0.94 flags 0/5 | Cobb   n/a | canalAPmin  14.5 cordAPmin  6.7 SACmin   6.5
+sub-amu02_T2w    [healthy  ] HaHp med 0.86 flags 0/5 | Cobb +56.2 | canalAPmin  13.9 cordAPmin  6.7 SACmin   7.2
+sub-amu03_T2w    [healthy  ] HaHp med 0.78 flags 0/5 | Cobb  -3.2 | canalAPmin  11.1 cordAPmin  5.9 SACmin   4.6
+sub-amu04_T2w    [healthy  ] HaHp med 0.85 flags 0/5 | Cobb   n/a | canalAPmin  11.2 cordAPmin  5.8 SACmin   4.7
+sub-beijingGE01_T2w [healthy  ] HaHp med 0.88 flags 0/5 | Cobb   n/a | canalAPmin  12.2 cordAPmin  6.3 SACmin   5.0
+sub-beijingGE02_T2w [healthy  ] HaHp med 0.87 flags 0/5 | Cobb  -7.2 | canalAPmin  11.3 cordAPmin  6.6 SACmin   3.6
+sub-beijingGE03_T2w [healthy  ] HaHp med 0.98 flags 0/5 | Cobb +34.2 | canalAPmin  11.4 cordAPmin  6.4 SACmin   3.7
+sub-brnoUhb01_T2w [healthy  ] HaHp med 1.02 flags 0/5 | Cobb  +4.1 | canalAPmin  12.7 cordAPmin  6.6 SACmin   5.1
+sub-fslAchieva01_T2w [healthy  ] HaHp med 0.90 flags 0/5 | Cobb -15.2 | canalAPmin  10.5 cordAPmin  5.9 SACmin   3.9
+sub-fslAchieva02_T2w [healthy  ] HaHp med 0.91 flags 0/5 | Cobb  +2.6 | canalAPmin  11.0 cordAPmin  6.2 SACmin   4.2
+sub-fslAchieva03_T2w [healthy  ] HaHp med 0.99 flags 0/5 | Cobb  -6.3 | canalAPmin  12.1 cordAPmin  5.6 SACmin   5.2
+sub-fslAchieva04_T2w [healthy  ] HaHp med 0.94 flags 0/5 | Cobb  -8.4 | canalAPmin  12.0 cordAPmin  6.1 SACmin   4.2
+
+============================================================================================
+COHORT SUMMARY  (Ha/Hp flag<0.68; dural-sac stenosis<10.0mm; SAC risk<3.0mm)
+============================================================================================
+
+[HEALTHY]  (12 cases)
+   G1 Ha/Hp (per-vert) n= 60  median   0.92  mean   0.92  range [  0.71,  1.12]   | <0.68:    0%
+   G4 Cobb C3-C7      n=  9  median  -3.20  mean   6.32  range [-15.18, 56.24] deg
+   G3 canal AP min    n= 12  median  11.70  mean  12.00  range [ 10.50, 14.53] mm  | <10.0:    0%
+   G3 cord AP min     n= 12  median   6.28  mean   6.24  range [  5.59,  6.70] mm
+   G3 SAC min         n= 12  median   4.69  mean   4.84  range [  3.59,  7.22] mm  | <3.0:    0%
+   G1 compression flags: 0/60 vertebrae (0%)
+
+[UNHEALTHY]  (10 cases)
+   G1 Ha/Hp (per-vert) n= 50  median   0.94  mean   1.00  range [  0.71,  1.83]   | <0.68:    0%
+   G4 Cobb C3-C7      n=  9  median -13.18  mean -11.24  range [-21.79, 13.19] deg
+   G3 canal AP min    n= 10  median   8.60  mean   8.53  range [  7.45,  9.97] mm  | <10.0:  100%
+   G3 cord AP min     n= 10  median   5.53  mean   5.66  range [  5.12,  6.50] mm
+   G3 SAC min         n= 10  median   2.27  mean   2.44  range [  1.75,  3.36] mm  | <3.0:   80%
+   G1 compression flags: 0/50 vertebrae (0%)

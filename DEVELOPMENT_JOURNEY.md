@@ -245,6 +245,28 @@ keep it honest and specific (numbers, dates, evidence, citations). Chronological
   the same class of trap as the canal/body-isolation orientation issues in J2/J6. Integration tests across
   a service boundary catch convention mismatches that unit tests on clean rectangles don't.
 
+## J14 — First threshold-crossing validation on real healthy + unhealthy MRI: G3 discriminates cleanly
+- **What we did:** ran the full pipeline on 12 healthy (Spine-Generic) + 10 symptomatic (MMCSD cervical
+  spondylosis: 5 CSM + 5 CSR) — TSS + SCT on Colab A100, then our measurement methods locally — and
+  compared each measurement's distribution healthy-vs-unhealthy against the cited thresholds.
+- **Headline — G3 (canal/cord/SAC) separates cleanly:** canal-AP minimum healthy median **11.7 mm**
+  (0% < 10) vs unhealthy **8.6 mm** (**100% < 10**); SAC minimum healthy **4.7 mm** (0% < 3) vs unhealthy
+  **2.3 mm** (**80% < 3**); cord-AP thinner unhealthy (5.5 vs 6.3 mm). The two canal distributions barely
+  touch (healthy floor 10.5 vs unhealthy ceiling 9.97). First hard proof the pipeline reads normal on
+  healthy and crosses into abnormal on real pathology.
+- **G4 Cobb — right direction, noisy:** unhealthy more kyphotic (−13° vs −3° healthy) = expected loss of
+  lordosis, but canal-cut is noisy (+56° healthy outlier; 9/12 measurable) → SPINEPS C1 is the fix for
+  absolute values; the cohort direction already separates.
+- **G1 Ha/Hp = 0% flags in BOTH cohorts — CORRECT, not a failure.** Spondylosis is degenerative, not
+  compression-fracture, so MMCSD heights are normal (true negatives) — empirically confirming the design
+  reasoning that MMCSD doesn't exercise the compression axis (needs a dedicated fracture set, the one data
+  gap). Healthy 0% over-flag re-confirms 5.2 specificity on the full 12.
+- **Honest caveats (logged):** n small (12/10); the 10 unhealthy were *selected to have mid-cervical
+  lesions* so part of the G3 separation is by construction — a random draw from the 250 MMCSD is the next
+  test; healthy = young controls (wide canals). Notably the earlier worry that SAC<3 / canal<10 *over-flag*
+  healthy on MRI did NOT materialize (0% healthy). Full numbers + reproduction:
+  `docs/validation/results-run1-2026-06-07.md`.
+
 ---
 *Open methodology gaps tracked elsewhere:* teammate threshold/citation fixes (disc DHI<0.30, bulge flat-wall,
 Pfirrmann cut-points) — see `group5/AUDIT_groups1-4_measurements.md`; C6/C7 Cobb **precision** is now closed by
