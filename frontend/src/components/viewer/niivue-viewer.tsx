@@ -110,18 +110,18 @@ export function NiivueViewer({ volumeUrl, maskUrl }: Props) {
         )}
       </div>
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <button className="rounded border px-2 py-1 hover:bg-muted" onClick={() => setView("sag")}>
+        <button className="rounded-md border border-border px-2.5 py-1.5 transition-all hover:-translate-y-px hover:bg-muted active:scale-95" onClick={() => setView("sag")}>
           Sagittal
         </button>
-        <button className="rounded border px-2 py-1 hover:bg-muted" onClick={() => setView("multi")}>
+        <button className="rounded-md border border-border px-2.5 py-1.5 transition-all hover:-translate-y-px hover:bg-muted active:scale-95" onClick={() => setView("multi")}>
           Multiplanar
         </button>
-        <button className="rounded border px-2 py-1 hover:bg-muted" onClick={() => setView("render")}>
+        <button className="rounded-md border border-border px-2.5 py-1.5 transition-all hover:-translate-y-px hover:bg-muted active:scale-95" onClick={() => setView("render")}>
           3D
         </button>
         {hasOverlay && (
           <button
-            className="ml-auto rounded border px-2 py-1 hover:bg-muted"
+            className="ml-auto rounded-md border border-border px-2.5 py-1.5 transition-all hover:-translate-y-px hover:bg-muted active:scale-95"
             onClick={() => setShowOverlay((v) => !v)}
           >
             {showOverlay ? "Hide" : "Show"} segmentation
