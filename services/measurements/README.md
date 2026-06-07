@@ -2,6 +2,8 @@
 
 Flask service running Phase 3 measurement components on a TotalSpineSeg `step2_output`. Each measurement is its own component module; the orchestrator runs them in dependency order, instruments every call with Prometheus, and returns a flat report.
 
+Phase 4 / Group 6 interpretation now lives in the sibling package [`services/interpretation/`](../interpretation/), which this service imports to attach interpreted rows to the raw measurement output.
+
 ## Components currently registered
 
 | Component | Phase | Outputs |

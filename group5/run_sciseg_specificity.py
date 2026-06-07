@@ -1,7 +1,7 @@
 """Group 5.1 — run the SCIseg healthy-specificity check on a folder of SCIseg lesion masks.
 
 Input: a directory of SCIseg `*_lesion_seg.nii.gz` masks (produced on Colab by
-colab_segment_duke.ipynb / sct_deepseg lesion_sci_t2). For each case it reports lesion burden
+colab/group5/colab_segment_duke.ipynb / sct_deepseg lesion_sci_t2). For each case it reports lesion burden
 (voxels, mm^3, largest component) and the cohort false-positive rate at a strict (any voxel)
 and a clinical-floor threshold. On the 12 HEALTHY Spine-Generic cords the goal is FP rate ~0
 ("on healthy, flags nothing").

@@ -80,9 +80,12 @@ the repo, to keep heavy imaging data off git) and imported here.
   `not_assessed`. Not revisitable without a contrast-enhanced acquisition.
 
 ## Colab notebooks (GPU segmentation)
-- `colab_segment_tss_fracture.ipynb`, `colab_segment_spinegeneric.ipynb` — TotalSpineSeg (full mode).
-- `colab_sciseg_spinegeneric.ipynb` — SCIseg on the healthy cohort (5.1 specificity).
-- `colab_segment_duke.ipynb` — SCIseg on Duke patients.
+These now live under [`colab/group5/`](../colab/group5/).
+
+- `colab/group5/colab_segment_tss_fracture.ipynb`, `colab/group5/colab_segment_spinegeneric.ipynb` — TotalSpineSeg (full mode).
+- `colab/group5/colab_sciseg_spinegeneric.ipynb` — SCIseg on the healthy cohort (5.1 specificity).
+- `colab/group5/colab_segment_duke.ipynb` — SCIseg on Duke patients.
+- `colab/group5/colab_spineps_spinegeneric.ipynb` — SPINEPS endplate-voxel alignment workflow.
 
 ## Run / test
 - Interpreter: `~/dev/group5-proto/.venv/bin/python`. Tests: `pytest group5/` (run from repo root or the proto).

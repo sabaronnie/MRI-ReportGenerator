@@ -13,7 +13,7 @@ strings carried by group5/flags_contract.py (Tan 2004 / Lee 2012 / Kaur 2025 / C
 
 from __future__ import annotations
 
-from services.measurements.thresholds import classify
+from services.interpretation import classify
 
 
 def test_vb_hahp_normal_is_within_reference():

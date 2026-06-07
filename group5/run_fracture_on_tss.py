@@ -4,7 +4,7 @@ Input: a TSS `step2_output` .nii.gz (per-vertebra CANONICAL labels) -- file or f
 For each cervical vertebra it measures 6-point Ha/Hm/Hp on that vertebra's own
 mid-sagittal slice, classifies Genant-style deformity, and compares the C3-C7 height
 distribution to published cervical norms. Pure numpy + nibabel: lightweight, LOCAL,
-no GPU/nnU-Net (segmentation itself runs on Colab GPU -- see colab_segment_duke.ipynb).
+no GPU/nnU-Net (segmentation itself runs on Colab GPU -- see colab/group5/colab_segment_tss_fracture.ipynb).
 
 TSS canonical labels (from inference.py iterative_label):
   cord=1, canal=2, C1=11 C2=12 C3=13 C4=14 C5=15 C6=16 C7=17, T1=21.., sacrum=50, discs 63-100.

@@ -22,7 +22,7 @@ from .geometric import (
     segmental_angles,
     spondylolisthesis,
 )
-from .interpretation import build_interpreted_measurements
+from services.interpretation import build_interpreted_measurements
 
 
 MEASUREMENT_DURATION = Histogram(

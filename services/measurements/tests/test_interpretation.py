@@ -7,7 +7,7 @@ fields and the status vocabulary are unchanged.
 
 from __future__ import annotations
 
-from services.measurements.interpretation import (
+from services.interpretation import (
     build_interpreted_measurements,
     detect_syndromes,
     interpret_group5_contract,
