@@ -11,13 +11,21 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Any
 
+from .thresholds import THRESHOLDS, classify
 
+
+# Substring markers that classify a flag as a QUALITY / caution flag (geometry or
+# segmentation health) rather than a clinical abnormality. "outlier" and "unreliable" were
+# added so tilt_outlier / ap_width_outlier / *_unreliable are treated as caution, not
+# pathology (owner-confirmed -- see Ronnie's validation reply + groups_1_4_code_audit).
 QUALITY_FLAG_MARKERS = (
     "low_confidence",
     "misaligned",
     "approximate",
     "resolution",
     "warning",
+    "outlier",
+    "unreliable",
 )
 
 UNIT_BY_MEASUREMENT = {
@@ -95,15 +103,27 @@ def build_interpreted_measurements(
             )
             has_pathology_flag = any(flag_name not in quality_flags for flag_name in pathology_flags)
 
+            # Catalogued measurements get status/severity/flag from the cited threshold
+            # catalog (thresholds.py); its citation lives centrally there and is joined per
+            # measurement by the report. Measurements not yet in the catalog fall back to the
+            # prior flag-only heuristic.
+            if measurement_name in THRESHOLDS:
+                ev = classify(measurement_name, raw_value)
+                status, severity, flag = ev.status, ev.severity, ev.flag
+            else:
+                status = "outside_reference" if has_pathology_flag else "review_only"
+                severity = None
+                flag = has_pathology_flag
+
             interpreted.append(
                 InterpretedMeasurement(
                     measurement=measurement_name,
                     level=str(level),
                     value=float(raw_value),
                     unit=_infer_unit(measurement_name),
-                    status="outside_reference" if has_pathology_flag else "review_only",
-                    severity=None,
-                    flag=has_pathology_flag,
+                    status=status,
+                    severity=severity,
+                    flag=flag,
                     demographics_used={},
                     quality_flags=quality_flags,
                     caveat=caveat,
@@ -112,6 +132,116 @@ def build_interpreted_measurements(
 
     interpreted.sort(key=lambda row: (row["measurement"], row["level"]))
     return interpreted
+
+
+def interpret_group5_contract(contract: dict[str, Any]) -> list[dict[str, Any]]:
+    """Interpret the Group 5 -> Group 6 findings contract (group5/flags_contract.py JSON).
+
+    Maps each level's vertebral-body compression screen (Ha/Hp ratio) and, when assessed, its
+    myelomalacia screen into the same InterpretedMeasurement container, driven by the catalog.
+    Group 6 consumes the contract's JSON shape, not Group 5's code (they live on different
+    branches). A not-assessed myelomalacia screen emits no row -- it is surfaced via the
+    contract's `not_assessed` list in the report.
+    """
+    rows: list[dict[str, Any]] = []
+    for level_entry in contract.get("levels", []):
+        level = str(level_entry.get("level", ""))
+        fracture = level_entry.get("fracture") or {}
+        if "ratio" in fracture:
+            ratio = fracture["ratio"]
+            rows.append(_catalog_row("vb_hahp_ratio", level, ratio, classify("vb_hahp_ratio", ratio)))
+        myelo = level_entry.get("myelomalacia") or {}
+        if myelo.get("assessed") and myelo.get("present") is not None:
+            present_val = 1.0 if myelo["present"] else 0.0
+            rows.append(
+                _catalog_row("myelomalacia", level, present_val, classify("myelomalacia", present_val))
+            )
+    rows.sort(key=lambda row: (row["measurement"], row["level"]))
+    return rows
+
+
+def _catalog_row(measurement: str, level: str, value: float, ev: Any) -> dict[str, Any]:
+    """Build an InterpretedMeasurement row directly from a catalog ThresholdEval."""
+    return InterpretedMeasurement(
+        measurement=measurement,
+        level=str(level),
+        value=float(value),
+        unit=ev.unit,
+        status=ev.status,
+        severity=ev.severity,
+        flag=ev.flag,
+        demographics_used={},
+        quality_flags=[],
+        caveat=ev.caveat,
+    ).to_dict()
+
+
+# Syndrome indicators (plan §4.3). PROVISIONAL combination rules -- advisory only, never a
+# diagnosis. The exact combination logic + the radiculopathy evidence base are pending the
+# Phase-4 research; these are documented placeholders flagged for review.
+_MYELOPATHY_ADVISORY = (
+    "pattern consistent with possible cervical myelopathy; clinical correlation required"
+)
+_RADICULOPATHY_ADVISORY = (
+    "pattern that may relate to radiculopathy; foraminal dimensions are not measured on "
+    "sagittal MRI, so this is weak -- clinical correlation required"
+)
+
+
+def detect_syndromes(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Provisional syndrome-pattern indicators from interpreted rows (plan §4.3).
+
+    PLACEHOLDER: advisory only, never diagnostic. The exact combination rules (and the
+    radiculopathy evidence base on sagittal-only MRI) are pending the Phase-4 research, so each
+    finding is marked `provisional` and carries a caveat.
+
+    Myelopathy (provisional): canal narrowing (dural_sac_AP_min flagged) AND SAC high-risk AND a
+    cord signal anomaly (myelomalacia flagged) at the same level.
+    Radiculopathy (provisional, weaker): a disc bulge flagged with a disc-height-index signal at
+    the same level -- DHI is currently a review-only gap, so this is a documented stub.
+    """
+    by_level: dict[str, dict[str, dict[str, Any]]] = {}
+    for r in rows:
+        by_level.setdefault(str(r["level"]), {})[r["measurement"]] = r
+
+    def flagged(level_map: dict[str, dict[str, Any]], name: str) -> bool:
+        row = level_map.get(name)
+        return bool(row and row.get("flag"))
+
+    syndromes: list[dict[str, Any]] = []
+    for level, m in by_level.items():
+        if flagged(m, "dural_sac_AP_min") and flagged(m, "SAC") and flagged(m, "myelomalacia"):
+            syndromes.append(
+                {
+                    "syndrome": "possible_myelopathy",
+                    "level": level,
+                    "status": "review_only",
+                    "advisory": _MYELOPATHY_ADVISORY,
+                    "contributing": ["dural_sac_AP_min", "SAC", "myelomalacia"],
+                    "provisional": True,
+                    "caveat": (
+                        "Provisional combination rule (canal narrowing + SAC<3mm + cord signal); "
+                        "exact rule pending Phase-4 research. Advisory only, never diagnostic."
+                    ),
+                }
+            )
+        if flagged(m, "posterior_bulge_mm") and "DHI" in m:
+            syndromes.append(
+                {
+                    "syndrome": "possible_radiculopathy",
+                    "level": level,
+                    "status": "review_only",
+                    "advisory": _RADICULOPATHY_ADVISORY,
+                    "contributing": ["posterior_bulge_mm", "DHI"],
+                    "provisional": True,
+                    "caveat": (
+                        "Provisional + WEAK: sagittal MRI does not measure foraminal dimensions "
+                        "and DHI has no validated cervical cut. Pending Phase-4. Advisory only."
+                    ),
+                }
+            )
+    syndromes.sort(key=lambda s: (s["syndrome"], s["level"]))
+    return syndromes
 
 
 def _matching_flags(
