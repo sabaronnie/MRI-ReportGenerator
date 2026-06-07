@@ -11,6 +11,70 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-06 (cont.) — Group 5 DONE; corner-fix implemented; MASTER handoff written
+
+**Branch:** `groups-5-6` (all pushed, 0 unpushed, HEAD 46d4bdc)
+
+**What was done:**
+- **5.1 CLOSED → Group 5 DONE.** Ran SCIseg (Colab) on 11 healthy cords → 10/11 clean, 1 FP (sub-amu02 77mm³@C7) = ~91% specificity; end-to-end paired pipeline maps lesion→cervical level (verified). All four sub-parts + the 5→6 contract + the single/batch runner are complete.
+- **Teammates' G1/G4 corner-fix IMPLEMENTED (direction done).** `vertebral_fracture.endplate_lines` (Theil-Sen endplate lines + corners) + new `group5/cervical_alignment.py` (endplate-line Cobb, lordosis-positive, C7 reliability guard; experimental slip). Validated on 12 necks: Cobb SIGN FIXED (lordotic vs Ronnie's −21° kyphotic), mid-cervical C3–C5 +2.2±6.7° stable; C2–C7 endpoint SD ~16° + slip ~3mm bias = NOT at target → need SPINEPS-corpus + radiologist GT. Journaled J7–J10.
+- **SPINEPS pilot notebook ready** (`group5/colab_spineps_spinegeneric.ipynb`) — BLOCKED on Colab GPU daily quota (wait for reset / Kaggle).
+- Committed granularly throughout, plain messages, no signatures. Validation harnesses committed under group5/validation/.
+
+**Files changed:** group5/{vertebral_fracture,cervical_alignment,run_group5_pipeline,flags_contract,myelomalacia_specificity,run_sciseg_specificity}.py + tests, README, colab_spineps_spinegeneric.ipynb, validation/*, DEVELOPMENT_JOURNEY.md (J7–J10).
+
+**Pending / next action (THE handoff):** full project execution is being passed to a new chat — see
+**`../handoffs/chat-handoffs/HANDOFF-MASTER-execution-2026-06-06.md`** (complete: state, code, data, research, rules).
+Immediate next: (1) SPINEPS Colab pilot when GPU resets → C6/C7 endpoint-precision test; (2) Group 6 takeover when the
+Phase-4 threshold research returns (separate chat). 5.1 lesion masks live in `~/dev/group5-proto/out_sg_lesion/`.
+
+---
+
+## 2026-06-06 — Andrew (Group 5 to ~done + tier-1 validation of teammates' code + new practices)
+
+**Branch:** `groups-5-6`
+
+**What was done (audit of the session):**
+- **Group 5 nearly done.** Built the **end-to-end runner** `group5/run_group5_pipeline.py` (TSS step2 [+ optional SCIseg lesion] → the 5→6 flags JSON; glues 5.2 + 5.1 + the contract; lesion→level by SI overlap; 3 TDD tests, proven on a real healthy neck). Refreshed `group5/README.md` and **closed 5.3 (scoped out — no labeled tumor data) + 5.4 (deferred — needs gadolinium)** with a documented Scope & Limitations section. **Only 5.1 remains** (the SCIseg healthy-specificity Colab run → `out_sg_lesion/`).
+- **Research results integrated.** The 4 norm prompts + z-threshold all returned (memories: `disc_*`, `cervical_*`, `vb_hahp_z_threshold`). Folded the verified cited fixes into `group5/AUDIT_groups1-4_measurements.md` (disc-bulge tilted-chord, Miyazaki not Pfirrmann, CSF normalization validated, spondy upright-borrow, DHI/disc-height gap real). z=2.0 kept.
+- **Tier-1 validation of the teammates' measurement code on the 12 healthy necks** (`out_sg/`): ran their components directly. **First over-claimed "inaccurate," then corrected** — separated CLINICAL flags from QUALITY/caution flags (tilt_outlier etc.), confirmed the input is valid (genuine cervical T2 SPACE 3D-iso; our 5.2 reads the same masks correctly; over-flagging persists at 0.8 mm AND 4 mm → not a resolution/input artifact).
+- **THE KEYSTONE (Ronnie's G1/G4):** pulled Ronnie's canonical branch (`Standarization-Ronnie` @ `4102f06`), ran via his own orchestrator. The 6-corner landmark extraction is unstable on real lordotic necks → cascades into 3 outputs: anterior>posterior heights (Ha/Hp ≈ 1.08, backwards), Cobb C3–C7 = −21°±27° (healthy reads kyphotic; segmental ±90°), spondylolisthesis 62% flagged. Sizes (AP width, heights) are fine. **One keystone, not five bugs.** G3 (canal/cord) is SCT-backed → couldn't validate locally (needs Colab). Audited his NEW G4 (Cobb math correct but C3–C7≠C2–C7, sign unvalidated, 10° uncited) + G3 (SCT-delegated, SAC<3mm uncited, no neg-SAC guard).
+- **Sent validation-request handoffs** to Ronnie + Mohammad (`handoffs/validation-requests/`). Ronnie replied (answers captured); Mohammad pending.
+- **NEW PRACTICES (Andrew's directives, now standing):** (1) **commit granularly** — every small step its own commit; the commit history is graded, not the push ([[commit-granularly]]). (2) **document mistakes for the report/papers** — created `DEVELOPMENT_JOURNEY.md` (mistake → how found → fix → validation; seeded J1–J6) ([[document-mistakes-for-report]]).
+- **Drafted the corner/body-isolation FIX research prompt** (`handoffs/research-prompts/RESEARCH-PROMPT-cervical-corner-endplate-method-2026-06-06.md`) — get the validated cervical corner/endplate-landmark + Cobb method so we reverse-engineer a stable replacement (our canal-cut + endplate-line is the candidate).
+
+**Files changed:** `group5/run_group5_pipeline.py` (+test), `group5/README.md`, `group5/AUDIT_groups1-4_measurements.md`, `DEVELOPMENT_JOURNEY.md`; handoffs under `../handoffs/` (not in repo). Tier-1 harnesses live in `~/dev/group5-proto/` (import teammate worktrees; not committed).
+
+**Pending / next action (state at end of 2026-06-06, Andrew asleep):**
+- **RUNNING in parallel (separate chats):** (1) corner/endplate-method research = the fix for Ronnie's keystone; (2) Group-6/Phase-4 threshold research = the cited threshold table our Group 6 will hard-code (handoffs in `../handoffs/research-prompts/`).
+- **RUNNING: Colab** = SCIseg on the 12 healthy cords → download to `out_sg_lesion/` to close 5.1.
+- **QUEUED: Group 6 takeover.** Group 6 = the interpretation/validation layer (Ronnie's "Phase 4"); we're taking it over. Context + plan saved in memory `group6_takeover_context.md`. **TRIGGER: when the Phase-4 threshold research returns → FLAG Andrew to start Group 6.**
+- **PENDING: Mohammad's reply** → re-validate his disc code correctly.
+- Commit convention (2026-06-06): plain 1-2 sentence messages, NO signatures/trailers. Keep appending DEVELOPMENT_JOURNEY + committing granularly.
+
+---
+
+## 2026-06-05 — Andrew (G5: A/B/C/D + full Groups 1-4 accuracy audit)
+
+**Branch:** `groups-5-6`
+
+**What was done:**
+- **A — 5.2 threshold recalibration (DONE + PUSHED `bb6ecd8`):** replaced the debunked Ha/Hp 0.97±0.02 with the healthy-cohort norm 0.94±0.13 (cited); added `cervical_deformity_flag` (data-driven screen, z=2.0, separate from the medical Genant grade). FP on 12 healthy: 17%→0%. 30 tests green. **z=2.0 decided** (research confirms: no cervical compression data exists, SD is the lever — see memory `vb_hahp_z_threshold.md`).
+- **B — 5→6 flags-JSON contract (DONE + PUSHED `381bee0`):** `group5/flags_contract.py` emitter, 7 tests, proven on a real case. **v0.1 PROPOSAL — needs team sign-off.**
+- **C — 5.1 SCIseg healthy-specificity (LOCAL DONE, NOT pushed `66c5429`,`677258d`):** scorer + runner + retargeted Colab notebook + `data/sciseg_healthy_pilot.zip` ready. **Colab run still pending (Andrew).**
+- **D — Groups 1-4 accuracy audit (DONE):** 8-agent read-only audit → memo `group5/AUDIT_groups1-4_measurements.md` (committed `e693907`, NOT pushed). Math mostly correct but ~no cervical validation, 4/6 untested, cutoffs uncited; disc-bulge under-reports, thick-slice false precision, orchestrator crash. C7-T1 label 71 verified correct.
+
+**Files changed:** `group5/vertebral_fracture.py`, `run_fracture_on_tss.py`, `test_vertebral_fracture.py`, `flags_contract.py`, `test_flags_contract.py`, `myelomalacia_specificity.py`, `test_myelomalacia_specificity.py`, `run_sciseg_specificity.py`, `colab_sciseg_spinegeneric.ipynb`, `AUDIT_groups1-4_measurements.md` (all under `group5/`).
+
+**Pending / next action — ANDREW'S WAKE-UP CHECKLIST (do in order):**
+1. **Launch the 4 research prompts** (separate chats, parallel OK) — file: `.claude/workflows/RESEARCH-PROMPTS-groups1-4-norms-2026-06-05.md` (disc height/DHI, disc bulge, Pfirrmann, spondylolisthesis).
+2. **Paste research results back into the Group-5 chat** as each returns (the z-threshold one already landed in memory; the 4 new ones feed tier-1 validation of teammates' code).
+3. **Run the Colab SCIseg job (C):** upload `~/dev/group5-proto/data/sciseg_healthy_pilot.zip` → Drive, run `group5/colab_sciseg_spinegeneric.ipynb` (T4 GPU, ~25-30 min) → download `*_lesion_seg.nii.gz` → `~/dev/group5-proto/out_sg_lesion/` → tell Claude to score (expect FP ~0%).
+4. **Approve push** of the 3 unpushed commits (`66c5429`, `677258d`, `e693907`) to `groups-5-6`.
+5. **Later / team:** B contract needs team sign-off; raise the disc-bulge/thick-slice/orchestrator issues + the stale-morphometry merge with Ronnie/Mohammad; tier-1 validation once norms land.
+
+---
+
 ## 2026-04-28 — Roni (Phase 3A.1 + 3A.2 measurement component, IEP2 scaffold)
 
 **Branch:** `main` (still relaxed for this session)

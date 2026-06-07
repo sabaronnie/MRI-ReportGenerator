@@ -129,3 +129,13 @@ NOTES.local.md
 TODO.local.md
 scratch/
 playground/
+
+# Group 5 — keep imaging data, venv, caches out of git
+group5/data/
+group5/out*/
+group5/tss_*/
+group5/.venv/
+__pycache__/
+*.nii
+*.nii.gz
+*.dcm
