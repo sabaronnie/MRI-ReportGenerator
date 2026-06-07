@@ -1,0 +1,139 @@
+{
+  "contract_version": "1.0",
+  "case": {
+    "job_id": "scan_demo_c5",
+    "case_id": "scan_demo_c5",
+    "submitted_at": "2026-06-07T14:10:00Z",
+    "patient_context": {
+      "sex": "male",
+      "age_years": 42,
+      "height_cm": 178
+    },
+    "source_file": {
+      "filename": "scan.nii.gz"
+    }
+  },
+  "manifest": {
+    "seg_shape": [25, 60, 50],
+    "voxel_spacing_mm": [1.0, 1.0, 1.0],
+    "labels_present": [13, 14, 15, 16, 17, 63, 64, 65, 66, 67]
+  },
+  "components": {
+    "cervical_body_morphometry": {
+      "status": "ok",
+      "duration_s": 0.012,
+      "metadata": {
+        "levels": ["C3", "C4", "C5", "C6", "C7"]
+      }
+    },
+    "lordosis_classification": {
+      "status": "ok",
+      "duration_s": 0.002,
+      "metadata": {
+        "lordosis_classification": {
+          "C3-C7": "straightened / low lordosis"
+        },
+        "classification_caveat": "Approximate classification only: derived from C3-C7 Cobb on supine MRI."
+      }
+    }
+  },
+  "measurements": {
+    "AP_width": {
+      "C3": 19.0,
+      "C4": 19.5,
+      "C5": 18.9
+    },
+    "dural_sac_AP_min": {
+      "C5": 9.8
+    },
+    "cord_AP": {
+      "C5": 7.1
+    },
+    "SAC": {
+      "C5": 2.7
+    },
+    "Cobb_C3_C7": {
+      "C3-C7": -2.0
+    }
+  },
+  "flags": {
+    "sac_high_risk": {
+      "C5": true
+    },
+    "sac_slice_misaligned": {
+      "C5": true
+    }
+  },
+  "interpretations": {
+    "measurements": [
+      {
+        "measurement": "dural_sac_AP_min",
+        "level": "C5",
+        "value": 9.8,
+        "unit": "mm",
+        "status": "outside_reference",
+        "severity": "stenosis_provisional",
+        "flag": true,
+        "demographics_used": {},
+        "quality_flags": [],
+        "caveat": "Measures SOFT-TISSUE dural-sac AP via SCT, NOT the osseous canal."
+      },
+      {
+        "measurement": "SAC",
+        "level": "C5",
+        "value": 2.7,
+        "unit": "mm",
+        "status": "outside_reference",
+        "severity": "high_risk",
+        "flag": true,
+        "demographics_used": {},
+        "quality_flags": ["sac_slice_misaligned"],
+        "caveat": "Derived metric; confirm with segmentation QC."
+      },
+      {
+        "measurement": "myelomalacia",
+        "level": "C5",
+        "value": 1.0,
+        "unit": "present",
+        "status": "outside_reference",
+        "severity": "signal_anomaly_present",
+        "flag": true,
+        "demographics_used": {},
+        "quality_flags": [],
+        "caveat": "Cord T2-hyperintensity SCREEN (SCIseg): a positive level is a finding for physician review."
+      },
+      {
+        "measurement": "Cobb_C3_C7",
+        "level": "C3-C7",
+        "value": -2.0,
+        "unit": "deg",
+        "status": "review_only",
+        "severity": "kyphotic",
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [],
+        "caveat": "Our Cobb is C3-C7 inferior-inferior and SUPINE."
+      }
+    ],
+    "syndromes": [
+      {
+        "syndrome": "possible_myelopathy",
+        "level": "C5",
+        "status": "review_only",
+        "advisory": "pattern consistent with possible cervical myelopathy; clinical correlation required",
+        "contributing": ["dural_sac_AP_min", "SAC", "myelomalacia"],
+        "provisional": true,
+        "caveat": "Provisional combination rule; advisory only, never diagnostic."
+      }
+    ]
+  },
+  "report_context": {
+    "modality": "cervical_sagittal_mri",
+    "report_language": "en",
+    "disclaimers": [
+      "This is a research tool, not a medical device. Not for clinical diagnosis.",
+      "Measurements acquired on supine MRI; functional radiographs may differ."
+    ],
+    "include_appendix": true
+  }
+}
