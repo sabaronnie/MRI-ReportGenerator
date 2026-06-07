@@ -1,13 +1,14 @@
-"""Phase 4.1 - C3-C7 Cobb angle from existing body-morphometry corners.
+"""Phase 4.1 - C3-C7 Cobb angle from ENDPLATE-LINE fits on the segmentation.
 
-Reuses `cervical_body_morphometry` corner landmarks:
-    - inferior endplate of C3 = AI -> PI
-    - inferior endplate of C7 = AI -> PI
+Fits straight lines (Theil-Sen) to the C3 and C7 inferior endplates after canal-cut body isolation,
+and takes the angle between them (lordosis-positive). This replaces the previous 2-corner AI->PI
+method, which depended on cervical_body_morphometry corners that were unstable on real lordotic necks
+(project J6-J12; Wang 2023 found line-fit ICC 0.97 vs four-corner 0.75). The C6/C7 endpoint-precision
+upgrade is `_endplate_cobb.spineps_endplate_cobb_angle` (fits SPINEPS endplate voxels), available once
+the SPINEPS instance mask is plumbed into the measurement context.
 
-Important: the computation uses `corners_voxel * voxel_spacing_mm` in the common
-canonical-RAS frame. It must never use `corners_mm`, which live in each
-vertebra's local PCA frame and are therefore not directly comparable across
-levels.
+The `_line_angle_deg` / `_normalize_deg` / `_require_corners` helpers below are retained because
+`segmental_angles` and `posterior_tangent_angle` still import them.
 """
 
 from __future__ import annotations
@@ -15,11 +16,19 @@ from __future__ import annotations
 import math
 from typing import Any
 
+import nibabel as nib
+
 from ..context import ComponentResult, MeasurementContext, MeasurementError
+from ._endplate_cobb import cobb_angle
 
 
 NAME = "c3c7_cobb_angle"
-DEPENDS_ON = ["cervical_body_morphometry"]
+# Self-contained: fits endplate LINES on the segmentation directly (no morphometry-corner dependency).
+DEPENDS_ON: list[str] = []
+
+C3_LABEL = 13
+C7_LABEL = 17
+CANAL_LABEL = 2
 
 UPPER_LEVEL = "C3"
 LOWER_LEVEL = "C7"
@@ -27,49 +36,39 @@ REQUIRED_CORNERS = ("AI", "PI")
 
 
 def compute(ctx: MeasurementContext, prior_results: dict[str, Any]) -> ComponentResult:
-    producer = prior_results.get("cervical_body_morphometry")
-    if producer is None:
+    """C3-C7 Cobb from endplate-LINE fits on the canal-cut C3 and C7 bodies (lordosis-positive)."""
+    axcodes = nib.aff2axcodes(ctx.seg_affine)
+    cobb_deg = cobb_angle(
+        ctx.seg_data,
+        axcodes,
+        ctx.voxel_spacing_mm,
+        top_label=C3_LABEL,
+        bottom_label=C7_LABEL,
+        canal_label=CANAL_LABEL,
+    )
+    if cobb_deg is None:
         raise MeasurementError(
-            "c3c7_cobb_angle requires `cervical_body_morphometry` in prior_results — "
-            "register it as a DEPENDS_ON producer in the orchestrator."
+            "c3c7_cobb_angle: C3 or C7 inferior endplate is not measurable from the segmentation "
+            "(missing level, or endplate orientation unreliable -- e.g. C7 obscured at the "
+            "cervicothoracic junction)."
         )
 
-    corners_voxel = producer.intermediate.get("corners_voxel", {})
-    upper = _require_endplate(corners_voxel, UPPER_LEVEL)
-    lower = _require_endplate(corners_voxel, LOWER_LEVEL)
-
-    spacing_pa_mm = float(ctx.voxel_spacing_mm[1])
-    spacing_si_mm = float(ctx.voxel_spacing_mm[2])
-
-    angle_c3 = _line_angle_deg(upper["AI"], upper["PI"], spacing_pa_mm, spacing_si_mm)
-    angle_c7 = _line_angle_deg(lower["AI"], lower["PI"], spacing_pa_mm, spacing_si_mm)
-    # With canonical-RAS coordinates, PA increases anteriorly and the reused line
-    # direction is AI -> PI (anterior -> posterior). In that convention, the raw
-    # geometric difference is the opposite of the desired clinical sign. Flip it
-    # here so lordosis is positive and kyphosis is negative.
-    cobb_deg = _normalize_deg(angle_c3 - angle_c7)
-
     return ComponentResult(
-        measurements={
-            "Cobb_C3_C7": {
-                "C3-C7": round(cobb_deg, 3),
-            }
-        },
-        intermediate={
-            "endplate_angle_deg": {
-                UPPER_LEVEL: round(angle_c3, 3),
-                LOWER_LEVEL: round(angle_c7, 3),
-            },
-            "inferior_endplate_voxel": {
-                UPPER_LEVEL: {"AI": tuple(upper["AI"]), "PI": tuple(upper["PI"])},
-                LOWER_LEVEL: {"AI": tuple(lower["AI"]), "PI": tuple(lower["PI"])},
-            },
-        },
+        measurements={"Cobb_C3_C7": {"C3-C7": round(float(cobb_deg), 3)}},
+        intermediate={},
         flags={},
         metadata={
-            "method": "signed angle difference of C3 and C7 inferior endplates (AI->PI) in global PA-SI frame",
+            "method": (
+                "endplate-LINE fit (Theil-Sen) to the canal-cut C3 and C7 bodies; Cobb = angle "
+                "between the two inferior-endplate lines (Wang 2023: line-fit ICC 0.97 vs "
+                "four-corner 0.75; project J7-J12). Replaces the 2-corner AI->PI method."
+            ),
             "levels": [UPPER_LEVEL, LOWER_LEVEL],
             "sign_convention": "lordosis_positive_kyphosis_negative",
+            "supine_caveat": (
+                "Supine MRI; compare to standing-radiograph norms with care. C6/C7 endpoint precision "
+                "is best with the SPINEPS endplate-voxel upgrade (spineps_endplate_cobb_angle)."
+            ),
         },
     )
 

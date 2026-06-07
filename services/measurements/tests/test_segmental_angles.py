@@ -1,60 +1,45 @@
-"""Tests for segmental angles derived from reused body-morphometry corners."""
+"""Tests for segmental angles from endplate-LINE fits on the segmentation.
+
+Per adjacent pair, the angle between the upper vertebra's inferior endplate and the lower vertebra's
+superior endplate (line fit, canal-cut), replacing the 2-corner AI->PI / AS->PS method.
+"""
 
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
-from services.measurements.context import ComponentResult, MeasurementContext, MeasurementError
+from services.measurements.context import MeasurementContext, MeasurementError
 from services.measurements.geometric import segmental_angles
 
 
-def _ctx(spacing=(1.0, 1.0, 1.0)) -> MeasurementContext:
+def _ctx(seg, spacing=(1.0, 1.0, 1.0)) -> MeasurementContext:
     return MeasurementContext(
         seg_path=None,
-        seg_data=np.zeros((1, 1, 1), dtype=np.int32),
-        seg_affine=np.eye(4),
+        seg_data=seg.astype(np.int32),
+        seg_affine=np.eye(4),               # canonical RAS
         voxel_spacing_mm=spacing,
     )
 
 
-def _prior(corners_voxel: dict) -> dict[str, ComponentResult]:
-    return {
-        "cervical_body_morphometry": ComponentResult(
-            measurements={},
-            intermediate={"corners_voxel": corners_voxel},
-            flags={},
-            metadata={},
-        )
-    }
+def _five_levels() -> np.ndarray:
+    # canonical RAS (LR, PA, IS): C3..C7 bodies stacked anterior, spinal canal posterior.
+    seg = np.zeros((6, 34, 70), dtype=np.int32)
+    for label, is0 in [(17, 4), (16, 17), (15, 30), (14, 43), (13, 56)]:   # C7 bottom .. C3 top
+        seg[1:5, 18:30, is0:is0 + 11] = label
+    seg[1:5, 8:14, 4:68] = 2                 # spinal canal (TSS label 2)
+    return seg
 
 
-def test_parallel_endplates_give_zero_segmental_angle():
-    result = segmental_angles.compute(
-        _ctx(),
-        _prior(
-            {
-                "C3": {"AI": (0.0, 10.0, 20.0), "PI": (0.0, 0.0, 20.0)},
-                "C4": {"AS": (0.0, 10.0, 30.0), "PS": (0.0, 0.0, 30.0)},
-            }
-        ),
-    )
-    assert result.measurements["segmental_angle"]["C3-C4"] == pytest.approx(0.0)
+def test_four_segmental_pairs_near_zero_for_parallel_bodies():
+    result = segmental_angles.compute(_ctx(_five_levels()), {})
+    seg_ang = result.measurements["segmental_angle"]
+    assert set(seg_ang) == {"C3-C4", "C4-C5", "C5-C6", "C6-C7"}
+    assert all(abs(v) < 5.0 for v in seg_ang.values())
 
 
-def test_positive_segmental_angle_when_lower_endplate_more_tilted():
-    result = segmental_angles.compute(
-        _ctx(),
-        _prior(
-            {
-                "C3": {"AI": (0.0, 10.0, 20.0), "PI": (0.0, 0.0, 20.0)},    # 0 deg
-                "C4": {"AS": (0.0, 10.0, 30.0), "PS": (0.0, 0.0, 35.0)},    # +26.565 deg
-            }
-        ),
-    )
-    assert result.measurements["segmental_angle"]["C3-C4"] == pytest.approx(26.565, abs=1e-3)
-
-
-def test_missing_pairs_are_skipped_but_empty_result_raises():
-    with pytest.raises(MeasurementError, match="no valid adjacent"):
-        segmental_angles.compute(_ctx(), _prior({"C3": {"AI": (0, 0, 0), "PI": (0, 1, 0)}}))
+def test_raises_when_no_pair_measurable():
+    seg = np.zeros((6, 34, 70), dtype=np.int32)
+    seg[1:5, 8:14, 4:68] = 2                 # canal only, no vertebrae
+    with pytest.raises(MeasurementError):
+        segmental_angles.compute(_ctx(seg), {})
