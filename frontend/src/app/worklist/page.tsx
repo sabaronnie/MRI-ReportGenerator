@@ -1,9 +1,11 @@
 import { listCases } from "@/lib/api/client";
 import { CaseTable } from "@/components/worklist/case-table";
+import { requireSession } from "@/lib/auth/session";
 
 export const metadata = { title: "Worklist · Cervical MRI" };
 
 export default async function WorklistPage() {
+  await requireSession();
   const cases = await listCases();
   return (
     <div className="mx-auto max-w-6xl px-6 py-8">
