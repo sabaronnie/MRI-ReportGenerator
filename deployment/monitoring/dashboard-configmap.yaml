@@ -34,16 +34,17 @@ data:
           ]
         },
         {
-          "type": "stat", "title": "EEP error rate (5xx)",
+          "type": "timeseries", "title": "EEP error rate by class (4xx / 5xx)",
           "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
-          "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1,
-            "thresholds": { "mode": "absolute", "steps": [
-              { "color": "green", "value": null }, { "color": "yellow", "value": 0.01 }, { "color": "red", "value": 0.05 } ] } }, "overrides": [] },
+          "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0 }, "overrides": [] },
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "targets": [
             { "datasource": { "type": "prometheus", "uid": "${datasource}" },
-              "expr": "sum(rate(eep_requests_total{status=~\"5..\"}[5m])) / clamp_min(sum(rate(eep_requests_total[5m])), 0.0001)",
-              "legendFormat": "5xx ratio", "refId": "A" }
+              "expr": "(sum(rate(eep_requests_total{status=~\"4..\"}[5m])) or vector(0)) / clamp_min(sum(rate(eep_requests_total[5m])), 0.0001)",
+              "legendFormat": "4xx", "refId": "A" },
+            { "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": "(sum(rate(eep_requests_total{status=~\"5..\"}[5m])) or vector(0)) / clamp_min(sum(rate(eep_requests_total[5m])), 0.0001)",
+              "legendFormat": "5xx", "refId": "B" }
           ]
         },
         {

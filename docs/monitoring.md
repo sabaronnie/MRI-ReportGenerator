@@ -22,7 +22,7 @@ each service exposes /metrics  ──ServiceMonitor──▶  Prometheus  ──
 # Grafana login: admin / mri-demo-admin   (demo only)
 ```
 Grafana is exposed via an AWS load balancer. Prometheus is internal; inspect targets with:
-`kubectl -n monitoring port-forward svc/kps-kube-prometheus-prometheus 9090` → http://localhost:9090/targets
+`kubectl -n monitoring port-forward svc/kps-prometheus 9090` → http://localhost:9090/targets
 
 ## Metrics each service exposes
 | Service | Metric | Type | Use |
