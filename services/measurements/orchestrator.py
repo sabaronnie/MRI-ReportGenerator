@@ -17,11 +17,15 @@ from .context import MeasurementContext, MeasurementError
 from .geometric import (
     c3c7_cobb_angle,
     cervical_body_morphometry,
+    disc_ap_bulge,
+    disc_height_index,
+    disc_si_height,
     lordosis_classification,
     posterior_tangent_angle,
     segmental_angles,
     spondylolisthesis,
 )
+from .signal import pfirrmann_grade
 from .group5 import fracture_screen
 from services.interpretation import build_interpreted_measurements
 
@@ -55,6 +59,12 @@ COMPONENTS = {
     functional_canal_ap.NAME: functional_canal_ap,
     cord_ap.NAME: cord_ap,
     sac.NAME: sac,
+    # G2 disc — geometric (no grayscale needed) + signal (needs raw MRI; degrades gracefully).
+    # The topo-sort honours DEPENDS_ON so dict order here is not load-bearing.
+    disc_si_height.NAME: disc_si_height,
+    disc_height_index.NAME: disc_height_index,
+    disc_ap_bulge.NAME: disc_ap_bulge,
+    pfirrmann_grade.NAME: pfirrmann_grade,
 }
 
 
