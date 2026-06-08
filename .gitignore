@@ -142,3 +142,6 @@ __pycache__/
 
 .venv-eep/
 services/eep/sample_data/
+
+# AWS deploy runtime artifact (load balancer host)
+deployment/aws/.eep_host
