@@ -11,6 +11,18 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-08 (cont. 3) — Andrew (session 401-loop fix + real branded report PDF)
+
+**Branch:** `feat/app/fullstack-local` — pushed.
+
+**What was done:**
+- **Fixed the site-breaking 401:** a rebuilt EEP re-seeded `users.db` with new IDs → existing JWTs 401'd and the worklist threw. Now EEP 401s route through `/api/session/expired` (clears cookie → /login, breaks the login↔worklist loop a stale cookie caused); seed users get **deterministic IDs** (uuid5 of email) so rebuilds keep sessions valid (`b2b2311`).
+- **Real branded clinical PDF** (the "generator" was a stub returning HTML): `services/reporting/pdf_report.py` (**fpdf2**, pure-Python, no system deps) renders a polished PDF — logo header, case+patient block, summary chips, findings narrative + color-coded table, impression, cited caveats, disclaimers, footer. `render_clinical_report_pdf` now real; reporting exposes `POST /render.pdf`; EEP `GET /workflow/cases/{id}/report.pdf` (reuses `_case_to_handoff` read-only — **no infra-file edits**); Next.js proxies `/api/cases/[id]/report-pdf`; case page has a **Download PDF** button. 22 pytest green; prod build green; e2e verified (`a568529`).
+
+**Files changed:** `frontend/src/lib/api/{workflow,admin,client}.ts`, `app/api/session/expired/route.ts`, `services/eep/auth/db.py` (fix); `services/reporting/{pdf_report,render_pdf,app}.py` + `requirements.txt` + `assets/logo.png`, `services/eep/workflow/router.py`, `app/api/cases/[id]/report-pdf/route.ts`, `components/report/case-header.tsx` (PDF).
+
+**Pending / next action:** Andrew bringing **measurement codes** + the **age/height/sex → interpretation** wiring (demographics capture is on hold until then; [[demographics_interpretation_coupling]] — must also be coded in Group 6). PDF demographics row auto-appears once `case_header.patient_summary` is populated upstream. Infra note unchanged: `services/eep/app.py` mounts auth+workflow routers.
+
 ## 2026-06-08 (cont. 2) — Andrew (radiologist workflow features: worklist A/B/C/D)
 
 **Branch:** `feat/app/fullstack-local` — pushed.
