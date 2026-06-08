@@ -12,6 +12,10 @@ FIXTURES_DIR = EEP_DIR / "fixtures"
 # Empty => the EEP runs self-contained in fixture/simulated mode.
 MEASUREMENTS_URL = os.environ.get("MEASUREMENTS_URL", "").rstrip("/")
 
+# Reporting IEP base URL (set in compose/k8s, e.g. http://reporting:8082). Empty => the EEP
+# can't render reports (the /report.html endpoint returns 503).
+REPORTING_URL = os.environ.get("REPORTING_URL", "").rstrip("/")
+
 # Where the viewer NIfTI volume/mask live at runtime (mounted, never committed).
 SAMPLE_DATA_DIR = Path(os.environ.get("EEP_SAMPLE_DIR", str(EEP_DIR / "sample_data")))
 

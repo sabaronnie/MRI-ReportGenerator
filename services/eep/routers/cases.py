@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 
 from .. import config, store
 from ..models import CaseSummary, SignOffRequest, UploadAccepted
-from ..orchestration import process_upload
+from ..orchestration import process_upload, render_case_report
 
 router = APIRouter(prefix="/cases", tags=["cases"])
 
@@ -65,6 +65,18 @@ def _serve(filename: str, media_type: str):
     if not path.exists():
         _err(404, "artifact_unavailable", f"{filename} not available in this deployment")
     return FileResponse(path, media_type=media_type)
+
+
+@router.get("/{case_id}/report.html", response_class=HTMLResponse)
+def report_html(case_id: str):
+    """Render this case's clinical report by orchestrating the reporting IEP (measurements -> reporting)."""
+    case = store.get_case(case_id)
+    if case is None:
+        _err(404, "not_found", "case not found")
+    html = render_case_report(case)
+    if html is None:
+        _err(503, "reporting_unavailable", "the reporting service is not reachable", failed_stage="reporting", retryable=True)
+    return HTMLResponse(content=html)
 
 
 @router.get("/{case_id}/volume")

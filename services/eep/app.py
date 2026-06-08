@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 
 from . import config, store
-from .orchestration import measurements_ready
+from .orchestration import measurements_ready, reporting_ready
 from .routers import cases
 
 app = FastAPI(title="MRI-ReportGenerator EEP", version="0.1.0")
@@ -67,7 +67,12 @@ def healthz():
 
 @app.get("/readyz")
 def readyz():
-    return {"status": "ready", "cases": len(store.list_cases()), "measurements_ready": measurements_ready()}
+    return {
+        "status": "ready",
+        "cases": len(store.list_cases()),
+        "measurements_ready": measurements_ready(),
+        "reporting_ready": reporting_ready(),
+    }
 
 
 @app.get("/metrics")
