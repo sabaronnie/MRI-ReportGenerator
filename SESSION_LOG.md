@@ -11,6 +11,21 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-07/08 — Andrew (frontend BUILT M1–M6; starting EEP + containerization)
+
+**Branch:** `feat/frontend/scaffold` (worktree `frontend-worktree/`, 39 commits, pushed, **unmerged**). EEP work continues on `feat/eep/scaffold` (worktree `eep-worktree/`).
+
+**What was done:**
+- **Full polished frontend built** — Next.js 16 + Tailwind v4 + shadcn/ui, **mock-first** (`NEXT_PUBLIC_API_MODE=mock`, typed client `lib/api/client.ts`) against the frozen data + report contracts (`docs/contracts/`). Screens: worklist, case report (findings table from `interpretations.measurements[]` + impressions + disclaimers), interactive **NiiVue viewer** (real Spine-Generic `sub-amu01` volume + TSS mask, gitignored under `public/samples/`), **auth/RBAC** (4 roles, mock cookie session, radiologist-only sign-off), **upload + simulated processing**.
+- **Design pass** (light clinical, teal petrol accent, **IBM Plex** serif/sans/mono) + **animation pass** (Framer Motion `motion`, `sonner` toasts, `lucide-react` icons; page transitions, working mobile menu, Back button, uniform button micro-interactions). Light-only, no purple (Andrew's prefs).
+- Fixed 4 bugs (optional report fields; Base-UI button API; route-handler in-memory store not shared with RSC → switched to `router.refresh` polling; font-var mismatch). Type-clean, 0 console errors, verified in-browser per milestone.
+
+**Files changed:** new `frontend-worktree/frontend/**` (whole Next.js app). No `main` files touched (isolated worktree).
+
+**Pending / next action:** Build the **EEP** (FastAPI front-door in `services/eep/`) orchestrating measurements + interpretation (segmentation = Colab/GPU upstream; reporting = Ronnie, pending) → then **containerize** frontend + EEP (`deployment/`) → flip frontend to `live` mode → **AWS deploy (needs Andrew's creds)**. Frontend design refinements pending Andrew's review.
+
+---
+
 ## 2026-06-06 (cont.) — Group 5 DONE; corner-fix implemented; MASTER handoff written
 
 **Branch:** `groups-5-6` (all pushed, 0 unpushed, HEAD 46d4bdc)
