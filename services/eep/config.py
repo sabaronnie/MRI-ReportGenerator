@@ -38,3 +38,13 @@ SIM_TOTAL_S = float(os.environ.get("EEP_SIM_TOTAL_S", "8"))
 # IEP call resilience: retries (on connect error / timeout / 5xx) + linear backoff between tries.
 IEP_RETRIES = int(os.environ.get("EEP_IEP_RETRIES", "2"))
 IEP_BACKOFF_S = float(os.environ.get("EEP_IEP_BACKOFF_S", "0.5"))
+
+# Segmentation engines (TotalSpineSeg, SCT, SPINEPS) — each a service exposing POST /segment.
+# When ALL THREE are set, an upload runs real segmentation (the 3 engines fanned out IN PARALLEL);
+# otherwise the EEP uses the bundled stand-in mask (current demo behavior). They are separate
+# services on purpose (TSS vs SPINEPS pin incompatible numpy).
+SEG_TSS_URL = os.environ.get("SEG_TSS_URL", "").rstrip("/")
+SEG_SCT_URL = os.environ.get("SEG_SCT_URL", "").rstrip("/")
+SEG_SPINEPS_URL = os.environ.get("SEG_SPINEPS_URL", "").rstrip("/")
+# A CPU TotalSpineSeg run is ~35 min; allow plenty of headroom (GPU is far faster).
+SEG_TIMEOUT_S = float(os.environ.get("SEG_TIMEOUT_S", "2700"))

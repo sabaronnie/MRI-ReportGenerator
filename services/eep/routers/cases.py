@@ -26,13 +26,16 @@ async def upload_case(file: UploadFile = File(...), uploader: str = Form("demo")
     name = file.filename or "uploaded-study.nii.gz"
     if not name.lower().endswith(config.ACCEPTED_SUFFIXES):
         _err(415, "unsupported_type", "expected a DICOM .zip or NIfTI .nii/.nii.gz", failed_stage="upload", retryable=False)
-    # stream-read to enforce the size limit without buffering the whole file
+    # Read with the size limit enforced. Buffer the bytes (bounded by the limit) so that, when the
+    # real segmentation engines are wired, the EEP can feed the actual scan to them.
     size = 0
+    buf = bytearray()
     while chunk := await file.read(1024 * 1024):
         size += len(chunk)
         if size > config.MAX_UPLOAD_BYTES:
             _err(413, "too_large", "file exceeds the upload limit", failed_stage="upload", retryable=False)
-    return process_upload(name, uploader)
+        buf.extend(chunk)
+    return process_upload(name, uploader, bytes(buf))
 
 
 @router.get("/{case_id}")

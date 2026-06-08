@@ -8,7 +8,12 @@ bundled stand-in mask zip — it is not run in-process.
 
 from __future__ import annotations
 
+import tempfile
+import uuid
+from pathlib import Path
+
 from . import config, store
+from .clients import segmentation as seg
 from .clients.measurements import MeasurementsClient
 from .clients.reporting import ReportingClient
 
@@ -29,17 +34,39 @@ def _map_core(handoff: dict) -> dict | None:
     return core or None
 
 
-def process_upload(filename: str, uploader: str) -> dict:
+def _resolve_segmentation(filename: str, input_bytes: bytes | None) -> Path | None:
+    """Real segmentation (3 engines in parallel) when wired + we have the upload; else the stand-in.
+
+    Returns a path to the segmentation zip the measurements IEP consumes, or None.
+    """
+    if input_bytes and seg.all_engines_configured():
+        try:
+            merged = seg.run_segmentation(input_bytes, filename)
+            tmp = Path(tempfile.gettempdir()) / f"segzip-{uuid.uuid4().hex[:8]}.zip"
+            tmp.write_bytes(merged)
+            return tmp
+        except Exception:  # noqa: BLE001 — any engine failure falls back to the stand-in, never crashes
+            pass
+    return SEG_ZIP if SEG_ZIP.exists() else None
+
+
+def process_upload(filename: str, uploader: str, input_bytes: bytes | None = None) -> dict:
     client = MeasurementsClient()
     core: dict | None = None
-    if client.configured and SEG_ZIP.exists():
-        handoff = client.measure(SEG_ZIP, case_id="pending", filename=filename)
+    seg_zip = _resolve_segmentation(filename, input_bytes)
+    if client.configured and seg_zip is not None and seg_zip.exists():
+        handoff = client.measure(seg_zip, case_id="pending", filename=filename)
         core = _map_core(handoff or {})
     return store.create_case(filename, uploader, core=core)
 
 
 def measurements_ready() -> bool:
     return MeasurementsClient().health()
+
+
+def segmentation_ready() -> bool:
+    """True when all 3 engines are wired (real segmentation active); False => stand-in mode."""
+    return seg.all_engines_configured()
 
 
 def reporting_ready() -> bool:

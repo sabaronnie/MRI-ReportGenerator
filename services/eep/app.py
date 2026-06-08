@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 
 from . import config, store
-from .orchestration import measurements_ready, reporting_ready
+from .orchestration import measurements_ready, reporting_ready, segmentation_ready
 from .routers import cases
 
 app = FastAPI(title="MRI-ReportGenerator EEP", version="0.1.0")
@@ -72,6 +72,7 @@ def readyz():
         "cases": len(store.list_cases()),
         "measurements_ready": measurements_ready(),
         "reporting_ready": reporting_ready(),
+        "segmentation_ready": segmentation_ready(),  # True => real 3-engine segmentation active
     }
 
 
