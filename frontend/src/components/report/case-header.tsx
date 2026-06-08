@@ -2,9 +2,9 @@ import { buttonVariants } from "@/components/ui/button";
 import { TriageBadge } from "@/components/worklist/triage-badge";
 import { StatusPill } from "@/components/worklist/status-pill";
 import type { CaseEnvelope } from "@/lib/api/contract";
-import { getReportHtmlUrl } from "@/lib/api/client";
+import { getReportHtmlUrl, getReportPdfUrl } from "@/lib/api/client";
 import { SignOffButton } from "./sign-off-button";
-import { BadgeCheck, FileText } from "lucide-react";
+import { BadgeCheck, FileText, Download } from "lucide-react";
 
 export function CaseHeader({ data, canSign }: { data: CaseEnvelope; canSign: boolean }) {
   const { case: c, report } = data;
@@ -12,6 +12,7 @@ export function CaseHeader({ data, canSign }: { data: CaseEnvelope; canSign: boo
   const exports = report.exports;
   const signed = meta?.status === "signed";
   const reportUrl = getReportHtmlUrl(c.case_id);
+  const pdfUrl = getReportPdfUrl(c.case_id);
   return (
     <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-5">
       <div>
@@ -42,6 +43,17 @@ export function CaseHeader({ data, canSign }: { data: CaseEnvelope; canSign: boo
           >
             <FileText className="h-3.5 w-3.5" />
             View report
+          </a>
+        ) : null}
+        {pdfUrl ? (
+          <a
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+            href={pdfUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Download className="h-3.5 w-3.5" />
+            PDF
           </a>
         ) : null}
         {exports?.pdf_url ? (

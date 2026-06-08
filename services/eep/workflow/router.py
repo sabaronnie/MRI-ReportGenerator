@@ -6,12 +6,15 @@ its own mutable state lives in workflow.db. See docs/workflow-features.md.
 
 from __future__ import annotations
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
-from .. import store
+from .. import config, store
 from ..auth import db as auth_db
 from ..auth.deps import get_current_user
+from ..orchestration import _case_to_handoff
 from . import db, tat
 
 db.init_db()
@@ -140,3 +143,25 @@ def assign(case_id: str, body: AssignIn, _: dict = Depends(get_current_user)):
 def add_addendum(case_id: str, body: AddendumIn, user: dict = Depends(get_current_user)):
     _require_case(case_id)
     return db.add_addendum(case_id, user["id"], user["name"], body.text)
+
+
+# -------------------------------------------------------------- report PDF ---
+
+@router.get("/cases/{case_id}/report.pdf")
+def report_pdf(case_id: str, _: dict = Depends(get_current_user)):
+    """Branded clinical PDF: project the case onto the reporting handoff and ask the
+    reporting IEP to render a real PDF (see services/reporting/pdf_report.py)."""
+    case = _require_case(case_id)
+    base = (config.REPORTING_URL or "").rstrip("/")
+    if not base:
+        raise HTTPException(status_code=503, detail="reporting service not configured")
+    try:
+        resp = httpx.post(f"{base}/render.pdf", json=_case_to_handoff(case), timeout=30.0)
+        resp.raise_for_status()
+    except httpx.HTTPError:
+        raise HTTPException(status_code=503, detail="reporting service unavailable")
+    return Response(
+        content=resp.content,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="{case_id}-report.pdf"'},
+    )

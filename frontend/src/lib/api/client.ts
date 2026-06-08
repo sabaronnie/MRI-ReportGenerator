@@ -171,3 +171,9 @@ export function getReportHtmlUrl(id: string): string | null {
   if (MODE === "mock" || !EEP_URL) return null;
   return `/api/cases/${encodeURIComponent(id)}/report`;
 }
+
+/** URL of the branded clinical report PDF (reporting IEP). Live only, proxied. */
+export function getReportPdfUrl(id: string): string | null {
+  if (MODE === "mock" || !EEP_URL) return null;
+  return `/api/cases/${encodeURIComponent(id)}/report-pdf`;
+}
