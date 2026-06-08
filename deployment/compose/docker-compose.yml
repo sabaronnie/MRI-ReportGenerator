@@ -1,0 +1,68 @@
+# Local stack for MRI-ReportGenerator.
+# Default: the backend (measurements IEP + EEP) — fully buildable from this branch.
+# `--profile fullstack` adds the frontend (needs frontend/ at the repo root, i.e. after the
+# feat/frontend branch merges to main; see README).
+#
+#   cd deployment/compose && docker compose up --build
+#
+name: mri-reportgenerator
+
+services:
+  measurements:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/measurements.Dockerfile
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys;sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8081/healthz').status==200 else 1)"]
+      interval: 30s
+      timeout: 3s
+      retries: 5
+
+  reporting:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/reporting.Dockerfile
+    ports:
+      - "8082:8082"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys;sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8082/healthz').status==200 else 1)"]
+      interval: 30s
+      timeout: 3s
+      retries: 5
+
+  eep:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/eep.Dockerfile
+    environment:
+      MEASUREMENTS_URL: "http://measurements:8081"
+      REPORTING_URL: "http://reporting:8082"
+      EEP_ALLOWED_ORIGINS: "http://localhost:3000"
+      EEP_SAMPLE_DIR: "/data/samples"
+    volumes:
+      # drop sample_volume_T2.nii.gz / sample_mask_tss.nii.gz / segmentation.zip here (gitignored)
+      - ./sample_data:/data/samples:ro
+    ports:
+      - "8080:8080"
+    depends_on:
+      measurements:
+        condition: service_started
+      reporting:
+        condition: service_started
+
+  # Activate with `--profile fullstack` once frontend/ exists at the repo root.
+  frontend:
+    profiles: ["fullstack"]
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile
+    environment:
+      NEXT_PUBLIC_API_MODE: "live"
+      NEXT_PUBLIC_EEP_URL: "http://localhost:8080"
+    ports:
+      - "3000:3000"
+    depends_on:
+      eep:
+        condition: service_started

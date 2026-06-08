@@ -8,6 +8,7 @@ fields and the status vocabulary are unchanged.
 from __future__ import annotations
 
 from services.interpretation import (
+    build_reporting_handoff_contract,
     build_interpreted_measurements,
     detect_syndromes,
     interpret_group5_contract,
@@ -160,3 +161,83 @@ def test_no_myelopathy_syndrome_when_a_criterion_is_missing():
     ]
     syndromes = detect_syndromes(rows)
     assert not any(s["syndrome"] == "possible_myelopathy" for s in syndromes)
+
+
+def test_build_reporting_handoff_contract_backfills_case_context_and_syndromes():
+    report = {
+        "components": {"sac": {"status": "ok", "duration_s": 0.01, "metadata": {}}},
+        "measurements": {"SAC": {"C5": 2.7}},
+        "flags": {"sac_high_risk": {"C5": True}},
+        "interpretations": {
+            "measurements": [
+                {
+                    "measurement": "dural_sac_AP_min",
+                    "level": "C5",
+                    "value": 9.8,
+                    "unit": "mm",
+                    "status": "outside_reference",
+                    "severity": "stenosis_provisional",
+                    "flag": True,
+                    "demographics_used": {},
+                    "quality_flags": [],
+                    "caveat": None,
+                },
+                {
+                    "measurement": "SAC",
+                    "level": "C5",
+                    "value": 2.7,
+                    "unit": "mm",
+                    "status": "outside_reference",
+                    "severity": "high_risk",
+                    "flag": True,
+                    "demographics_used": {},
+                    "quality_flags": [],
+                    "caveat": None,
+                },
+                {
+                    "measurement": "myelomalacia",
+                    "level": "C5",
+                    "value": 1.0,
+                    "unit": "present",
+                    "status": "outside_reference",
+                    "severity": "signal_anomaly_present",
+                    "flag": True,
+                    "demographics_used": {},
+                    "quality_flags": [],
+                    "caveat": None,
+                },
+            ]
+        },
+    }
+
+    contract = build_reporting_handoff_contract(
+        report,
+        manifest={"seg_shape": [25, 60, 50]},
+        case={
+            "job_id": "scan_123",
+            "submitted_at": "2026-06-07T14:10:00Z",
+            "patient_context": {"sex": "male", "age_years": 42, "height_cm": 178},
+            "source_file": {"filename": "scan.nii.gz"},
+        },
+        report_context={"include_appendix": False},
+    )
+
+    assert contract["contract_version"] == "1.0"
+    assert contract["case"]["case_id"] == "scan_123"
+    assert contract["report_context"]["modality"] == "cervical_sagittal_mri"
+    assert contract["report_context"]["include_appendix"] is False
+    assert "research tool" in contract["report_context"]["disclaimers"][0].lower()
+    assert contract["interpretations"]["syndromes"] == [
+        {
+            "syndrome": "possible_myelopathy",
+            "level": "C5",
+            "status": "review_only",
+            "advisory": "pattern consistent with possible cervical myelopathy; clinical correlation required",
+            "contributing": ["dural_sac_AP_min", "SAC", "myelomalacia"],
+            "provisional": True,
+            "caveat": (
+                "Provisional combination rule (canal narrowing + SAC<3mm + cord signal); "
+                "exact rule pending Phase-4 research. Advisory only, never diagnostic."
+            ),
+        }
+    ]

@@ -1,0 +1,355 @@
+{
+  "report_version": "1.0",
+  "source_contract_version": "1.0",
+  "title": "Cervical Spine MRI Analysis Report",
+  "case_header": {
+    "title": "Cervical Spine MRI Analysis Report",
+    "exam": "MRI cervical spine",
+    "technique": "Automated research-use post-processing of sagittal cervical spine MRI including segmentation, measurement, interpretation, and structured reporting.",
+    "case_id": "scan_demo_c5",
+    "job_id": "scan_demo_c5",
+    "submitted_at": "2026-06-07T14:10:00Z",
+    "source_filename": "scan.nii.gz",
+    "patient_summary": "Male, 42 years, 178 cm",
+    "patient_context": {
+      "sex": "male",
+      "age_years": 42,
+      "height_cm": 178
+    }
+  },
+  "case": {
+    "job_id": "scan_demo_c5",
+    "case_id": "scan_demo_c5",
+    "submitted_at": "2026-06-07T14:10:00Z",
+    "patient_context": {
+      "sex": "male",
+      "age_years": 42,
+      "height_cm": 178
+    },
+    "source_file": {
+      "filename": "scan.nii.gz"
+    }
+  },
+  "summary": {
+    "measurement_row_count": 4,
+    "flagged_measurement_count": 3,
+    "syndrome_count": 1,
+    "status_counts": {
+      "within_reference": 0,
+      "outside_reference": 3,
+      "review_only": 1,
+      "not_interpretable": 0
+    }
+  },
+  "clinical_report": {
+    "exam": "MRI cervical spine",
+    "technique": "Automated analysis of sagittal cervical spine MRI. Research-use structured interpretation only; not a substitute for radiologist review.",
+    "findings_sections": [
+      {
+        "heading": "Alignment",
+        "body": "Cervical alignment is straightened / low lordosis. C3-C7 Cobb angle measures -2.0 deg. Approximate classification only: derived from C3-C7 Cobb on supine MRI."
+      },
+      {
+        "heading": "Level-Specific Findings",
+        "body": "At C5, functional canal / dural-sac AP minimum (SCT) 9.8 mm (stenosis_provisional); space available for the cord (canal AP - cord AP) 2.7 mm (high_risk); cord T2-hyperintensity screen (myelomalacia) 1.0 present (signal_anomaly_present)."
+      },
+      {
+        "heading": "Cord / Syndrome Pattern",
+        "body": "C5: pattern consistent with possible cervical myelopathy; clinical correlation required"
+      }
+    ],
+    "findings_text": "Alignment: Cervical alignment is straightened / low lordosis. C3-C7 Cobb angle measures -2.0 deg. Approximate classification only: derived from C3-C7 Cobb on supine MRI.\n\nLevel-Specific Findings: At C5, functional canal / dural-sac AP minimum (SCT) 9.8 mm (stenosis_provisional); space available for the cord (canal AP - cord AP) 2.7 mm (high_risk); cord T2-hyperintensity screen (myelomalacia) 1.0 present (signal_anomaly_present).\n\nCord / Syndrome Pattern: C5: pattern consistent with possible cervical myelopathy; clinical correlation required",
+    "impression": [
+      "C5: pattern consistent with possible cervical myelopathy; clinical correlation required",
+      "C5: functional canal / dural-sac AP minimum (SCT) 9.8 mm (stenosis_provisional).",
+      "C5: space available for the cord (canal AP - cord AP) 2.7 mm (high_risk).",
+      "C5: cord T2-hyperintensity screen (myelomalacia) 1.0 present (signal_anomaly_present).",
+      "Alignment: straightened / low lordosis; C3-C7 Cobb angle -2.0 deg."
+    ]
+  },
+  "findings": {
+    "table_rows": [
+      {
+        "measurement": "dural_sac_AP_min",
+        "display_name": "functional canal / dural-sac AP minimum (SCT)",
+        "level": "C5",
+        "value": 9.8,
+        "unit": "mm",
+        "status": "outside_reference",
+        "severity": "stenosis_provisional",
+        "flag": true,
+        "quality_flags": [],
+        "caveat": "Measures SOFT-TISSUE dural-sac AP via SCT, NOT the osseous canal.",
+        "citation": "Nell 2019 (PMC6764695, C2-C7 healthy age/sex percentiles); stenosis bands >13/10-13/<10 mm are a clinical convention (Ulbrich 2014; Thelen 2019/SHIP) of OSSEOUS-canal / radiograph origin -- pending Phase-4 MRI soft-tissue confirmation",
+        "tag": "raw"
+      },
+      {
+        "measurement": "SAC",
+        "display_name": "space available for the cord (canal AP - cord AP)",
+        "level": "C5",
+        "value": 2.7,
+        "unit": "mm",
+        "status": "outside_reference",
+        "severity": "high_risk",
+        "flag": true,
+        "quality_flags": [
+          "sac_slice_misaligned"
+        ],
+        "caveat": "Derived metric; confirm with segmentation QC.",
+        "citation": "SAC <3 mm = high compression risk (plan-cited Fehlings 2015 / Nouri 2016) -- radiograph-origin, verify for MRI (pending Phase-4); Nell 2019 (PMC6764695) healthy percentiles",
+        "tag": "derived"
+      },
+      {
+        "measurement": "myelomalacia",
+        "display_name": "cord T2-hyperintensity screen (myelomalacia)",
+        "level": "C5",
+        "value": 1.0,
+        "unit": "present",
+        "status": "outside_reference",
+        "severity": "signal_anomaly_present",
+        "flag": true,
+        "quality_flags": [],
+        "caveat": "Cord T2-hyperintensity SCREEN (SCIseg): a positive level is a finding for physician review.",
+        "citation": "SCIseg (sct_deepseg lesion_sci_t2); Naga Karthik 2024 (PMC11065035). Measured healthy specificity 10/11 (~91%)",
+        "tag": "derived"
+      },
+      {
+        "measurement": "Cobb_C3_C7",
+        "display_name": "global cervical Cobb angle (C3-C7, lordosis-positive)",
+        "level": "C3-C7",
+        "value": -2.0,
+        "unit": "deg",
+        "status": "review_only",
+        "severity": "kyphotic",
+        "flag": false,
+        "quality_flags": [],
+        "caveat": "Our Cobb is C3-C7 inferior-inferior and SUPINE.",
+        "citation": "NASSJ 2025 (PMC12744292, asymptomatic C2-C7 ~18.7 deg, range ~10-35 deg); plan also cites Yukawa 2018 (~13.9 +/- 12.3 deg). Lordosis-positive.",
+        "tag": "derived"
+      }
+    ],
+    "highlighted_measurements": [
+      {
+        "measurement": "dural_sac_AP_min",
+        "display_name": "functional canal / dural-sac AP minimum (SCT)",
+        "level": "C5",
+        "value": 9.8,
+        "unit": "mm",
+        "status": "outside_reference",
+        "severity": "stenosis_provisional",
+        "flag": true,
+        "quality_flags": [],
+        "caveat": "Measures SOFT-TISSUE dural-sac AP via SCT, NOT the osseous canal.",
+        "citation": "Nell 2019 (PMC6764695, C2-C7 healthy age/sex percentiles); stenosis bands >13/10-13/<10 mm are a clinical convention (Ulbrich 2014; Thelen 2019/SHIP) of OSSEOUS-canal / radiograph origin -- pending Phase-4 MRI soft-tissue confirmation",
+        "tag": "raw"
+      },
+      {
+        "measurement": "SAC",
+        "display_name": "space available for the cord (canal AP - cord AP)",
+        "level": "C5",
+        "value": 2.7,
+        "unit": "mm",
+        "status": "outside_reference",
+        "severity": "high_risk",
+        "flag": true,
+        "quality_flags": [
+          "sac_slice_misaligned"
+        ],
+        "caveat": "Derived metric; confirm with segmentation QC.",
+        "citation": "SAC <3 mm = high compression risk (plan-cited Fehlings 2015 / Nouri 2016) -- radiograph-origin, verify for MRI (pending Phase-4); Nell 2019 (PMC6764695) healthy percentiles",
+        "tag": "derived"
+      },
+      {
+        "measurement": "myelomalacia",
+        "display_name": "cord T2-hyperintensity screen (myelomalacia)",
+        "level": "C5",
+        "value": 1.0,
+        "unit": "present",
+        "status": "outside_reference",
+        "severity": "signal_anomaly_present",
+        "flag": true,
+        "quality_flags": [],
+        "caveat": "Cord T2-hyperintensity SCREEN (SCIseg): a positive level is a finding for physician review.",
+        "citation": "SCIseg (sct_deepseg lesion_sci_t2); Naga Karthik 2024 (PMC11065035). Measured healthy specificity 10/11 (~91%)",
+        "tag": "derived"
+      }
+    ],
+    "syndromes": [
+      {
+        "syndrome": "possible_myelopathy",
+        "level": "C5",
+        "status": "review_only",
+        "advisory": "pattern consistent with possible cervical myelopathy; clinical correlation required",
+        "contributing": [
+          "dural_sac_AP_min",
+          "SAC",
+          "myelomalacia"
+        ],
+        "provisional": true,
+        "caveat": "Provisional combination rule; advisory only, never diagnostic."
+      }
+    ]
+  },
+  "impression": [
+    "C5: pattern consistent with possible cervical myelopathy; clinical correlation required",
+    "C5: functional canal / dural-sac AP minimum (SCT) 9.8 mm (stenosis_provisional).",
+    "C5: space available for the cord (canal AP - cord AP) 2.7 mm (high_risk).",
+    "C5: cord T2-hyperintensity screen (myelomalacia) 1.0 present (signal_anomaly_present).",
+    "Alignment: straightened / low lordosis; C3-C7 Cobb angle -2.0 deg."
+  ],
+  "quality_caveats": {
+    "measurement_notes": [
+      {
+        "type": "measurement_quality",
+        "measurement": "SAC",
+        "level": "C5",
+        "quality_flags": [
+          "sac_slice_misaligned"
+        ],
+        "caveat": "Derived metric; confirm with segmentation QC."
+      }
+    ],
+    "component_notes": [],
+    "general_caveats": [
+      "Measures SOFT-TISSUE dural-sac AP via SCT, NOT the osseous canal.",
+      "Derived metric; confirm with segmentation QC.",
+      "Cord T2-hyperintensity SCREEN (SCIseg): a positive level is a finding for physician review.",
+      "Our Cobb is C3-C7 inferior-inferior and SUPINE.",
+      "Provisional combination rule; advisory only, never diagnostic."
+    ]
+  },
+  "quality_notes": [
+    {
+      "type": "measurement_quality",
+      "measurement": "SAC",
+      "level": "C5",
+      "quality_flags": [
+        "sac_slice_misaligned"
+      ],
+      "caveat": "Derived metric; confirm with segmentation QC."
+    }
+  ],
+  "disclaimers": [
+    "This is a research tool, not a medical device. Not for clinical diagnosis.",
+    "Measurements acquired on supine MRI; functional radiographs may differ."
+  ],
+  "metadata": {
+    "modality": "cervical_sagittal_mri",
+    "report_language": "en",
+    "include_appendix": true
+  },
+  "appendix": {
+    "manifest": {
+      "seg_shape": [
+        25,
+        60,
+        50
+      ],
+      "voxel_spacing_mm": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "labels_present": [
+        13,
+        14,
+        15,
+        16,
+        17,
+        63,
+        64,
+        65,
+        66,
+        67
+      ]
+    },
+    "provenance": [
+      {
+        "measurement": "dural_sac_AP_min",
+        "display_name": "functional canal / dural-sac AP minimum (SCT)",
+        "citation": "Nell 2019 (PMC6764695, C2-C7 healthy age/sex percentiles); stenosis bands >13/10-13/<10 mm are a clinical convention (Ulbrich 2014; Thelen 2019/SHIP) of OSSEOUS-canal / radiograph origin -- pending Phase-4 MRI soft-tissue confirmation",
+        "tag": "raw",
+        "caveat": "Measures SOFT-TISSUE dural-sac AP via SCT, NOT the osseous canal -- do not conflate with bony CT/radiograph canal thresholds. Value is a stable across-slice minimum, not a single manual caliper point. Bands provisional (pending Phase-4). Finding for physician review.",
+        "provenance_note": "Soft-tissue dural sac; bands provisional pending Phase-4 MRI confirmation."
+      },
+      {
+        "measurement": "SAC",
+        "display_name": "space available for the cord (canal AP - cord AP)",
+        "citation": "SAC <3 mm = high compression risk (plan-cited Fehlings 2015 / Nouri 2016) -- radiograph-origin, verify for MRI (pending Phase-4); Nell 2019 (PMC6764695) healthy percentiles",
+        "tag": "derived",
+        "caveat": "SAC <3 mm high-risk cutoff is radiograph-origin; verify for MRI. Derived from same-slice subtraction -> reliability depends on slice alignment. Stronger as a risk flag than a full severity ladder. Finding for physician review.",
+        "provenance_note": "SAC<3 mm high-risk; radiograph-origin, verify (pending Phase-4)."
+      },
+      {
+        "measurement": "myelomalacia",
+        "display_name": "cord T2-hyperintensity screen (myelomalacia)",
+        "citation": "SCIseg (sct_deepseg lesion_sci_t2); Naga Karthik 2024 (PMC11065035). Measured healthy specificity 10/11 (~91%)",
+        "tag": "derived",
+        "caveat": "Cord T2-hyperintensity SCREEN (SCIseg): a positive level is a finding for physician review (pattern consistent with possible myelopathy), NOT a diagnosis; clinical correlation required. Binary present/absent; sensitivity rests on SCIseg's publication.",
+        "provenance_note": "Group 5.1 binary screen; carried into Group 6 via the 5->6 flags contract."
+      },
+      {
+        "measurement": "Cobb_C3_C7",
+        "display_name": "global cervical Cobb angle (C3-C7, lordosis-positive)",
+        "citation": "NASSJ 2025 (PMC12744292, asymptomatic C2-C7 ~18.7 deg, range ~10-35 deg); plan also cites Yukawa 2018 (~13.9 +/- 12.3 deg). Lordosis-positive.",
+        "tag": "derived",
+        "caveat": "Our Cobb is C3-C7 inferior-inferior and SUPINE (MRI reads ~5 deg less lordotic than standing radiographs) -> apply a supine->standing offset before comparing to standing norms; papers often report C2-C7. C6/C7 endpoint precision is not yet at target (SD ~16 deg; pending SPINEPS corpus + radiologist calibration) -> alignment is reported as a descriptive class for review, not hard-flagged.",
+        "provenance_note": "Sign fixed (was -21 deg kyphotic); magnitude/endpoints pending SPINEPS + radiologist GT. The label side = lordosis_classification."
+      }
+    ],
+    "raw_data": {
+      "components": {
+        "cervical_body_morphometry": {
+          "status": "ok",
+          "duration_s": 0.012,
+          "metadata": {
+            "levels": [
+              "C3",
+              "C4",
+              "C5",
+              "C6",
+              "C7"
+            ]
+          }
+        },
+        "lordosis_classification": {
+          "status": "ok",
+          "duration_s": 0.002,
+          "metadata": {
+            "lordosis_classification": {
+              "C3-C7": "straightened / low lordosis"
+            },
+            "classification_caveat": "Approximate classification only: derived from C3-C7 Cobb on supine MRI."
+          }
+        }
+      },
+      "measurements": {
+        "AP_width": {
+          "C3": 19.0,
+          "C4": 19.5,
+          "C5": 18.9
+        },
+        "dural_sac_AP_min": {
+          "C5": 9.8
+        },
+        "cord_AP": {
+          "C5": 7.1
+        },
+        "SAC": {
+          "C5": 2.7
+        },
+        "Cobb_C3_C7": {
+          "C3-C7": -2.0
+        }
+      },
+      "flags": {
+        "sac_high_risk": {
+          "C5": true
+        },
+        "sac_slice_misaligned": {
+          "C5": true
+        }
+      }
+    }
+  }
+}

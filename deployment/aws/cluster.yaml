@@ -1,0 +1,42 @@
+# eksctl cluster definition for MRI-ReportGenerator.
+#   eksctl create cluster -f deployment/aws/cluster.yaml
+#   eksctl delete cluster -f deployment/aws/cluster.yaml
+#
+# 2x t3.medium managed nodes (4 GB each) — comfortable for measurements (scipy/numpy) + EEP +
+# frontend + system pods. The node role gets read-only access to the samples S3 bucket so the
+# EEP initContainer can pull the viewer NIfTI without baking data into the image.
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: mri-reportgenerator
+  region: eu-north-1
+  version: "1.31"
+  tags:
+    project: mri-reportgenerator
+    course: eece503n
+
+iam:
+  withOIDC: true
+
+managedNodeGroups:
+  - name: ng-default
+    instanceType: t3.medium
+    desiredCapacity: 2
+    minSize: 2
+    maxSize: 3
+    volumeSize: 20
+    labels: { role: worker }
+    tags:
+      project: mri-reportgenerator
+    iam:
+      attachPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - "s3:GetObject"
+              - "s3:ListBucket"
+            Resource:
+              - "arn:aws:s3:::mri-reportgenerator-samples-*"
+              - "arn:aws:s3:::mri-reportgenerator-samples-*/*"

@@ -23,7 +23,7 @@ from .geometric import (
     spondylolisthesis,
 )
 from .group5 import fracture_screen
-from services.interpretation import build_interpreted_measurements
+from services.interpretation import build_interpreted_measurements, detect_syndromes
 
 
 MEASUREMENT_DURATION = Histogram(
@@ -102,12 +102,14 @@ def run_all(ctx: MeasurementContext, enabled: list[str] | None = None) -> dict[s
                 "duration_s": elapsed,
                 "error": str(e),
             }
+    interpreted_rows = build_interpreted_measurements(
+        report,
+        measurement_sources=measurement_sources,
+        flag_sources=flag_sources,
+    )
     report["interpretations"] = {
-        "measurements": build_interpreted_measurements(
-            report,
-            measurement_sources=measurement_sources,
-            flag_sources=flag_sources,
-        )
+        "measurements": interpreted_rows,
+        "syndromes": detect_syndromes(interpreted_rows),
     }
     return report
 

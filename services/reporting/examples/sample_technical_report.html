@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cervical Spine MRI Analysis Report - Technical</title>
+    <style>
+      :root {
+        --ink: #162033;
+        --muted: #566173;
+        --line: #d7dee8;
+        --panel: #f6f8fb;
+        --accent: #12395b;
+        --warn: #8a5a00;
+        --flag: #7a1f1f;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: #eef2f7;
+        color: var(--ink);
+        font: 14px/1.45 "Georgia", "Times New Roman", serif;
+      }
+      .page {
+        width: 8.5in;
+        min-height: 11in;
+        margin: 24px auto;
+        background: white;
+        padding: 0.7in 0.75in 0.8in;
+        box-shadow: 0 18px 40px rgba(14, 30, 52, 0.14);
+      }
+      .page + .page {
+        page-break-before: always;
+      }
+      .eyebrow {
+        font: 600 11px/1.2 "Helvetica Neue", Arial, sans-serif;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+      h1 {
+        font: 700 24px/1.15 "Helvetica Neue", Arial, sans-serif;
+        margin: 0 0 14px;
+        color: var(--accent);
+      }
+      h2 {
+        font: 700 13px/1.2 "Helvetica Neue", Arial, sans-serif;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin: 22px 0 8px;
+        color: var(--accent);
+      }
+      h3 {
+        font: 700 14px/1.2 "Helvetica Neue", Arial, sans-serif;
+        margin: 16px 0 6px;
+      }
+      p {
+        margin: 0 0 10px;
+      }
+      .header-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 18px;
+        padding: 14px 16px;
+        background: linear-gradient(180deg, #fbfcfe 0%, #f2f6fb 100%);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+      .meta-label {
+        font: 600 10px/1.2 "Helvetica Neue", Arial, sans-serif;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 3px;
+      }
+      .meta-value {
+        font: 14px/1.35 "Helvetica Neue", Arial, sans-serif;
+      }
+      .section-block {
+        margin-top: 14px;
+      }
+      .section-body {
+        white-space: pre-line;
+      }
+      ol {
+        margin: 8px 0 0 20px;
+        padding: 0;
+      }
+      li {
+        margin: 0 0 6px;
+      }
+      ul {
+        margin: 8px 0 0 18px;
+        padding: 0;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 8px;
+      }
+      th, td {
+        border: 1px solid var(--line);
+        padding: 7px 8px;
+        vertical-align: top;
+        text-align: left;
+      }
+      th {
+        background: var(--panel);
+        font: 600 11px/1.2 "Helvetica Neue", Arial, sans-serif;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .pill {
+        display: inline-block;
+        padding: 2px 7px;
+        border-radius: 999px;
+        background: #edf2f7;
+        font: 600 11px/1.2 "Helvetica Neue", Arial, sans-serif;
+        color: var(--muted);
+      }
+      .pill-flag {
+        background: #f9e8e8;
+        color: var(--flag);
+      }
+      .pill-review {
+        background: #fff5df;
+        color: var(--warn);
+      }
+      .pill-within {
+        background: #e6f5ea;
+        color: #21623c;
+      }
+      .mono {
+        font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+        font-size: 12px;
+      }
+      pre {
+        margin: 8px 0 0;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: #fbfcfe;
+        overflow-x: auto;
+        white-space: pre-wrap;
+      }
+      .small {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      @media print {
+        body { background: white; }
+        .page {
+          margin: 0;
+          width: auto;
+          min-height: auto;
+          box-shadow: none;
+          padding: 0.5in 0.6in 0.65in;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <section class="page">
+      <div class="eyebrow">Automated Research Report</div>
+      <h1>Cervical Spine MRI Analysis Report</h1>
+      <div class="header-grid">
+        <div><div class="meta-label">Exam</div><div class="meta-value">MRI cervical spine</div></div>
+        <div><div class="meta-label">Technique</div><div class="meta-value">Automated analysis of sagittal cervical spine MRI. Research-use structured interpretation only; not a substitute for radiologist review.</div></div>
+        <div><div class="meta-label">Case ID</div><div class="meta-value">scan_demo_c5</div></div>
+        <div><div class="meta-label">Job ID</div><div class="meta-value">scan_demo_c5</div></div>
+        <div><div class="meta-label">Submitted</div><div class="meta-value">2026-06-07T14:10:00Z</div></div>
+        <div><div class="meta-label">Source File</div><div class="meta-value">scan.nii.gz</div></div>
+        <div><div class="meta-label">Patient Context</div><div class="meta-value">Male, 42 years, 178 cm</div></div>
+        <div><div class="meta-label">Summary</div><div class="meta-value">4 rows, 3 flagged, 1 syndromes</div></div>
+      </div>
+
+      <h2>Findings</h2>
+      <div class="section-block"><h3>Alignment</h3><p class="section-body">Cervical alignment is straightened / low lordosis. C3-C7 Cobb angle measures -2.0 deg. Approximate classification only: derived from C3-C7 Cobb on supine MRI.</p></div><div class="section-block"><h3>Level-Specific Findings</h3><p class="section-body">At C5, functional canal / dural-sac AP minimum (SCT) 9.8 mm (stenosis_provisional); space available for the cord (canal AP - cord AP) 2.7 mm (high_risk); cord T2-hyperintensity screen (myelomalacia) 1.0 present (signal_anomaly_present).</p></div><div class="section-block"><h3>Cord / Syndrome Pattern</h3><p class="section-body">C5: pattern consistent with possible cervical myelopathy; clinical correlation required</p></div>
+
+      <h2>Impression</h2>
+      <ol><li>C5: pattern consistent with possible cervical myelopathy; clinical correlation required</li><li>C5: functional canal / dural-sac AP minimum (SCT) 9.8 mm (stenosis_provisional).</li><li>C5: space available for the cord (canal AP - cord AP) 2.7 mm (high_risk).</li><li>C5: cord T2-hyperintensity screen (myelomalacia) 1.0 present (signal_anomaly_present).</li><li>Alignment: straightened / low lordosis; C3-C7 Cobb angle -2.0 deg.</li></ol>
+
+      <h2>Disclaimers</h2>
+      <ul><li>This is a research tool, not a medical device. Not for clinical diagnosis.</li><li>Measurements acquired on supine MRI; functional radiographs may differ.</li></ul>
+    </section>
+
+    <section class="page">
+      <div class="eyebrow">Technical Appendix</div>
+      <h1>Explainability Appendix</h1>
+
+      <h2>Structured Findings Table</h2>
+      <table><thead><tr><th>Level</th><th>Measurement</th><th>Value</th><th>Status</th><th>Quality Flags</th><th>Caveat</th></tr></thead><tbody><tr><td>C5</td><td>functional canal / dural-sac AP minimum (SCT)</td><td>9.8 mm</td><td><span class="pill pill-flag">outside_reference - stenosis_provisional</span></td><td>None</td><td>Measures SOFT-TISSUE dural-sac AP via SCT, NOT the osseous canal.</td></tr><tr><td>C5</td><td>space available for the cord (canal AP - cord AP)</td><td>2.7 mm</td><td><span class="pill pill-flag">outside_reference - high_risk</span></td><td>sac_slice_misaligned</td><td>Derived metric; confirm with segmentation QC.</td></tr><tr><td>C5</td><td>cord T2-hyperintensity screen (myelomalacia)</td><td>1.0 present</td><td><span class="pill pill-flag">outside_reference - signal_anomaly_present</span></td><td>None</td><td>Cord T2-hyperintensity SCREEN (SCIseg): a positive level is a finding for physician review.</td></tr><tr><td>C3-C7</td><td>global cervical Cobb angle (C3-C7, lordosis-positive)</td><td>-2.0 deg</td><td><span class="pill pill-review">review_only - kyphotic</span></td><td>None</td><td>Our Cobb is C3-C7 inferior-inferior and SUPINE.</td></tr></tbody></table>
+
+      <h2>Quality And Caveats</h2>
+      <h3>Measurement Notes</h3><ul><li>C5: SAC [sac_slice_misaligned]</li></ul><h3>General Caveats</h3><ul><li>Measures SOFT-TISSUE dural-sac AP via SCT, NOT the osseous canal.</li><li>Derived metric; confirm with segmentation QC.</li><li>Cord T2-hyperintensity SCREEN (SCIseg): a positive level is a finding for physician review.</li><li>Our Cobb is C3-C7 inferior-inferior and SUPINE.</li><li>Provisional combination rule; advisory only, never diagnostic.</li></ul>
+
+      <h2>Threshold Provenance</h2>
+      <table><thead><tr><th>Measurement</th><th>Tag</th><th>Citation</th><th>Note</th></tr></thead><tbody><tr><td>functional canal / dural-sac AP minimum (SCT)</td><td>raw</td><td class="small">Nell 2019 (PMC6764695, C2-C7 healthy age/sex percentiles); stenosis bands &gt;13/10-13/&lt;10 mm are a clinical convention (Ulbrich 2014; Thelen 2019/SHIP) of OSSEOUS-canal / radiograph origin -- pending Phase-4 MRI soft-tissue confirmation</td><td class="small">Soft-tissue dural sac; bands provisional pending Phase-4 MRI confirmation.</td></tr><tr><td>space available for the cord (canal AP - cord AP)</td><td>derived</td><td class="small">SAC &lt;3 mm = high compression risk (plan-cited Fehlings 2015 / Nouri 2016) -- radiograph-origin, verify for MRI (pending Phase-4); Nell 2019 (PMC6764695) healthy percentiles</td><td class="small">SAC&lt;3 mm high-risk; radiograph-origin, verify (pending Phase-4).</td></tr><tr><td>cord T2-hyperintensity screen (myelomalacia)</td><td>derived</td><td class="small">SCIseg (sct_deepseg lesion_sci_t2); Naga Karthik 2024 (PMC11065035). Measured healthy specificity 10/11 (~91%)</td><td class="small">Group 5.1 binary screen; carried into Group 6 via the 5-&gt;6 flags contract.</td></tr><tr><td>global cervical Cobb angle (C3-C7, lordosis-positive)</td><td>derived</td><td class="small">NASSJ 2025 (PMC12744292, asymptomatic C2-C7 ~18.7 deg, range ~10-35 deg); plan also cites Yukawa 2018 (~13.9 +/- 12.3 deg). Lordosis-positive.</td><td class="small">Sign fixed (was -21 deg kyphotic); magnitude/endpoints pending SPINEPS + radiologist GT. The label side = lordosis_classification.</td></tr></tbody></table>
+
+      <h2>Raw Structured Data</h2>
+      <h3>Components</h3><pre class="mono">{
+  &quot;cervical_body_morphometry&quot;: {
+    &quot;duration_s&quot;: 0.012,
+    &quot;metadata&quot;: {
+      &quot;levels&quot;: [
+        &quot;C3&quot;,
+        &quot;C4&quot;,
+        &quot;C5&quot;,
+        &quot;C6&quot;,
+        &quot;C7&quot;
+      ]
+    },
+    &quot;status&quot;: &quot;ok&quot;
+  },
+  &quot;lordosis_classification&quot;: {
+    &quot;duration_s&quot;: 0.002,
+    &quot;metadata&quot;: {
+      &quot;classification_caveat&quot;: &quot;Approximate classification only: derived from C3-C7 Cobb on supine MRI.&quot;,
+      &quot;lordosis_classification&quot;: {
+        &quot;C3-C7&quot;: &quot;straightened / low lordosis&quot;
+      }
+    },
+    &quot;status&quot;: &quot;ok&quot;
+  }
+}</pre><h3>Measurements</h3><pre class="mono">{
+  &quot;AP_width&quot;: {
+    &quot;C3&quot;: 19.0,
+    &quot;C4&quot;: 19.5,
+    &quot;C5&quot;: 18.9
+  },
+  &quot;Cobb_C3_C7&quot;: {
+    &quot;C3-C7&quot;: -2.0
+  },
+  &quot;SAC&quot;: {
+    &quot;C5&quot;: 2.7
+  },
+  &quot;cord_AP&quot;: {
+    &quot;C5&quot;: 7.1
+  },
+  &quot;dural_sac_AP_min&quot;: {
+    &quot;C5&quot;: 9.8
+  }
+}</pre><h3>Flags</h3><pre class="mono">{
+  &quot;sac_high_risk&quot;: {
+    &quot;C5&quot;: true
+  },
+  &quot;sac_slice_misaligned&quot;: {
+    &quot;C5&quot;: true
+  }
+}</pre>
+    </section>
+  </body>
+</html>

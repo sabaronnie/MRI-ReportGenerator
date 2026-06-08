@@ -26,6 +26,106 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-08 (cont. 3) — Andrew (monitoring: Prometheus + Grafana on EKS → M3 met)
+
+**Branch:** `feat/eep/scaffold` — pushed.
+
+**What was done:**
+- **Deployed kube-prometheus-stack** (Prometheus Operator + Prometheus + Grafana + node-exporter +
+  kube-state-metrics) via Helm to the EKS cluster (`monitoring` ns). IaC in `deployment/monitoring/`
+  (values.yaml, servicemonitors.yaml, dashboard-configmap.yaml, install.sh) + `docs/monitoring.md`.
+- **ServiceMonitors** scrape all 3 services' `/metrics` (eep, measurements, reporting) — verified all
+  targets `up` in Prometheus. Named the metrics ports on measurements/reporting services.
+- **Custom Grafana dashboard** "MRI-ReportGenerator — Services": EEP throughput, error rate by class
+  (4xx/5xx), latency p50/p95, measurements component p95 + outcomes, reporting render rate/p95, and the
+  **ML signal** panel (`measurement_pathology_flags_total` by flag = output-distribution proxy).
+- **Verified live**: generated traffic (incl. uploads exercising measurements + pathology flags),
+  opened Grafana in-browser, dashboard renders real data. Screenshot `../grafana-dashboard-clean.png`.
+- **Grafana is public** via LB: `http://a7175637bf30040feb6bcdf4719ebd42-937560400.eu-north-1.elb.amazonaws.com`
+  (admin / mri-demo-admin). Rubric M3 (§11) MET.
+
+**Pending / next:** still open (RUBRIC_TRACKER): automated e2e test on deployed system (Q1), finish
+Tradeoffs doc (T5), MLOps framing (M1/M2), open PRs (G2). Cluster + monitoring LEFT RUNNING for the
+demo tomorrow — TEARDOWN after: `deployment/aws/teardown.sh` (+ `helm uninstall kps -n monitoring`).
+
+---
+
+## 2026-06-08 (cont. 2) — Andrew (reporting wired as 2nd IEP → GT3 met, live on AWS)
+
+**Branch:** `feat/eep/scaffold` — pushed.
+
+**What was done:**
+- **Closed the last hard-stop risk (GT3/T3/T4).** Wrapped the existing `services/reporting/` builder
+  + HTML renderers in a **Flask IEP** (`services/reporting/app.py`: `POST /render` + health/ready/metrics).
+  Wired the EEP to orchestrate it: `services/eep/clients/reporting.py`, `orchestration.render_case_report`
+  (normalizes a stored case → handoff → reporting), `REPORTING_URL` config, `/readyz` now reports
+  `reporting_ready`, and a new public **`GET /cases/{id}/report.html`** that renders a clinical report
+  on demand via the reporting IEP. The EEP now orchestrates TWO independent IEPs (measurements + reporting).
+- **Containerized + deployed it:** `deployment/docker/reporting.Dockerfile`, `deployment/k8s/reporting.yaml`
+  (ClusterIP), compose + deploy-script wiring. Targeted redeploy (reporting + eep, preserved frontend CORS).
+- **Verified live on EKS:** `/readyz` → `measurements_ready:true` AND `reporting_ready:true`;
+  `GET /cases/demo-stenosis-0003/report.html` → 200, renders a radiology-style report (exam header,
+  level findings C5/C6, impression, disclaimers). Screenshot `../aws-live-report.png`. 5 pods running
+  (2 eep, frontend, measurements, reporting).
+
+**Demo URLs (live, ephemeral):** frontend `http://a359d7957b43847a69ba05ef7b9fad98-1651813190.eu-north-1.elb.amazonaws.com`,
+EEP `http://a08443535da2a4ee5856aeb58f0ae7f7-167484581.eu-north-1.elb.amazonaws.com` (`/docs`, `/metrics`),
+report `…/cases/demo-stenosis-0003/report.html`.
+
+**Pending / next (presentation tomorrow):** GT1/GT2/GT3 all MET. Next required boxes (RUBRIC_TRACKER):
+Prometheus+Grafana monitoring (M3), automated e2e test on deployed system (Q1), finish Tradeoffs doc (T5),
+MLOps framing (M1/M2). Teardown after the demo: `deployment/aws/teardown.sh`.
+
+---
+
+## 2026-06-08 (cont.) — Andrew (LIVE ON AWS — EKS deploy end-to-end, GT1+GT2 met)
+
+**Branch:** `feat/eep/scaffold` (+ `feat/frontend/scaffold`) — both pushed.
+
+**What was done:**
+- **Deployed the whole system to AWS EKS** (region eu-north-1/Stockholm). Account `658132201414`, IAM
+  user `mri-deploy`, creds in `~/.aws/` (never in git). `$20/mo` budget alert set.
+- **Public + verified end-to-end** (Playwright on the deployed URLs, 0 console errors): login →
+  worklist (server-rendered from the live EEP) → case report (real findings) → NiiVue viewer fetching
+  `/volume`+`/mask` from the public EEP across CORS → 200. `measurements_ready:true` in-cluster (EEP→IEP
+  orchestration works in the cloud). Screenshot `../aws-deployed-case.png`.
+- **Rubric: GT2 (public AWS API) MET; GT1 (deployed e2e) MET.** Cluster = 2× t3.medium; pods:
+  measurements (ClusterIP), 2× eep (LB), frontend (LB). Sample NIfTI pulled from S3 by an EEP
+  initContainer (no data in images).
+- IaC committed earlier this session: `deployment/aws/` (eksctl + 3-phase scripts + teardown) +
+  `deployment/k8s/` + `docs/deployment.md`. Frontend Dockerfile takes NEXT_PUBLIC_* build args.
+
+**Current LIVE URLs (EPHEMERAL — ELB hostnames change on every redeploy):**
+- Frontend: `http://a359d7957b43847a69ba05ef7b9fad98-1651813190.eu-north-1.elb.amazonaws.com`
+- EEP API: `http://a08443535da2a4ee5856aeb58f0ae7f7-167484581.eu-north-1.elb.amazonaws.com` (`/docs`, `/healthz`, `/metrics`)
+
+**Pending / next action:** decide teardown (`deployment/aws/teardown.sh` to stop the ~$170/mo burn —
+covered by signup credits regardless) vs leave up for demo. Re-deploy any time: `01`→`02`→`03` (~25 min,
+URLs will differ). NEXT rubric items: wire reporting as 2nd IEP (GT3/T3/T4), Prometheus+Grafana on the
+already-exposed `/metrics`, EEP/integration/e2e tests, GitHub Actions CI. Full map in `docs/RUBRIC_TRACKER.md`.
+
+---
+
+## 2026-06-08 — Andrew (container stack up + REAL EEP↔measurements orchestration + frontend LIVE e2e)
+
+**Branch:** `feat/eep/scaffold` (+ `feat/frontend/scaffold`) — both pushed.
+
+**What was done:**
+- **Backend container stack RUNS.** `docker compose up --build` in `deployment/compose/` builds + runs measurements (Flask/gunicorn :8081) + eep (FastAPI/uvicorn :8080). scipy/numpy/nibabel installed from prebuilt wheels on slim — no build-essential needed.
+- **REAL EEP→IEP orchestration PROVEN.** EEP `/readyz` → `measurements_ready: true`; uploading a scan makes the EEP call the measurements IEP over the docker network and return REAL measurements (differ from the cloned fixture; 4/10 components OK: cervical_body_morphometry, group5_fracture_screen, segmental_angles, spondylolisthesis). The other 6 error *as expected* — the minimal stand-in `segmentation.zip` has only the TSS step2 mask (cord/canal need SCT masks/input_iso = G3 Colab-upstream; c3c7_cobb's C7 endplate unmeasurable on sub-amu01; rest cascade). Graceful per-component error contract confirmed.
+- **Frontend LIVE e2e PASSED** (dev server, `.env.local` MODE=live → :8080). Drove the whole flow with Playwright, 0 console errors: login (radiologist) → worklist reads EEP (showed 4 cases incl. a curl-uploaded one) → case report renders real per-level findings → NiiVue viewer loads volume+mask from EEP (200s) → UI upload → real EEP POST /cases → sign-off → reviewed/signed. Screenshots: `../live-case-upload.png`, `../live-signed-state.png`.
+
+**3 bugs found + fixed (verified):**
+- **measurements image wouldn't boot** — `cord_ap`/`functional_canal_ap` import `services.segmentation.sct_segmenter` (a light stdlib SCT-CLI wrapper) but the Dockerfile didn't copy `services/segmentation` → `ModuleNotFoundError`. Fixed: `COPY services/segmentation` (89e95e7).
+- **live upload never sent the file** — `uploadAction` read the File but `createCase` only passed the filename, then POSTed `/cases` with no body → would 422. Fixed: forward the multipart file to the EEP (frontend 85254bf).
+- **sign-off status reverted** — `store._advance` (sim clock) overwrote `reviewed` back to `ready` on every GET for uploaded cases. Fixed: guard `_advance` once reviewed (6e4ed64).
+
+**Files changed:** `deployment/docker/measurements.Dockerfile`, `services/eep/store.py` (eep branch); `frontend/src/lib/api/client.ts`, `frontend/src/app/upload/actions.ts` (frontend branch). Sample data staged in `deployment/compose/sample_data/` (gitignored, not committed).
+
+**Pending / next action:** GT1 demo spine works locally. **NEXT = AWS deploy (GT2)** — needs Andrew's creds + spend OK: ECR + ECS/Fargate or EKS + ALB (public URL) + replace EEP in-memory store with RDS/Postgres + Secrets Manager. Then monitoring (Prometheus/Grafana on the already-exposed /metrics), CI (GitHub Actions build/test/push), tests, docs/tradeoffs. The 3 images are built locally; `--profile fullstack` for the frontend needs `frontend/` at repo root (after feat/frontend merges). Do not start AWS until Andrew confirms.
+
+---
+
 ## 2026-06-06 (cont.) — Group 5 DONE; corner-fix implemented; MASTER handoff written
 
 **Branch:** `groups-5-6` (all pushed, 0 unpushed, HEAD 46d4bdc)

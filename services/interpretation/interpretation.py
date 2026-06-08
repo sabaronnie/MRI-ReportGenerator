@@ -13,6 +13,11 @@ from typing import Any
 
 from .thresholds import THRESHOLDS, classify
 
+DEFAULT_REPORT_DISCLAIMERS = [
+    "This is a research tool, not a medical device. Not for clinical diagnosis.",
+    "Measurements acquired on supine MRI; functional radiographs may differ.",
+]
+
 
 # Substring markers that classify a flag as a QUALITY / caution flag (geometry or
 # segmentation health) rather than a clinical abnormality. "outlier" and "unreliable" were
@@ -244,6 +249,46 @@ def detect_syndromes(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return syndromes
 
 
+def build_reporting_handoff_contract(
+    report: dict[str, Any],
+    *,
+    manifest: dict[str, Any],
+    case: dict[str, Any] | None = None,
+    report_context: dict[str, Any] | None = None,
+    contract_version: str = "1.0",
+) -> dict[str, Any]:
+    """Build the stable post-interpretation payload handed to reporting.
+
+    `report` is the measurement/interpretation payload produced by the current
+    measurement orchestrator. This helper reshapes it into the reporting contract
+    documented in REPORTING_HANDOFF_CONTRACT.md and backfills default sections
+    that reporting expects (notably `interpretations.syndromes`, `case`, and
+    `report_context`).
+    """
+    case_payload = _normalize_case(case)
+    report_context_payload = _normalize_report_context(report_context)
+
+    interpretations = dict(report.get("interpretations", {}))
+    interpreted_rows = list(interpretations.get("measurements", []))
+    syndromes = interpretations.get("syndromes")
+    if syndromes is None:
+        syndromes = detect_syndromes(interpreted_rows)
+
+    return {
+        "contract_version": contract_version,
+        "case": case_payload,
+        "manifest": dict(manifest),
+        "components": dict(report.get("components", {})),
+        "measurements": dict(report.get("measurements", {})),
+        "flags": dict(report.get("flags", {})),
+        "interpretations": {
+            "measurements": interpreted_rows,
+            "syndromes": list(syndromes),
+        },
+        "report_context": report_context_payload,
+    }
+
+
 def _matching_flags(
     *,
     flags: dict[str, dict[str, bool]],
@@ -289,3 +334,38 @@ def _infer_unit(measurement_name: str) -> str:
     if "ratio" in measurement_name.lower():
         return "ratio"
     return "unknown"
+
+
+def _normalize_case(case: dict[str, Any] | None) -> dict[str, Any]:
+    case = dict(case or {})
+    patient_context = dict(case.get("patient_context") or {})
+    source_file = dict(case.get("source_file") or {})
+    job_id = case.get("job_id")
+
+    return {
+        "job_id": job_id,
+        "case_id": case.get("case_id", job_id),
+        "submitted_at": case.get("submitted_at"),
+        "patient_context": {
+            "sex": patient_context.get("sex"),
+            "age_years": patient_context.get("age_years"),
+            "height_cm": patient_context.get("height_cm"),
+        },
+        "source_file": {
+            "filename": source_file.get("filename"),
+        },
+    }
+
+
+def _normalize_report_context(report_context: dict[str, Any] | None) -> dict[str, Any]:
+    report_context = dict(report_context or {})
+    disclaimers = report_context.get("disclaimers")
+    if not disclaimers:
+        disclaimers = list(DEFAULT_REPORT_DISCLAIMERS)
+
+    return {
+        "modality": report_context.get("modality", "cervical_sagittal_mri"),
+        "report_language": report_context.get("report_language", "en"),
+        "disclaimers": list(disclaimers),
+        "include_appendix": bool(report_context.get("include_appendix", True)),
+    }
