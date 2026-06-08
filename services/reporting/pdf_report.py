@@ -8,6 +8,7 @@ narrative + table, impression, caveats, and disclaimers. No system dependencies.
 from __future__ import annotations
 
 import os
+import re
 from typing import Any
 
 from fpdf import FPDF
@@ -33,6 +34,21 @@ _STATUS = {
 }
 
 USABLE_W = 170.0  # A4 (210mm) minus 20mm margins each side
+
+
+def _level_key(level: str) -> tuple[int, int]:
+    """Order findings head-to-toe and keep all measurements at one level together.
+    Single levels (C5) group as (5,0); adjacent disc/segmental pairs (C4-C5) slot
+    just below their upper body as (4,1); global spans (Cobb C3-C7) sort to the end."""
+    nums = [int(x) for x in re.findall(r"C(\d+)", level or "")]
+    if not nums:
+        return (99, 0)
+    if len(nums) == 1:
+        return (nums[0], 0)
+    a, b = nums[0], nums[1]
+    if b - a == 1:
+        return (a, 1)
+    return (98, a)
 
 
 def _t(text: Any, limit: int | None = None) -> str:
@@ -215,6 +231,7 @@ def build_clinical_pdf(document: dict) -> bytes:
             pdf.body(s.get("body", ""))
             pdf.ln(1.5)
     if rows:
+        rows = sorted(rows, key=lambda r: _level_key(r.get("level", "")))
         pdf.ln(1)
         _findings_table(pdf, rows)
 
