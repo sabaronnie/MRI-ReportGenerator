@@ -62,6 +62,34 @@ null on a non-compression cohort (Section~\ref{sec:results}).
 read backwards and localized the cause to an over-measured denominator at the cervicothoracic junction ---
 a real, sign-level bug a unit test on clean shapes would have missed.
 
+\paragraph{J17--J21 --- Owning the group code; G1 recalibrations.} Consolidating ownership of the
+measurement modules, four service-level defects were measured and fixed on real cohorts: an over-aggressive
+vertebral-tilt cut (\SI{20}{\degree} flagged 88\% of healthy bodies; recalibrated to \SI{45}{\degree}), the
+vertebral-height corner method (reading \hahp{} backwards, \(\sim\)1.08; replaced by the endplate-line
+fit, \(\sim\)0.93), the disc bulge reference, and a debunked absolute disc-height cut (replaced by a cited
+relative rule). A resolution-robustness check confirmed the mm metrics are stable from \SI{0.8}{} to
+\SI{4}{\milli\meter} through-plane, while the canal-cut Cobb is not --- a third argument for the
+endplate-voxel method.
+
+\paragraph{J22--J23 --- The disc, scaled and stratified.} A 49-case within-MMCSD test (276 disc-levels,
+lesion vs.\ non-lesion) replaced the confounded cross-dataset comparison. The disc \emph{signal} grade
+proved a non-discriminator (AUC $0.50$), as did posterior bulge; the disc/VB AP-width ratio carried the
+only real signal (AUC $0.62$). Critically, an apparent strong AP-width effect (AUC $0.79$) collapsed to
+$0.61$ under level stratification --- the nuisance variable (lesions cluster at wider levels) had nearly
+produced a false headline.
+
+\paragraph{J24--J26 --- The alignment reversal.} Group~4 Cobb was the sharpest lesson. At $n{=}11$ it
+showed a large directional effect ($d{=}0.76$); we resisted reporting it as validated and instead built a
+representative healthy cohort (26 multi-site controls). The effect \emph{dissolved} ($d{=}0.28$, AUC
+$0.57$, $p{=}0.32$): the original controls had been lordosis-biased, and supine positioning is a
+cross-cohort confound. Alignment is a non-specific marker; the larger sample, not a larger easy-side
+sample, settled it.
+
+\paragraph{J25 --- End-to-end and demographics.} The disc group was wired into the orchestrator, patient
+age/sex were threaded through to the interpretation layer (with a cited sex-specific dural-sac cut), and
+the full pipeline was run end-to-end to produce structured reports cross-referenced against a deployed
+front-end render.
+
 \paragraph{Process lessons.} Several themes recur: (i) ground every clinical number in a primary source,
 because plausible-looking in-code constants can trace to the wrong cohort; (ii) separate measurement
 \emph{method} quality from segmentation/body-isolation quality --- they are different levers; (iii) keep

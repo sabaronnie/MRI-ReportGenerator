@@ -14,13 +14,18 @@ abnormal-detection generalizes across any pathology that produces the same anato
 than being trained on a particular disease. Because no public dataset pairs cervical MRI with per-case
 expert measurements, we validate by \emph{threshold crossing and distribution separation}: healthy
 necks must sit on the normal side of each cited threshold, and a symptomatic cohort must shift into the
-abnormal side. On 12 healthy Spine-Generic controls versus 10 symptomatic cervical-spondylosis cases
-from the MMCSD dataset, the canal/cord measurements separate strongly (functional canal AP minimum and
-space-available-for-cord, both Mann--Whitney $p=0.0001$); the SPINEPS endplate-voxel Cobb method reads
-correct lordosis on healthy necks (\SI{+15.2}{\degree}, matching the literature) and a reduced value on
-the pathological cohort; the vertebral compression screen is correctly silent on a non-compression
-cohort; and the validation harness additionally detected a genuine sign-level bug in the disc-height
-index (a denominator over-measured at the cervicothoracic junction). We document the full
+abnormal side. On 12 healthy Spine-Generic controls versus a symptomatic cervical-spondylosis cohort
+from the MMCSD dataset (scaled to 41--49 cases for the disc and alignment groups), the canal/cord
+measurements separate strongly (functional canal AP minimum and space-available-for-cord, both
+Mann--Whitney $p=0.0001$) and the vertebral compression screen is correctly silent on a non-compression
+cohort. Two leads were \emph{revised} by larger, design-appropriate cohorts, which we report as a
+methodological result: the SPINEPS endplate-voxel Cobb method reads correct lordosis (\SI{+15.2}{\degree})
+but on a representative multi-site healthy sample does \emph{not} discriminate myelopathy (a validated
+measurement, not a screen), and the disc group --- after the harness detected and we fixed a sign-level
+height/bulge bug --- separates only modestly, through disc \emph{geometric spread} (disc/vertebral-body AP
+ratio, AUC $0.62$), with disc signal and bulge documented as non-discriminators. Four measurement defects
+were found and fixed, and the interpretation layer was wired and run end-to-end with
+patient-demographic-aware thresholds. We document the full
 mistake-to-fix methodology narrative, the limitations imposed by the absence of ground truth, and the
 deployment architecture. The contribution is less a new algorithm than a disciplined, honest,
 end-to-end \emph{engineering} of clinical measurement automation with explicit provenance and validation.

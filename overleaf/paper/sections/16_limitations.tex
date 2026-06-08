@@ -6,10 +6,20 @@ per-case expert measurements, so we report distribution separation and precision
 sensitivity/specificity or absolute accuracy (e.g.\ an absolute Cobb MAE). Closing this requires an
 institutional read (e.g.\ AUBMC), which we did not have.
 
-\paragraph{Sample size and selection.} The validation used 12 healthy and 10 symptomatic necks, and the
-10 unhealthy cases were \emph{selected to carry mid-cervical lesions}. Part of the Group 3 sharpness is
-therefore by construction; a random draw from the 250 MMCSD cases is the necessary next test, and may
-soften the separation.
+\paragraph{Sample size and selection.} The initial run used 12 healthy and 10 symptomatic necks, with the
+10 unhealthy cases \emph{selected to carry mid-cervical lesions}; part of the Group~3 sharpness is
+therefore by construction, and a random draw from the 250 MMCSD cases remains the necessary next test for
+G3. The disc and alignment leads were subsequently scaled (to 49 symptomatic cases for the within-MMCSD
+disc test, and to 26 healthy vs.\ 41 symptomatic for alignment), which is what \emph{revised} those two
+conclusions; nonetheless all cohorts remain modest and single-institution on the symptomatic side.
+
+\paragraph{Alignment is a non-specific marker, and the small-sample lesson.} Group~4 Cobb illustrates a
+trap we explicitly avoided: an encouraging directional result at $n{=}11$ ($d{=}0.76$) dissolved to no
+separation ($d{=}0.28$, $p{=}0.32$) once the healthy arm was a representative multi-site sample. Healthy
+cervical lordosis is highly variable and supine positioning is a cross-cohort confound, so cervical
+alignment does not discriminate myelopathy in our data; we report it as a validated measurement, not a
+screen. The general limitation: with small samples and no ground truth, a ``large effect'' is a noisy
+estimate, and only a representative sample --- not a larger one on the easy side --- settles it.
 
 \paragraph{Spectrum and cohort bias.} MMCSD is a surgical (severe-end) cervical-spondylosis cohort, so
 claims are scoped to the cervical-spondylosis spectrum; generalization to mild disease or to
@@ -33,9 +43,13 @@ soft-tissue calibration is not established. The disc-degeneration grade cut-poin
 $\kappa$/AUC for cervical and are research-grade. Spondylolisthesis has no supine-MRI presence threshold
 and is reported as experimental.
 
-\paragraph{Group 2 not validated; Group 6 not end-to-end run.} The disc group has a confirmed,
-root-caused bug pending a fix with its author; the interpretation layer is built and unit-tested but its
-end-to-end run is gated on the measurement validation reported here.
+\paragraph{Group 2 partial; Group 6 now end-to-end.} The disc-group defects were root-caused and fixed
+(endplate-line heights, endplate-corner bulge reference, a cited relative disc-height rule); the group is
+now \emph{partially} validated --- the disc/VB-AP-ratio separates modestly (AUC $0.62$) while disc signal
+and posterior bulge are documented non-discriminators, and no per-case cut-point is claimed. The
+interpretation layer (Group~6) was wired end-to-end and runs the full cited catalog with
+demographic-aware (sex-specific) thresholds; its per-case clinical accuracy still awaits an institutional
+read.
 
 \paragraph{Slice thickness.} Cervical T2 is typically \SIrange{3}{4}{\milli\meter} through-plane, so the
 \SI{1}{\milli\meter} isotropic measurement grid is interpolated; the system surfaces a
