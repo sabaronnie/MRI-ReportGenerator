@@ -260,7 +260,7 @@ clinical requirement.
 | Group | Result | Status |
 |---|---|---|
 | **G3** canal / SAC / cord (SCT) | canal AP 11.7 → 8.6 mm **p = 0.0001**; SAC 4.7 → 2.3 mm **p = 0.0001**; cord 6.3 → 5.5 mm p = 0.009 | ✅ **Validated (strong)** |
-| **G4** C3–C7 Cobb (SPINEPS) | Reads correct lordosis +15.2° (= literature 15.4°); discrimination underpowered (d = 0.91, awaiting larger n) | ⚠️ Method-validated |
+| **G4** C3–C7 Cobb (SPINEPS) | Reads correct lordosis on well-positioned controls (+15–20° = literature); but on a balanced cohort (26 H vs 41 U) the effect dissolves: d = 0.28, AUC 0.57, p = 0.32 | ❌ Method-valid, **NOT a discriminator** (J26) |
 | **G1** Ha/Hp compression screen | 0% false-flag on healthy; correctly null on (non-compressive) spondylosis, confirmed n = 49 | ✅ Validated as a screen |
 | **G2** disc | Signal/bulge are documented negatives; disc/VB AP ratio discriminates (AUC 0.62, level-controlled) | ⚠️ Partial — geometric spread only |
 | **G5** myelomalacia / fracture screens | ~91% healthy specificity (myelomalacia); compression screen as G1 | ✅ Validated as screens |

@@ -40,7 +40,9 @@ the numeric results are reproducible from \texttt{run\_validation\_master.py}.
 
 \subsection{What a correct result looks like per group}
 By construction we expect: strong separation where the disease lives (canal/cord stenosis $\rightarrow$
-Group 3); directional separation where the metric is less specific (alignment $\rightarrow$ Group 4); a
-null result where the cohort lacks the pathology (vertebral compression $\rightarrow$ Group 1 on a
+Group 3); weaker or absent separation where the metric is less specific (alignment $\rightarrow$ Group 4);
+a null result where the cohort lacks the pathology (vertebral compression $\rightarrow$ Group 1 on a
 non-compression cohort); and the harness should catch any metric that points the wrong way (a built-in
-bug detector). Section~\ref{sec:results} shows each of these occurred.
+bug detector). Section~\ref{sec:results} shows each of these occurred --- and, importantly, that the
+alignment lead which looked directional at small $n$ \emph{dissolved to a non-discriminator} once a
+representative, balanced cohort was used.
