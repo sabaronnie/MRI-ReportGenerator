@@ -36,11 +36,11 @@ on the record, but it does not feed G6. `age` + `sex` are the demographics the p
 | Group | Component(s) (orchestrator NAME) | Key outputs | Validated? | Wired into orchestrator? |
 |---|---|---|---|---|
 | **G1** vertebra | `cervical_body_morphometry`, `spondylolisthesis` | `H_anterior/H_middle/H_posterior`, `AP_width`, `tilt_deg`; slip | screen ✅; heights fixed (endplate-line), tilt recalibrated | ✅ |
-| **G2** disc | `disc_si_height`, `disc_height_index`, `disc_ap_bulge`, `pfirrmann_grade` | `disc_SI_height`, `DHI`, `posterior_bulge_mm`, `disc_vb_ap_ratio`, `nucleus_csf_ratio` | partial — disc/VB AP ratio discriminates (AUC 0.62); signal/bulge negative | ❌ **NOT wired** (contract confirms) |
+| **G2** disc | `disc_si_height`, `disc_height_index`, `disc_ap_bulge`, `pfirrmann_grade` | `disc_SI_height`, `DHI`, `posterior_bulge_mm`, `disc_vb_ap_ratio`, `nucleus_csf_ratio` | partial — disc/VB AP ratio discriminates (AUC 0.62); signal/bulge negative | ✅ **wired** (J25; all four components in orchestrator `COMPONENTS`) |
 | **G3** canal/cord | `functional_canal_ap`, `cord_ap`, `sac` | `canal_AP`, `cord_AP`, `SAC` (per level) | ✅ **strong** (p=0.0001) | ✅ |
-| **G4** alignment | `c3c7_cobb_angle`, `lordosis_classification`, `segmental_angles`, `posterior_tangent_angle` | `Cobb_C3_C7` (prefers SPINEPS C1) | directional/borderline (p=0.070); production C1 path verified | ✅ |
+| **G4** alignment | `c3c7_cobb_angle`, `lordosis_classification`, `segmental_angles`, `posterior_tangent_angle` | `Cobb_C3_C7` (prefers SPINEPS C1) | **method-valid, NOT a discriminator** (balanced 26 H vs 41 U: d=0.28, AUC 0.57, p=0.32; J26); production C1 path verified | ✅ |
 | **G5** screens | `fracture_screen` (+ myelomalacia in group5 pipeline) | compression/wedge flags; lesion flags | screens validated (~91% specificity) | `fracture_screen` ✅; myelomalacia via group5 contract |
-| **G6** interpret | `services/interpretation` (`build_interpreted_measurements`, `classify`, `detect_syndromes`) | per-finding status + syndrome detection | built + unit-tested | ✅ called inside `run_all()` (scaffold — see §4) |
+| **G6** interpret | `services/interpretation` (`build_interpreted_measurements`, `classify`, `detect_syndromes`) | per-finding status + syndrome detection | built + unit-tested; **wired end-to-end** (J25) | ✅ called inside `run_all()`; `classify()` applied per catalogued key (see §4) |
 
 ## 4. G6 interpretation — how it works + what's pending
 - **`thresholds.py`** — a cited threshold catalog (`Band`/`ThresholdSpec`/`classify(key, value)`), provenance
@@ -48,13 +48,13 @@ on the record, but it does not feed G6. `age` + `sex` are the demographics the p
 - **`interpretation.py`** — `build_interpreted_measurements(report, ...)` wraps each numeric output with a
   status, `detect_syndromes()` flags stenosis/radiculopathy-style patterns, `interpret_group5_contract()`
   folds in the G5 flags. The report carries `interpretations.measurements[*].demographics_used` (today `{}`).
-- **Current limitation (the scaffold gap):** `build_interpreted_measurements` marks a value
-  `outside_reference` only when a known pathology flag is set, else `review_only` — it does **not yet** run
-  the full `classify()` catalog per measurement. So the rich cited catalog exists but the orchestrator's
-  interpretation pass is a simpler scaffold. Wiring `classify()` in is a known task.
-- **Demographics not yet consumed:** `demographics_used` stays `{}`; age/sex are in the contract but no band
-  is age/sex-adjusted yet (the catalog cites Nell 2019 / PAM50 as the proper norms — implementing the
-  percentile lookup is future work).
+- **`classify()` IS wired (J25):** `build_interpreted_measurements` calls `classify(key, value)` for every
+  catalogued measurement (it was NOT a pure scaffold, as an earlier draft of this doc claimed); non-catalogued
+  keys fall back to flag-only (`outside_reference` if a pathology flag is set, else `review_only`).
+- **Demographics consumed (J25):** `demographics_used` is populated per measurement; **sex adjusts the
+  dural-sac cut** (Nell 2019 M<10/F<9 mm). `age`/`height` flow into the context; `height` is record-only (no
+  cervical norm normalises by height). Age/sex *percentile* lookups for canal/SAC/cord beyond the dural-sac
+  sex cut remain future work (cord is delegated to SCT PAM50).
 - **Threshold corrections (from `cervical_unhealthy_validation_plan`)** partly reflected (e.g. DHI<0.30
   debunked); still to verify/apply: dural-sac/SAC/Torg over-flag relaxation, drop the 1.35 mm bulge figure,
   van Santbrink offset direction, Miyazaki IV non-discriminating.
