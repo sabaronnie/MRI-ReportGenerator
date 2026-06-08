@@ -420,6 +420,36 @@ the target metric (revert otherwise). All 137 service tests stayed green after e
   healthy necks canal-cut couldn't measure (C7 obscured) → coverage up. p=0.13 still (n=11v10) — discrimination
   is the SPINEPS-on-50 batch (RUN 2). Committed.
 
+## J23 — G2 within-MMCSD validation (49 cases, confound-free): signal is dead, disc-SPREAD discriminates
+- **Design:** the cross-dataset healthy-vs-unhealthy test is scanner-confounded for the acquisition-
+  sensitive disc metrics, so we validated WITHIN the MMCSD cohort: per disc level, lesion vs non-lesion
+  (labels `high_pain_text.xlsx` 2C2-3..2C7-T1, 1=lesion), native `tss/input` grayscale (no resample
+  darkening), the fixed endplate-corner bulge. 46/49 cases, 276 discs (87 lesion / 189 non-lesion).
+  CRITICAL control: lesion discs cluster at mid-cervical (wider) levels, so every metric was re-tested
+  LEVEL-CENTERED (residual vs its own level median) to remove the level main-effect.
+- **Findings (level-stratified = the valid numbers):**
+  - **Signal (nucleus/CSF ratio, Miyazaki grade): NO discrimination** — AUC 0.50, p=0.93 / 0.96. Even with
+    the correct native grayscale, disc signal does not separate lesion from non-lesion. A clean NEGATIVE
+    result; the signal axis is abandoned for this cohort (and the absolute all-grade-4 confirms the ratio
+    calibration is unreliable, not just confounded).
+  - **Posterior bulge (even fixed): flat** — AUC 0.50. TSS segments the disc to anatomical borders, not the
+    protruding nucleus, so geometric protrusion-past-chord can't see a herniation. Documented limitation.
+  - **Disc AP width: real effect, MOSTLY the level confound** — raw d=1.04 / AUC 0.79 collapses to d=0.39 /
+    AUC 0.61 (p=0.0022) once level-centered. A genuine ~1.5 mm within-level residual remains, but reporting
+    the raw 0.79 would have been a confounded over-claim.
+  - **Disc/VB AP ratio: survives cleanly** — AUC 0.62, p=0.0018, consistent per-level signs. The disc
+    spreads toward the vertebral-body width as it degenerates; this normalizes for body size and is the
+    best G2 discriminator.
+  - **DHI: weak but correct direction** — AUC 0.59, p=0.015 (lesion discs slightly lower); the raw test
+    even read backwards (AUC 0.41) purely from the level confound, which the stratification fixed.
+- **Verdict:** G2's discriminating signal is disc GEOMETRIC SPREAD (disc/VB AP ratio + AP width), modest
+  (AUC ~0.61-0.62) but confound-controlled — NOT signal, NOT posterior-bulge. No validated cutoff (no
+  per-case GT); reported as a continuous separation. The fixes from J22 (bulge reference, DHI relative flag)
+  remove the backwards/over-flag artifacts; this run says what actually carries information.
+- **Lesson:** the level confound nearly produced a fake headline (AP width "AUC 0.79"). Stratifying by the
+  obvious nuisance variable (level) before believing a within-cohort separation is the discipline that kept
+  G2 honest — same family as the cross-scanner caution in validation_design_rationale.
+
 ---
 *Open methodology gaps tracked elsewhere:* teammate threshold/citation fixes (disc DHI<0.30, bulge flat-wall,
 Pfirrmann cut-points) — see `group5/AUDIT_groups1-4_measurements.md`; C6/C7 Cobb **precision** is now closed by

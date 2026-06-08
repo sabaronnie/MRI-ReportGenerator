@@ -13,7 +13,7 @@ distribution-separation; no per-case radiologist GT exists). Cohort: 12 healthy 
 | **G1** | Ha/Hp compression screen (our 5.2) | 0% FP on 12 healthy | correctly NULL on spondylosis (true neg) | ✅ **validated as screen**; compression-fracture arm UNTESTED (no dataset) |
 | **G5.1** | myelomalacia (SCIseg) | ~91% healthy specificity | sensitivity from SCIseg paper; MMCSD arm not run | ✅ **healthy-validated**; unhealthy arm pending |
 | **G5.2** | fracture/compression | = G1 (17%→0% FP) | RSNA negative (non-compression); same gap as G1 | ✅ **validated as screen** |
-| **G2** | disc DHI / bulge / signal | over-flagged (now fixed for DHI) | does NOT discriminate | ❌ **NOT validated — in active remediation** |
+| **G2** | disc DHI / bulge / signal | over-flag fixed (J22) | within-MMCSD: signal DEAD; **disc/VB AP ratio + AP width discriminate** (AUC ~0.62, level-controlled) | ⚠️ **partial — geometric disc-spread validated; signal/bulge negative** |
 | **G4** | Cobb canal-cut; segmental; post-tangent | sign fixed | noisy / no norm | ⚠️ superseded by C1 / not validated |
 | **G1** | morphometry heights + slip (SERVICE) | Ha/Hp backwards (corner method) | — | ❌ **service port not done** (our endplate method works; not ported) |
 | **G6** | interpretation catalog | thresholds cited | n/a | 🔧 **built + unit-tested, NOT end-to-end run** |
@@ -40,15 +40,20 @@ experimental (no supine-MRI threshold). AP width/tilt are quality metrics (tilt 
 5.2 compression (17%→0% FP) and 5.1 myelomalacia (~91% healthy specificity) validated on healthy. 5.1 was
 NOT run on the MMCSD unhealthy cohort this pass (open). 5.3 tumor scoped out, 5.4 scar deferred (needs gadolinium).
 
-### G2 — NOT validated; in active remediation (current work)
-DHI + bulge read backwards (healthy worse than pathology) = real bug. Root cause: cross-dataset
-calibration (healthy/unhealthy from different scanners) confounds the height-ratio and signal metrics;
-physical dimensions (G3 mm) are immune, which is why G3 validated and G2 doesn't. Done so far: a cited
-relative reduced-height flag cut false-firing 77%→3% (additive, safe), but disc height doesn't
-discriminate this cohort (3% vs 2%). Signal axis: tried, also flat + a calibration bug (healthy discs
-mis-grade 4) traced to resampling the raw onto the mask grid. **In progress:** native-grayscale signal +
-**within-MMCSD per-level validation** (lesion vs non-lesion discs, same scanner — confound-free), scaling
-to ~50 MMCSD cases for statistical power (pilot d≈0.48 → need ~70 discs/group).
+### G2 — PARTIAL: geometric disc-spread validated; signal/bulge are negatives (J23, 49-case within-MMCSD)
+Within-MMCSD lesion vs non-lesion (46/49 cases, 276 discs, 87 lesion / 189 non-lesion), **level-stratified**
+to remove the confound that lesions cluster at wide mid-cervical levels:
+- **Signal (nucleus/CSF, Miyazaki): DEAD** — AUC 0.50, p=0.93. Even with the correct native `tss/input`
+  grayscale, disc signal does not discriminate. Clean negative; signal axis abandoned for this cohort.
+- **Posterior bulge (fixed): flat** — AUC 0.50. TSS masks don't capture protrusion (segments to anatomical
+  borders). Documented limitation.
+- **Disc/VB AP ratio: ✅ discriminates** — AUC 0.62, p=0.0018, consistent per-level. Best G2 metric (disc
+  spreads toward VB width with degeneration; normalizes for body size).
+- **Disc AP width: discriminates but mostly level-confound** — raw AUC 0.79 → 0.61 stratified (p=0.0022);
+  genuine ~1.5 mm within-level residual.
+- **DHI: weak/correct** — AUC 0.59, p=0.015 (raw read backwards purely from the level confound).
+No validated cutoff (no per-case GT) → reported as continuous separation. J22 fixes removed the
+backwards/over-flag artifacts (bulge 60%→8% healthy, DHI relative flag); this run says what carries signal.
 
 ### G6 — built, not end-to-end run
 Catalog + classify + interpretation engine unit-tested. Threshold corrections identified (dural-sac/SAC/Torg
@@ -83,6 +88,7 @@ service tests green. Harness: `research/group5/test_service_g1_g2.py`.
 
 ## One-line state
 G3 validated; G4 method-validated/directional; G1+G5 screens healthy-validated (compression arm gap);
-G2 not validated (active remediation, 50-case within-MMCSD run); G6 built, pending. Local: G1 tilt cut
+G2 partial (signal/bulge negative, disc/VB AP ratio + AP width discriminate AUC ~0.62 level-controlled,
+49-case within-MMCSD J23); G6 built, pending. Local: G1 tilt cut
 recalibrate 20°→~45° (over-flagged 83% healthy); AP depth + Ha/Hp precision confirmed; mm metrics
 resolution-robust, canal-cut Cobb is not.
