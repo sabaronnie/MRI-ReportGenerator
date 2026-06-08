@@ -92,6 +92,12 @@ def compute(ctx: MeasurementContext, prior_results: dict[str, Any]) -> Component
         measurements["disc_vb_ap_ratio"][disc_name] = float(ratio)
         measurements["posterior_bulge_mm"][disc_name] = float(posterior_bulge_mm)
         measurements["vb_ap_width_ref"][disc_name] = float(vb_ref)
+        # ratio>=1.10 is a COHORT-DERIVED cut (no published cervical disc-AP/VB-AP-width ratio
+        # norm exists -- search NEGATIVE, memory disc_vb_ap_ratio_norm), calibrated from the
+        # MMCSD/healthy distribution exactly like the Ha/Hp z-screen -- NOT a made-up/literature
+        # number. Mechanism is literature-grounded: cervical disc AP diameter widens with
+        # degeneration (Machino 2021, PMID 34098133). It is G2's one discriminator (AUC 0.62,
+        # level-controlled, J23); surfaced for physician review, no per-case ground truth.
         flags["disc_bulge_present"][disc_name] = posterior_bulge_mm >= 2.0 or ratio >= 1.10
         flags["disc_ap_unreliable"][disc_name] = reliable != "yes"
 
