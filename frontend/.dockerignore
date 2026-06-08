@@ -1,0 +1,10 @@
+node_modules
+.next
+.git
+npm-debug.log*
+Dockerfile
+.dockerignore
+.superpowers
+# large runtime sample volumes are served by the EEP in live mode, never bundled
+public/samples/*.nii
+public/samples/*.nii.gz
