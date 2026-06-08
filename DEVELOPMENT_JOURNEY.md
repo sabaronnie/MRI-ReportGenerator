@@ -503,6 +503,30 @@ the target metric (revert otherwise). All 137 service tests stayed green after e
 - **Lesson:** "built + unit-tested" hid an integration gap (G2 never in the run loop) and a stale threshold
   (DHI<0.30) — only running the *whole* orchestrator end-to-end surfaced both. Wiring is its own validation.
 
+## J26 — G4 with a balanced healthy cohort: the effect EVAPORATES — Cobb does NOT discriminate
+- **Setup:** added 15 new SPINEPS healthy controls (Spine-Generic balgrist/nottwil/brnoUhb/amu/fsl) to the
+  original 12 → 26 healthy vs 41 unhealthy, the balanced design J24 said should cross p<0.05.
+- **Result — the opposite of the prediction:** healthy mean fell **+15.2° → +10.7°**; vs unhealthy +8.0°.
+  **Cohen d 0.76 → 0.28, AUC 0.68 → 0.57, two-sided p 0.070 → 0.32.** G4 Cobb does **NOT** separate
+  healthy from CSM.
+- **Why (the mechanism):** huge BETWEEN-SITE variation in healthy cervical lordosis — beijingGE +20.9°,
+  amu +11.6°, nottwil +6.0°, balgrist **+0.9°** (one −12.7° kyphotic). The original 12 were a
+  lordosis-BIASED sample (amu/beijingGE/fslAchieva); adding balgrist/nottwil dropped the healthy mean into
+  the symptomatic range. The promising d=0.76 was a small-sample + site-selection artifact, not a real
+  effect — exactly the "underpowered effect size is a noisy estimate" lesson from J24, now realised.
+- **Two confounds that make this expected, not surprising:** (1) supine MRI **positioning** (neck
+  flexion/extension) varies by site protocol and directly sets Cobb — the multi-site healthy carry
+  positioning variance the single-protocol MMCSD does not; (2) cervical lordosis is genuinely a
+  population-variable trait (SD ±10°, range −13° to +32° in healthy here).
+- **What survives:** the METHOD is still valid — well-positioned controls read +15–20°, matching the
+  standing-radiograph literature, and the SPINEPS endplate-voxel fit is precise (J12). G4 measures Cobb
+  correctly; Cobb just isn't a disease discriminator. Verdict: **method-validated, NOT a discriminator**
+  (unlike G3 canal stenosis, p=0.0001). This vindicates the standing caution that alignment is a
+  biologically weak/non-specific CSM marker.
+- **Lesson:** chasing statistical significance on an underpowered "large effect" was the trap — the right
+  move was to get a representative sample, which dissolved the effect. Reporting G4 as "validated" off the
+  n=11 result would have been the fake-clean-number failure Andrew explicitly warned against.
+
 ---
 *Open methodology gaps tracked elsewhere:* teammate threshold/citation fixes (disc DHI<0.30, bulge flat-wall,
 Pfirrmann cut-points) — see `group5/AUDIT_groups1-4_measurements.md`; C6/C7 Cobb **precision** is now closed by
