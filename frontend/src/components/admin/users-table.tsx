@@ -34,6 +34,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ROLES, ROLE_LABEL, type ManagedUser } from "@/lib/auth/users";
 import type { Role } from "@/lib/api/contract";
 import {
@@ -44,8 +51,6 @@ import {
 } from "@/app/(app)/admin/actions";
 
 const HEAD = "text-xs font-medium uppercase tracking-wider text-muted-foreground";
-const SELECT =
-  "h-8 rounded-lg border border-input bg-transparent px-2 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50";
 
 export function UsersTable({ users }: { users: ManagedUser[] }) {
   return (
@@ -86,19 +91,22 @@ function UserRow({ user }: { user: ManagedUser }) {
       <TableCell className="font-medium">{user.name}</TableCell>
       <TableCell className="font-mono text-xs text-muted-foreground">{user.email}</TableCell>
       <TableCell>
-        <select
-          aria-label={`Role for ${user.name}`}
-          className={SELECT}
-          defaultValue={user.role}
+        <Select
+          value={user.role}
           disabled={pending}
-          onChange={(e) => run(() => setRoleAction(user.id, e.target.value as Role), "Role updated")}
+          onValueChange={(v) => run(() => setRoleAction(user.id, v as Role), "Role updated")}
         >
-          {ROLES.map((r) => (
-            <option key={r} value={r}>
-              {ROLE_LABEL[r]}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger size="sm" className="w-[150px]" aria-label={`Role for ${user.name}`}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {ROLES.map((r) => (
+              <SelectItem key={r} value={r}>
+                {ROLE_LABEL[r]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </TableCell>
       <TableCell>
         {user.active ? (

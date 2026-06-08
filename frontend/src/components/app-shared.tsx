@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ListChecks, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, ListChecks, ShieldCheck, Upload } from "lucide-react";
 import type { Role } from "@/lib/api/contract";
 
 export type SidebarNavItem = {
@@ -10,15 +10,22 @@ export type SidebarNavItem = {
   roles?: Role[];
 };
 
-/** Primary navigation. "Upload scan" is the prominent CTA in the sidebar, so it
- * is intentionally not duplicated here. */
+/** Primary navigation. */
 export const navItems: SidebarNavItem[] = [
+  { title: "Dashboard", path: "/dashboard", icon: <LayoutDashboard /> },
   { title: "Worklist", path: "/worklist", icon: <ListChecks /> },
+  {
+    title: "Upload",
+    path: "/upload",
+    icon: <Upload />,
+    roles: ["radiologist", "technologist", "admin"],
+  },
   { title: "Admin", path: "/admin", icon: <ShieldCheck />, roles: ["admin"] },
 ];
 
 /** Human title for the current route, shown in the app header. */
 export function pageTitleFor(pathname: string): string {
+  if (pathname.startsWith("/dashboard")) return "Dashboard";
   if (pathname.startsWith("/worklist")) return "Worklist";
   if (pathname.startsWith("/cases")) return "Case report";
   if (pathname.startsWith("/upload")) return "Upload scan";

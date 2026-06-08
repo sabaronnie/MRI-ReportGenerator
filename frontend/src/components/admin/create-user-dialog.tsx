@@ -15,11 +15,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ROLES, ROLE_LABEL } from "@/lib/auth/users";
 import { createUserAction } from "@/app/(app)/admin/actions";
-
-const SELECT =
-  "h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 export function CreateUserDialog() {
   const [open, setOpen] = useState(false);
@@ -62,13 +66,18 @@ export function CreateUserDialog() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="cu-role">Role</Label>
-            <select id="cu-role" name="role" defaultValue="radiologist" className={SELECT}>
-              {ROLES.map((r) => (
-                <option key={r} value={r}>
-                  {ROLE_LABEL[r]}
-                </option>
-              ))}
-            </select>
+            <Select name="role" defaultValue="radiologist">
+              <SelectTrigger id="cu-role" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ROLES.map((r) => (
+                  <SelectItem key={r} value={r}>
+                    {ROLE_LABEL[r]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="cu-pw">Initial password</Label>

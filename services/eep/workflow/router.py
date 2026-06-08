@@ -6,6 +6,8 @@ its own mutable state lives in workflow.db. See docs/workflow-features.md.
 
 from __future__ import annotations
 
+import collections
+
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
@@ -22,6 +24,16 @@ db.init_db()
 router = APIRouter(prefix="/workflow", tags=["workflow"])
 
 _TRIAGE_RANK = {"urgent": 0, "review": 1, "none": 2}
+
+# Map a flagged measurement to a clinical group (for the dashboard flag breakdown).
+_FLAG_GROUP = {
+    "canal_AP": "Canal / cord", "dural_sac_AP_min": "Canal / cord",
+    "SAC": "Canal / cord", "cord_AP": "Canal / cord",
+    "DHI": "Disc", "posterior_bulge_mm": "Disc",
+    "disc_vb_ap_ratio": "Disc", "pfirrmann_grade": "Disc",
+    "Cobb_C3_C7": "Alignment", "spondy_slip_mm": "Alignment",
+    "vb_hahp_ratio": "Vertebra",
+}
 
 
 class AssignIn(BaseModel):
@@ -100,6 +112,50 @@ def worklist(
 
 
 # ------------------------------------------------------------- case detail ---
+
+@router.get("/stats")
+def stats(_: dict = Depends(get_current_user)):
+    """Aggregate dashboard metrics computed from the case store."""
+    cases = [c for c in (store.get_case(s["case_id"]) for s in store.list_cases()) if c]
+    by_status: collections.Counter = collections.Counter()
+    by_triage: collections.Counter = collections.Counter()
+    flags_by_group: collections.Counter = collections.Counter()
+    by_day: collections.Counter = collections.Counter()
+    flagged_cases = signed = 0
+    open_ages: list[float] = []
+
+    for c in cases:
+        case = c.get("case", {})
+        by_status[case.get("status") or "unknown"] += 1
+        by_triage[case.get("triage_badge") or "none"] += 1
+        day = (case.get("created_at") or "")[:10]
+        if day:
+            by_day[day] += 1
+        t = tat.compute(case.get("created_at", ""), case.get("status", ""))
+        if t["tat_status"] == "signed":
+            signed += 1
+        elif t["age_hours"] is not None:
+            open_ages.append(t["age_hours"])
+        rows = (c.get("interpretations") or {}).get("measurements") or []
+        case_flagged = False
+        for r in rows:
+            if r.get("status") == "outside_reference" and r.get("flag"):
+                case_flagged = True
+                flags_by_group[_FLAG_GROUP.get(r.get("measurement"), "Other")] += 1
+        if case_flagged:
+            flagged_cases += 1
+
+    return {
+        "total": len(cases),
+        "by_status": dict(by_status),
+        "by_triage": dict(by_triage),
+        "flagged_cases": flagged_cases,
+        "signed": signed,
+        "avg_open_tat_hours": round(sum(open_ages) / len(open_ages), 1) if open_ages else 0.0,
+        "flags_by_group": dict(flags_by_group),
+        "by_day": dict(sorted(by_day.items())),
+    }
+
 
 @router.get("/cases/{case_id}")
 def case_workflow(case_id: str, _: dict = Depends(get_current_user)):

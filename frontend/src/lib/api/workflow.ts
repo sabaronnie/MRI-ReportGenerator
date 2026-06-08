@@ -89,6 +89,42 @@ export async function getWorklist(params: WorklistParams = {}): Promise<Worklist
   return rows;
 }
 
+export type Stats = {
+  total: number;
+  by_status: Record<string, number>;
+  by_triage: Record<string, number>;
+  flagged_cases: number;
+  signed: number;
+  avg_open_tat_hours: number;
+  flags_by_group: Record<string, number>;
+  by_day: Record<string, number>;
+};
+
+export async function getStats(): Promise<Stats> {
+  if (WORKFLOW_LIVE) return authed<Stats>("/workflow/stats");
+  // mock: aggregate from the worklist summaries (no per-case flag detail available)
+  const cases = await listCases();
+  const by_status: Record<string, number> = {};
+  const by_triage: Record<string, number> = {};
+  const by_day: Record<string, number> = {};
+  for (const c of cases) {
+    by_status[c.status] = (by_status[c.status] ?? 0) + 1;
+    by_triage[c.triage_badge] = (by_triage[c.triage_badge] ?? 0) + 1;
+    const d = c.created_at.slice(0, 10);
+    by_day[d] = (by_day[d] ?? 0) + 1;
+  }
+  return {
+    total: cases.length,
+    by_status,
+    by_triage,
+    flagged_cases: by_triage.urgent ?? 0,
+    signed: by_status.reviewed ?? 0,
+    avg_open_tat_hours: 0,
+    flags_by_group: {},
+    by_day,
+  };
+}
+
 export async function getCaseWorkflow(id: string): Promise<CaseWorkflow> {
   if (WORKFLOW_LIVE) return authed<CaseWorkflow>(`/workflow/cases/${encodeURIComponent(id)}`);
   return { case_id: id, assignment: null, tat: { age_hours: null, tat_status: "unknown", target_hours: TAT_TARGET_HOURS }, addenda: [] };

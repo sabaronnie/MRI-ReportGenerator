@@ -3,8 +3,15 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-const SELECT =
+const INPUT =
   "h-8 rounded-lg border border-input bg-transparent px-2 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 export function WorklistFilters({ live }: { live: boolean }) {
@@ -29,53 +36,58 @@ export function WorklistFilters({ live }: { live: boolean }) {
           placeholder="Search case…"
           defaultValue={sp.get("q") ?? ""}
           onChange={(e) => setParam("q", e.target.value.trim() || null)}
-          className={`${SELECT} w-44 pl-8`}
+          className={`${INPUT} w-44 pl-8`}
           aria-label="Search cases"
         />
       </div>
 
-      <select
-        className={SELECT}
-        defaultValue={sp.get("sort") ?? "priority"}
-        onChange={(e) => setParam("sort", e.target.value === "priority" ? null : e.target.value)}
-        aria-label="Sort"
+      <Select
+        value={sp.get("sort") ?? "priority"}
+        onValueChange={(v) => setParam("sort", v === "priority" ? null : v)}
       >
-        <option value="priority">Priority</option>
-        <option value="newest">Newest</option>
-        <option value="oldest">Oldest</option>
-      </select>
+        <SelectTrigger size="sm" className="w-32" aria-label="Sort">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="priority">Priority</SelectItem>
+          <SelectItem value="newest">Newest</SelectItem>
+          <SelectItem value="oldest">Oldest</SelectItem>
+        </SelectContent>
+      </Select>
 
-      <select
-        className={SELECT}
-        defaultValue={sp.get("triage") ?? ""}
-        onChange={(e) => setParam("triage", e.target.value || null)}
-        aria-label="Filter by triage"
+      <Select
+        value={sp.get("triage") ?? "all"}
+        onValueChange={(v) => setParam("triage", v === "all" ? null : v)}
       >
-        <option value="">All triage</option>
-        <option value="urgent">Urgent</option>
-        <option value="review">Review</option>
-        <option value="none">No flags</option>
-      </select>
+        <SelectTrigger size="sm" className="w-32" aria-label="Filter by triage">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All triage</SelectItem>
+          <SelectItem value="urgent">Urgent</SelectItem>
+          <SelectItem value="review">Review</SelectItem>
+          <SelectItem value="none">No flags</SelectItem>
+        </SelectContent>
+      </Select>
 
-      <select
-        className={SELECT}
-        defaultValue={sp.get("status") ?? ""}
-        onChange={(e) => setParam("status", e.target.value || null)}
-        aria-label="Filter by status"
+      <Select
+        value={sp.get("status") ?? "all"}
+        onValueChange={(v) => setParam("status", v === "all" ? null : v)}
       >
-        <option value="">All status</option>
-        <option value="ready">Ready</option>
-        <option value="processing">Processing</option>
-        <option value="queued">Queued</option>
-        <option value="reviewed">Reviewed</option>
-      </select>
+        <SelectTrigger size="sm" className="w-32" aria-label="Filter by status">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All status</SelectItem>
+          <SelectItem value="ready">Ready</SelectItem>
+          <SelectItem value="processing">Processing</SelectItem>
+          <SelectItem value="queued">Queued</SelectItem>
+          <SelectItem value="reviewed">Reviewed</SelectItem>
+        </SelectContent>
+      </Select>
 
       {live ? (
-        <Button
-          variant={mine ? "default" : "outline"}
-          size="sm"
-          onClick={() => setParam("mine", mine ? null : "1")}
-        >
+        <Button variant={mine ? "default" : "outline"} size="sm" onClick={() => setParam("mine", mine ? null : "1")}>
           My cases
         </Button>
       ) : null}

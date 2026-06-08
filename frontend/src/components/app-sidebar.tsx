@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Upload } from "lucide-react";
 import { Brand } from "@/components/brand";
 import {
   Sidebar,
@@ -36,23 +35,6 @@ export function AppSidebar({ role }: { role: Role }) {
       </SidebarHeader>
 
       <SidebarContent>
-        {role !== "viewer" ? (
-          <SidebarGroup>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  tooltip="Upload scan"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
-                  render={<Link href="/upload" />}
-                >
-                  <Upload />
-                  <span>Upload scan</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroup>
-        ) : null}
-
         <SidebarGroup>
           <SidebarMenu>
             {navItems
