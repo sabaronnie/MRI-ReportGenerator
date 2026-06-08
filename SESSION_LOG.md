@@ -11,6 +11,37 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-08 (cont. 4) — Andrew (finalize run: tests + tradeoffs + CI + MLOps + PRs)
+
+**Branch:** `feat/eep/scaffold` — pushed. PRs #2 (backend/infra) + #3 (frontend) opened to main.
+
+**What was done (closed most remaining infra/quality rubric items):**
+- **Tests (Q1/Q2):** EEP unit (`services/eep/tests/`), cross-service contract integration + golden
+  regression (`tests/integration/`), deployed-system e2e (`tests/e2e/test_deployed.py`, env-gated,
+  VERIFIED green against the live EEP). `pytest -q` → 22 passed, 5 skipped. `pytest.ini` + root
+  `conftest.py` + `requirements-dev.txt`.
+- **Tradeoffs (T5):** `docs/tradeoffs.md` rewritten — 6 tradeoffs with measured evidence.
+- **CI (G2/M1):** `.github/workflows/ci.yml` (test+build on push/PR, push-to-ECR on main — needs repo
+  secrets AWS_ACCESS_KEY_ID/SECRET/REGION) + `.github/workflows/mlops.yml` (the gate).
+- **MLOps (M1/M2):** `mlops/validate.py` — evaluates the threshold version on the golden cohort, logs
+  to **MLflow** (SQLite), and gates promotion (exit 1 on regression). VERIFIED: PROMOTE, exit 0,
+  threshold_version hash, render_success_rate=1.0, golden_match. `docs/mlops.md` explains the
+  threshold-versioning framing. `requirements-mlops.txt` (mlflow).
+- **PRs (G2):** #2 https://github.com/sabaronnie/MRI-ReportGenerator/pull/2 (backend/infra),
+  #3 .../pull/3 (frontend). main protected → need a teammate review to merge.
+- Updated `docs/RUBRIC_TRACKER.md` — GT1/2/3, S1–S5, Q1/Q2, M1–M4, T2–T5 now ✅.
+
+**Test/run quickref:** `pip install -r requirements-dev.txt && pytest -q`;
+deployed e2e: `EEP_BASE_URL=<eep-elb> pytest tests/e2e -m e2e`;
+MLOps gate: `pip install -r requirements-mlops.txt && python -m mlops.validate`.
+
+**Pending / next:** (1) teammate review+merge PRs #2/#3 to main; (2) business/positioning one-pager
+(P1–P4) + novelty vs the duplicate-title team (C1/P3) — team; (3) science write-ups (T1/P2);
+(4) TEARDOWN after the demo: `deployment/aws/teardown.sh` (+ `helm uninstall kps -n monitoring`).
+The AWS stack + Grafana are still LIVE for the demo.
+
+---
+
 ## 2026-06-08 (cont. 3) — Andrew (monitoring: Prometheus + Grafana on EKS → M3 met)
 
 **Branch:** `feat/eep/scaffold` — pushed.

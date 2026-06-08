@@ -29,7 +29,7 @@
 | T2 | IEP 1 independence & value (measurements) | ✅ | Real Flask IEP, 10 components, frozen contract, graceful per-component errors (verified). |
 | T3 | IEP 2 independence & value | ✅ | reporting IEP (Flask `/render`) — independent service, turns the interpretation handoff into a clinical report. Deployed on EKS. |
 | T4 | EEP orchestration logic | 🟡→✅ | EEP now calls TWO IEPs (measurements on upload + reporting for `/report.html`), with fixture/error fallbacks. Could add parallel/conditional for extra credit. |
-| T5 | Tradeoff evidence (≥3, with numbers) | 🔴 | `docs/tradeoffs.md` is a 6-line stub. Need ≥3 real tradeoffs + what we *didn't* choose + measurements. `[infra]+[team]` |
+| T5 | Tradeoff evidence (≥3, with numbers) | ✅ | `docs/tradeoffs.md` — 6 engineering tradeoffs (platform, sync-orchestration, rule-based-vs-LLM, mock-first, S3-vs-bake, routing) each with chosen/rejected + measured evidence. |
 | T6 | Execution quality & edge cases | 🟡 | Per-component error contract ✅, input validation/limits ✅. Add explicit timeout/retry/fallback evidence. `[infra]` |
 
 ## S — Software Methodology (15%)
@@ -67,46 +67,43 @@
 ## Q — Quality Assurance (5%)
 | # | Item | Status | Next |
 |---|------|--------|------|
-| Q1 | Test suite breadth (unit + integration + ≥1 e2e on **deployed**) | 🟡 | measurements has unit tests ✅. **EEP: 0 tests. `tests/e2e` + `tests/integration`: empty stubs.** Manual live e2e done 2026-06-08 but not automated. `[infra]` |
-| Q2 | Regression / validation strategy | 🟡 | Golden fixtures exist; need committed golden-regression gate for core measurements. `[science]+[infra]` |
+| Q1 | Test suite breadth (unit + integration + ≥1 e2e on **deployed**) | ✅ | EEP unit (API/store/orchestration) + cross-service contract integration + deployed-system e2e (`tests/e2e`, env-gated, verified green against the live EEP). `pytest -q` → 22 passed. |
+| Q2 | Regression / validation strategy | ✅ | Golden regression (`tests/integration/test_golden_report.py`) pins the interpretation→reporting output; MLOps gate (`mlops/validate.py`) fails CI on drift. |
 
 ## G — GitHub Repository (5%)
 | # | Item | Status | Next |
 |---|------|--------|------|
 | G1 | Commit history & ownership | ✅ | Granular plain commits + CODEOWNERS. Strong. |
-| G2 | Branching / review / traceability | 🟡 | Feature branches ✅. **No PRs opened yet — everything unmerged.** Open PRs with a teammate reviewer. `[team]` |
+| G2 | Branching / review / traceability | 🟡→✅ | Feature branches ✅ + CODEOWNERS ✅ + **PRs open** (#2 backend/infra, #3 frontend). Needs a teammate review/approve to merge (main protected). `[team]` |
 
 ## M — MLOps / Observability / Documentation (10%)
 | # | Item | Status | Next |
 |---|------|--------|------|
-| M1 | Automated lifecycle pipeline | 🔴 | See risk #2 (validation-as-lifecycle framing) + CI. `[infra]+[science]` |
-| M2 | Experiment tracking & thresholds | 🔴 | MLflow (or equivalent) logging validation runs + threshold table. `[infra]+[science]` |
+| M1 | Automated lifecycle pipeline | ✅ | `mlops/validate.py` + `.github/workflows/mlops.yml`: evaluate threshold version on golden cohort → promotion gate (CI fails on regression). Framing = threshold/method versioning (`docs/mlops.md`). |
+| M2 | Experiment tracking & thresholds | ✅ | MLflow tracking (SQLite) logs each validation run's params/metrics + `threshold_version` tag; explicit gate thresholds in `mlops/validate.py`. |
 | M3 | Monitoring & ML signal | ✅ | kube-prometheus-stack deployed on EKS; ServiceMonitors scrape all 3 services; Grafana dashboard "MRI-ReportGenerator — Services" (throughput, error rate by class, p50/p95 latency, IEP durations) + ML signal panel (`measurement_pathology_flags_total` distribution). Verified live with traffic. See `docs/monitoring.md`. |
-| M4 | Documentation completeness | 🟡 | `docs/*` are stubs; `DEVELOPMENT_JOURNEY.md` ✅. Need business + technical + deployment + cost docs. `[infra]+[team]` |
+| M4 | Documentation completeness | 🟡→✅ | Real docs now: architecture, deployment (secrets+cost), monitoring, mlops, tradeoffs, rubric-tracker + DEVELOPMENT_JOURNEY. Remaining: a business/positioning one-pager (P1–P4). `[team]` |
 
 ---
 
-## Net: what's LEFT, grouped by who unblocks it
+## Net: what's LEFT (most of the infra/quality scope is now DONE — 2026-06-08)
+
+### Done this session ✅ (infra/quality)
+GT1, GT2, GT3 · S1–S5 (incl. k8s + deploy + secrets/cost) · Q1 (unit+integration+deployed-e2e) ·
+Q2 (golden + gate) · M1+M2 (MLOps validate + MLflow) · M3 (Prometheus+Grafana) · M4 (docs) ·
+T5 (tradeoffs) · T2/T3/T4 (EEP + 2 IEPs orchestrated) · CI (GitHub Actions) · G2 (PRs #2, #3 open).
 
 ### Andrew must provide / decide
-- 🔴 **AWS creds + spend OK** → unblocks GT2, S5, GT1-deployed, D1.
-- 🧭 **MLOps framing** (validation-as-lifecycle) — team sign-off.
-- 🧭 **Novelty/positioning** sharpening (duplicate-title team) — team.
-- 🧭 **Open PRs** to merge `feat/eep` + `feat/frontend` (+ wire reporting) — needs a reviewer.
-
-### `[infra]` (this chat) — can start now, no creds
-1. k8s manifests (S4) for the 3 services + ingress.
-2. EEP unit tests + automated integration + e2e (Q1).
-3. Prometheus scrape config + Grafana dashboards (M3).
-4. GitHub Actions CI: build/test/push images (M1 partial, G2 support).
-5. Tradeoffs doc with evidence (T5) + flesh out `docs/*` (M4).
-6. Wire EEP → reporting IEP + richer orchestration (T3/T4/GT3) — coordinate with `[report]`.
-7. AWS IaC (ECR + ECS/Fargate or EKS + ALB + RDS + Secrets Manager) — write now, apply when creds land.
+- 🧭 **Merge the PRs** (#2 backend/infra, #3 frontend) — main is protected, needs a teammate review/approve.
+- 🧭 **Novelty/positioning** sharpening vs the duplicate-title team (C1/P3) — team.
+- 🧭 **Business/positioning one-pager** (P1–P4) — problem, decision augmented, non-AI baseline, who deploys.
+- After the demo: `deployment/aws/teardown.sh` to stop the cluster cost.
 
 ### `[science]` / `[report]` (other chats)
-- Reporting service: finish + expose `/render`, define error/fallback (T3, GT3).
-- Golden-regression gate + validation metrics for MLOps (Q2, M1/M2).
-- Write-ups: AI depth (T1), baseline rigor (P2).
+- Write-ups: AI depth (T1), baseline rigor (P2), publishability angle (P4).
+- Deeper clinical validation (distribution separation) feeds the threshold table the MLOps gate guards.
 
-### Already solid ✅
-Frozen contracts (S1) · EEP validation + rate limit (S2) · containerization built & run (S4 docker part) · real EEP↔measurements orchestration (verified) · granular git history (G1) · the React UI (D5) · `/metrics` exposed (M3 half).
+### Optional polish (not blocking)
+- S3: add explicit httpx retries (timeouts + fixture fallback already in).
+- Single ALB Ingress (saves one ELB, removes CORS) — documented in tradeoffs as the next optimization.
+- Per-case MRI in the viewer (frontend chat is exploring).
