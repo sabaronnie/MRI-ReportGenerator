@@ -12,10 +12,14 @@ overleaf/
     sections/  appendix/  figures/
     references.bib           the paper's bibliography
   deliverables/              <- rubric write-ups, each self-contained
-    T1_ai_depth.tex          T1 — AI depth / non-triviality  (DONE)
+    T1_ai_depth.tex          T1 — AI depth / non-triviality  (DONE, compiles)
+    P4_publishability.tex    P4 — value / publishability      (DONE, compiles)
     P2_baseline.tex          P2 — non-AI baseline rigor       (TODO: needs research numbers)
-    P4_publishability.tex    P4 — value / publishability      (TODO)
 ```
+
+Local test-compile (optional): `tectonic deliverables/T1_ai_depth.tex` (installed via
+`brew install tectonic` — a single-binary engine, no full MacTeX needed). T1, P4 and the paper all
+compile clean locally.
 
 ## Compiling
 - **Paper:** set `paper/main.tex` as the main document → pdfLaTeX (+ BibTeX for `references.bib`).
