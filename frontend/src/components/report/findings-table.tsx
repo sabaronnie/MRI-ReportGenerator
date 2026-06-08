@@ -20,7 +20,8 @@ function humanize(key: string): string {
 
 function fmtValue(m: InterpretedMeasurement): string {
   if (m.value === null || m.value === undefined) return "—";
-  return `${Math.round(m.value * 100) / 100} ${m.unit}`;
+  const unit = m.unit && m.unit !== "unknown" ? ` ${m.unit}` : "";
+  return `${Math.round(m.value * 100) / 100}${unit}`;
 }
 
 /** Order head-to-toe, keep all measurements at one level together, and slot adjacent
@@ -35,8 +36,18 @@ const levelKey = (l: string): [number, number] => {
 };
 const HEAD = "text-xs font-medium uppercase tracking-wider text-muted-foreground";
 
+// Clinically-reportable keys (mirror of services/reporting/pdf_report.py). The pipeline
+// emits many intermediate/QC rows; the report shows these + any flagged row.
+const CLINICAL_KEYS = new Set([
+  "canal_AP", "dural_sac_AP_min", "SAC", "cord_AP",
+  "DHI", "posterior_bulge_mm", "disc_vb_ap_ratio", "pfirrmann_grade",
+  "vb_hahp_ratio", "Cobb_C3_C7", "spondy_slip_mm",
+]);
+
 export function FindingsTable({ interpretations }: { interpretations: Interpretations }) {
-  const rows = [...interpretations.measurements].sort((a, b) => {
+  const rows = interpretations.measurements
+    .filter((m) => CLINICAL_KEYS.has(m.measurement) || m.flag)
+    .sort((a, b) => {
     const ka = levelKey(a.level);
     const kb = levelKey(b.level);
     return ka[0] - kb[0] || ka[1] - kb[1] || a.measurement.localeCompare(b.measurement);

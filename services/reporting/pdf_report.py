@@ -35,6 +35,15 @@ _STATUS = {
 
 USABLE_W = 170.0  # A4 (210mm) minus 20mm margins each side
 
+# Clinically-reportable measurement keys (those with a real threshold/interest). The
+# pipeline emits many intermediate/QC rows; the clinical table shows these + any flag.
+CLINICAL_KEYS = {
+    "canal_AP", "dural_sac_AP_min", "SAC", "cord_AP",       # G3 canal / cord
+    "DHI", "posterior_bulge_mm", "disc_vb_ap_ratio", "pfirrmann_grade",  # G2 disc
+    "vb_hahp_ratio",                                          # G1/G5 vertebral compression
+    "Cobb_C3_C7", "spondy_slip_mm",                          # G4 alignment / listhesis
+}
+
 
 def _level_key(level: str) -> tuple[int, int]:
     """Order findings head-to-toe and keep all measurements at one level together.
@@ -49,6 +58,15 @@ def _level_key(level: str) -> tuple[int, int]:
     if b - a == 1:
         return (a, 1)
     return (98, a)
+
+
+def _fmt_value(val: Any, unit: str) -> str:
+    """Round for display: 2 decimals for ratio-scale values (<2), 1 decimal otherwise."""
+    if not isinstance(val, (int, float)):
+        return "-"
+    decimals = 2 if abs(val) < 2 else 1
+    unit = "" if unit in (None, "", "unknown") else unit
+    return f"{val:.{decimals}f} {unit}".strip()
 
 
 def _t(text: Any, limit: int | None = None) -> str:
@@ -187,9 +205,7 @@ def _findings_table(pdf: _Report, rows: list[dict]) -> None:
         pdf.set_xy(20, y0)
         pdf.cell(widths[0], 6, _t(r.get("level", "-")))
         pdf.cell(widths[1], 6, _t(r.get("display_name") or r.get("measurement"), limit=58))
-        val = r.get("value")
-        unit = r.get("unit") or ""
-        pdf.cell(widths[2], 6, _t(f"{val} {unit}".strip() if val is not None else "-"))
+        pdf.cell(widths[2], 6, _t(_fmt_value(r.get("value"), r.get("unit") or "")))
         pdf.set_text_color(*fg)
         pdf.set_font("Helvetica", "B", 8.5)
         pdf.cell(widths[3], 6, _t(label))
@@ -230,6 +246,7 @@ def build_clinical_pdf(document: dict) -> bytes:
             pdf.cell(0, 5, _t(s.get("heading", "")), ln=1)
             pdf.body(s.get("body", ""))
             pdf.ln(1.5)
+    rows = [r for r in rows if r.get("measurement") in CLINICAL_KEYS or r.get("flag")]
     if rows:
         rows = sorted(rows, key=lambda r: _level_key(r.get("level", "")))
         pdf.ln(1)
