@@ -64,7 +64,13 @@ SUBVOXEL_FACTOR = 4
 # Flags / soft sanity checks.
 AP_WIDTH_LOW_MM = 12.0
 AP_WIDTH_HIGH_MM = 22.0
-TILT_DEG_MAX = 20.0
+# tilt_outlier is a SEGMENTATION/slice QUALITY flag (body PCA SI-axis vs global vertical),
+# not a disease detector. The old 20 deg cut was a near-vertical (thoraco-lumbar) assumption:
+# on the lordotic cervical spine, healthy mid/lower bodies are physiologically tilted ~28 deg
+# from absolute vertical, so 20 deg flagged 88% of HEALTHY C3-C7 (Spine-Generic, n=60; J19).
+# Recalibrated to the healthy distribution (median 27.9, mean 28.9 +/- 7.3, p99 42.5, max 43.5):
+# 45 deg = mean + ~2.5SD -> 0% healthy false-flag with margin.
+TILT_DEG_MAX = 45.0
 WEDGE_RATIO = 0.70
 BICONCAVE_RATIO = 0.70
 
