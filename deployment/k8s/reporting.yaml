@@ -1,0 +1,44 @@
+# Reporting IEP — internal only (ClusterIP). The EEP calls it at http://reporting:8082/render.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reporting
+  namespace: mri
+  labels: { app: reporting, tier: iep }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: reporting }
+  template:
+    metadata:
+      labels: { app: reporting, tier: iep }
+    spec:
+      containers:
+        - name: reporting
+          image: ${ECR_REGISTRY}/mri-reporting:${IMAGE_TAG}
+          ports:
+            - containerPort: 8082
+          readinessProbe:
+            httpGet: { path: /readyz, port: 8082 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8082 }
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            requests: { cpu: "100m", memory: "128Mi" }
+            limits:   { cpu: "500m", memory: "256Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reporting
+  namespace: mri
+  labels: { app: reporting }
+spec:
+  type: ClusterIP
+  selector: { app: reporting }
+  ports:
+    - port: 8082
+      targetPort: 8082

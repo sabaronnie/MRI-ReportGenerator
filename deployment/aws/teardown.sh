@@ -19,7 +19,7 @@ eksctl delete cluster --name "$CLUSTER" --region "$AWS_REGION" --wait
 
 if [ "${1:-}" = "--all" ]; then
   echo "==> Deleting ECR repos"
-  for repo in mri-eep mri-measurements mri-frontend; do
+  for repo in mri-eep mri-measurements mri-reporting mri-frontend; do
     aws ecr delete-repository --repository-name "$repo" --region "$AWS_REGION" --force >/dev/null 2>&1 || true
   done
   echo "==> Emptying + deleting samples bucket"

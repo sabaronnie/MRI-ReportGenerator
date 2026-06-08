@@ -16,7 +16,7 @@ fi
 aws eks update-kubeconfig --name "$CLUSTER" --region "$AWS_REGION"
 
 echo "==> [2/3] ECR repositories"
-for repo in mri-eep mri-measurements mri-frontend; do
+for repo in mri-eep mri-measurements mri-reporting mri-frontend; do
   ensure_ecr_repo "$repo"
   echo "    ok: $repo"
 done

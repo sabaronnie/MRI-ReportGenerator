@@ -20,12 +20,25 @@ services:
       timeout: 3s
       retries: 5
 
+  reporting:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/reporting.Dockerfile
+    ports:
+      - "8082:8082"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys;sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8082/healthz').status==200 else 1)"]
+      interval: 30s
+      timeout: 3s
+      retries: 5
+
   eep:
     build:
       context: ../..
       dockerfile: deployment/docker/eep.Dockerfile
     environment:
       MEASUREMENTS_URL: "http://measurements:8081"
+      REPORTING_URL: "http://reporting:8082"
       EEP_ALLOWED_ORIGINS: "http://localhost:3000"
       EEP_SAMPLE_DIR: "/data/samples"
     volumes:
@@ -35,6 +48,8 @@ services:
       - "8080:8080"
     depends_on:
       measurements:
+        condition: service_started
+      reporting:
         condition: service_started
 
   # Activate with `--profile fullstack` once frontend/ exists at the repo root.

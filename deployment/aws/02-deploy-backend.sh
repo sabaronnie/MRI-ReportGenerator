@@ -8,6 +8,9 @@ source "$HERE/lib.sh"
 init_env
 ecr_login
 
+echo "==> Ensuring ECR repos exist"
+for repo in mri-measurements mri-reporting mri-eep; do ensure_ecr_repo "$repo"; done
+
 echo "==> Building + pushing backend images (linux/amd64 for EKS nodes)"
 docker build --platform linux/amd64 \
   -f "$REPO_ROOT/deployment/docker/measurements.Dockerfile" \
@@ -15,19 +18,26 @@ docker build --platform linux/amd64 \
 docker push "$ECR_REGISTRY/mri-measurements:$IMAGE_TAG"
 
 docker build --platform linux/amd64 \
+  -f "$REPO_ROOT/deployment/docker/reporting.Dockerfile" \
+  -t "$ECR_REGISTRY/mri-reporting:$IMAGE_TAG" "$REPO_ROOT"
+docker push "$ECR_REGISTRY/mri-reporting:$IMAGE_TAG"
+
+docker build --platform linux/amd64 \
   -f "$REPO_ROOT/deployment/docker/eep.Dockerfile" \
   -t "$ECR_REGISTRY/mri-eep:$IMAGE_TAG" "$REPO_ROOT"
 docker push "$ECR_REGISTRY/mri-eep:$IMAGE_TAG"
 
-echo "==> Applying measurements + eep manifests"
+echo "==> Applying measurements + reporting + eep manifests"
 # CORS origin is unknown until the frontend LB exists; start permissive-but-explicit and let
 # phase 3 patch it to the real frontend origin.
 export FRONTEND_ORIGIN="http://localhost:3000"
 apply_template "$HERE/../k8s/measurements.yaml"
+apply_template "$HERE/../k8s/reporting.yaml"
 apply_template "$HERE/../k8s/eep.yaml"
 
 echo "==> Waiting for rollouts"
 kubectl -n "$NAMESPACE" rollout status deploy/measurements --timeout=180s
+kubectl -n "$NAMESPACE" rollout status deploy/reporting --timeout=180s
 kubectl -n "$NAMESPACE" rollout status deploy/eep --timeout=180s
 
 echo "==> Waiting for the EEP load balancer hostname (can take 2-4 min)"

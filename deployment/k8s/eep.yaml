@@ -30,6 +30,7 @@ spec:
             - containerPort: 8080
           env:
             - { name: MEASUREMENTS_URL,     value: "http://measurements:8081" }
+            - { name: REPORTING_URL,        value: "http://reporting:8082" }
             - { name: EEP_SAMPLE_DIR,       value: "/data/samples" }
             - { name: EEP_ALLOWED_ORIGINS,  value: "${FRONTEND_ORIGIN}" }
           readinessProbe:
