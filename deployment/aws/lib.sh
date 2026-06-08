@@ -41,7 +41,9 @@ ensure_ecr_repo() {
 }
 
 # Render a templated manifest (envsubst over our known vars only) and apply it.
+# Seg URLs default to empty (stand-in mode) unless the caller exports them.
 apply_template() {
   local file="$1"
-  envsubst '${ECR_REGISTRY} ${IMAGE_TAG} ${SAMPLES_BUCKET} ${FRONTEND_ORIGIN}' < "$file" | kubectl apply -f -
+  export SEG_TSS_URL="${SEG_TSS_URL:-}" SEG_SCT_URL="${SEG_SCT_URL:-}" SEG_SPINEPS_URL="${SEG_SPINEPS_URL:-}"
+  envsubst '${ECR_REGISTRY} ${IMAGE_TAG} ${SAMPLES_BUCKET} ${FRONTEND_ORIGIN} ${SEG_TSS_URL} ${SEG_SCT_URL} ${SEG_SPINEPS_URL}' < "$file" | kubectl apply -f -
 }

@@ -1,0 +1,84 @@
+# The 3 segmentation engine services (internal ClusterIP). They land on the tainted segmentation node
+# group (deployment/aws/segmentation-nodegroup.yaml). The EEP fans out to them in parallel.
+#
+# GPU: once the g4dn node group is up, uncomment the `nvidia.com/gpu: 1` limit on each (1 GPU per pod;
+# g4dn.xlarge = 1 GPU, so 3 GPU pods need 3 nodes — set the node group desiredCapacity: 3, which fits
+# the 16-vCPU quota at 3× g4dn.xlarge = 12 vCPU). On CPU, drop the GPU limit (works, ~35 min/case TSS).
+#
+# Apply (rendered): envsubst over ${ECR_REGISTRY} ${IMAGE_TAG} then kubectl apply (the deploy scripts'
+# apply_template helper does this).
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: seg-tss, namespace: mri, labels: { app: seg-tss, tier: iep, workload: segmentation } }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: seg-tss } }
+  template:
+    metadata: { labels: { app: seg-tss, tier: iep, workload: segmentation } }
+    spec:
+      nodeSelector: { workload: segmentation }
+      tolerations: [{ key: workload, value: "segmentation", effect: NoSchedule }]
+      containers:
+        - name: seg-tss
+          image: ${ECR_REGISTRY}/mri-seg-tss:${IMAGE_TAG}
+          ports: [{ containerPort: 8083 }]
+          readinessProbe: { httpGet: { path: /healthz, port: 8083 }, initialDelaySeconds: 20, periodSeconds: 15 }
+          resources:
+            requests: { cpu: "1", memory: "6Gi" }
+            limits:   { cpu: "4", memory: "12Gi" }   # , nvidia.com/gpu: 1   # <- uncomment on GPU
+---
+apiVersion: v1
+kind: Service
+metadata: { name: seg-tss, namespace: mri, labels: { app: seg-tss } }
+spec: { type: ClusterIP, selector: { app: seg-tss }, ports: [{ name: http, port: 8083, targetPort: 8083 }] }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: seg-sct, namespace: mri, labels: { app: seg-sct, tier: iep, workload: segmentation } }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: seg-sct } }
+  template:
+    metadata: { labels: { app: seg-sct, tier: iep, workload: segmentation } }
+    spec:
+      nodeSelector: { workload: segmentation }
+      tolerations: [{ key: workload, value: "segmentation", effect: NoSchedule }]
+      containers:
+        - name: seg-sct
+          image: ${ECR_REGISTRY}/mri-seg-sct:${IMAGE_TAG}
+          ports: [{ containerPort: 8084 }]
+          readinessProbe: { httpGet: { path: /healthz, port: 8084 }, initialDelaySeconds: 20, periodSeconds: 15 }
+          resources:
+            requests: { cpu: "1", memory: "4Gi" }
+            limits:   { cpu: "4", memory: "8Gi" }    # , nvidia.com/gpu: 1   # <- uncomment on GPU
+---
+apiVersion: v1
+kind: Service
+metadata: { name: seg-sct, namespace: mri, labels: { app: seg-sct } }
+spec: { type: ClusterIP, selector: { app: seg-sct }, ports: [{ name: http, port: 8084, targetPort: 8084 }] }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: seg-spineps, namespace: mri, labels: { app: seg-spineps, tier: iep, workload: segmentation } }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: seg-spineps } }
+  template:
+    metadata: { labels: { app: seg-spineps, tier: iep, workload: segmentation } }
+    spec:
+      nodeSelector: { workload: segmentation }
+      tolerations: [{ key: workload, value: "segmentation", effect: NoSchedule }]
+      containers:
+        - name: seg-spineps
+          image: ${ECR_REGISTRY}/mri-seg-spineps:${IMAGE_TAG}
+          ports: [{ containerPort: 8085 }]
+          readinessProbe: { httpGet: { path: /healthz, port: 8085 }, initialDelaySeconds: 20, periodSeconds: 15 }
+          resources:
+            requests: { cpu: "1", memory: "6Gi" }
+            limits:   { cpu: "4", memory: "12Gi" }   # , nvidia.com/gpu: 1   # <- uncomment on GPU
+---
+apiVersion: v1
+kind: Service
+metadata: { name: seg-spineps, namespace: mri, labels: { app: seg-spineps } }
+spec: { type: ClusterIP, selector: { app: seg-spineps }, ports: [{ name: http, port: 8085, targetPort: 8085 }] }
