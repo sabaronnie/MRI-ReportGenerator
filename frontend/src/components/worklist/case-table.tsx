@@ -7,23 +7,28 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { CaseSummary } from "@/lib/api/contract";
+import type { WorklistRow } from "@/lib/api/workflow";
 import { TriageBadge } from "./triage-badge";
 import { StatusPill } from "./status-pill";
-
-/** Deterministic UTC formatting (avoids server/client locale hydration mismatches). */
-function fmt(iso: string): string {
-  return iso.replace("T", " ").slice(0, 16) + " UTC";
-}
+import { TatBadge } from "@/components/workflow/tat-badge";
+import { ClaimCell } from "@/components/workflow/claim-cell";
 
 const HEAD = "text-xs font-medium uppercase tracking-wider text-muted-foreground";
 
-export function CaseTable({ cases }: { cases: CaseSummary[] }) {
-  if (cases.length === 0) {
+export function CaseTable({
+  rows,
+  meId,
+  live,
+}: {
+  rows: WorklistRow[];
+  meId: string;
+  live: boolean;
+}) {
+  if (rows.length === 0) {
     return (
       <div className="flex flex-col items-center gap-1 p-14 text-center">
-        <p className="text-sm font-medium text-foreground">No cases yet</p>
-        <p className="text-sm text-muted-foreground">Upload a scan to start a report.</p>
+        <p className="text-sm font-medium text-foreground">No cases match</p>
+        <p className="text-sm text-muted-foreground">Adjust the filters or upload a scan.</p>
       </div>
     );
   }
@@ -33,13 +38,14 @@ export function CaseTable({ cases }: { cases: CaseSummary[] }) {
         <TableRow className="hover:bg-transparent">
           <TableHead className={HEAD}>Case</TableHead>
           <TableHead className={HEAD}>Study</TableHead>
-          <TableHead className={HEAD}>Uploaded</TableHead>
+          <TableHead className={HEAD}>Age</TableHead>
           <TableHead className={HEAD}>Status</TableHead>
+          {live ? <TableHead className={HEAD}>Assignee</TableHead> : null}
           <TableHead className={`text-right ${HEAD}`}>Auto-screen</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {cases.map((c) => (
+        {rows.map((c) => (
           <TableRow key={c.case_id} className="group transition-colors hover:bg-accent/40">
             <TableCell>
               <Link
@@ -50,10 +56,17 @@ export function CaseTable({ cases }: { cases: CaseSummary[] }) {
               </Link>
             </TableCell>
             <TableCell className="text-muted-foreground">{c.modality}</TableCell>
-            <TableCell className="font-mono text-xs text-muted-foreground">{fmt(c.created_at)}</TableCell>
+            <TableCell>
+              <TatBadge tat={c.tat} />
+            </TableCell>
             <TableCell>
               <StatusPill status={c.status} />
             </TableCell>
+            {live ? (
+              <TableCell>
+                <ClaimCell caseId={c.case_id} assignment={c.assignment} meId={meId} />
+              </TableCell>
+            ) : null}
             <TableCell className="text-right">
               <TriageBadge triage={c.triage_badge} />
             </TableCell>
