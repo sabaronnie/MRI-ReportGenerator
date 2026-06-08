@@ -80,7 +80,11 @@ export async function getCase(id: string): Promise<CaseEnvelope> {
 }
 
 /** Mock upload: clone a baseline case as a new "queued" case and start the simulated pipeline. */
-export async function createCase(filename: string, uploader: string): Promise<{ case_id: string }> {
+export async function createCase(
+  filename: string,
+  uploader: string,
+  file?: File | Blob,
+): Promise<{ case_id: string }> {
   if (MODE === "mock") {
     const baseline = mockStore.get("demo-healthy-0001");
     const base = structuredClone(baseline ?? FIXTURES[0]);
@@ -98,8 +102,13 @@ export async function createCase(filename: string, uploader: string): Promise<{ 
     simStart.set(id, Date.now());
     return { case_id: id };
   }
-  // live: the EEP route handler forwards the multipart upload to POST /cases
-  return eep<{ case_id: string }>("/cases", { method: "POST" });
+  // live: forward the actual file as multipart to the EEP's POST /cases (it validates
+  // type/size and returns {case_id, status}). The upload bytes stand in for the scan; the
+  // EEP runs measurements off the mounted stand-in segmentation in this demo deployment.
+  const form = new FormData();
+  form.append("file", file ?? new Blob([], { type: "application/gzip" }), filename);
+  form.append("uploader", uploader);
+  return eep<{ case_id: string }>("/cases", { method: "POST", body: form });
 }
 
 /** Processing status (polled while a case is being analyzed). */

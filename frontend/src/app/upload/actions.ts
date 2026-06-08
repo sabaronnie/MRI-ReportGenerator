@@ -9,6 +9,6 @@ export async function uploadAction(formData: FormData) {
   const user = await requireRole(["radiologist", "technologist", "admin"]);
   const file = formData.get("file");
   const filename = file instanceof File && file.name ? file.name : "uploaded-study.nii.gz";
-  const { case_id } = await createCase(filename, user.name);
+  const { case_id } = await createCase(filename, user.name, file instanceof File ? file : undefined);
   redirect(`/cases/${case_id}`);
 }
