@@ -85,12 +85,14 @@ def list_users() -> list[dict]:
     return [_to_public(r) for r in rows]
 
 
-def create_user(email: str, name: str, role: str, password: str, active: bool = True) -> dict:
+def create_user(
+    email: str, name: str, role: str, password: str, active: bool = True, user_id: str | None = None
+) -> dict:
     if role not in VALID_ROLES:
         raise ValueError(f"invalid role: {role}")
     if len(password) < 8:
         raise ValueError("password too short (min 8)")
-    uid = str(uuid.uuid4())
+    uid = user_id or str(uuid.uuid4())
     try:
         with _lock, _connect() as conn:
             conn.execute(
@@ -177,6 +179,9 @@ def seed_if_empty() -> None:
     ]
     for email, name, role, pw in seed:
         try:
-            create_user(email, name, role, pw)
+            # Deterministic IDs (uuid5 of the email) so re-seeding after a container
+            # rebuild keeps the same IDs — existing JWTs stay valid (dev convenience;
+            # in deploy the DB lives on a PersistentVolume).
+            create_user(email, name, role, pw, user_id=str(uuid.uuid5(uuid.NAMESPACE_DNS, email)))
         except EmailExistsError:
             pass

@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { getToken } from "@/lib/auth/session";
 import type { ManagedUser } from "@/lib/auth/users";
 import type { Role } from "@/lib/api/contract";
@@ -25,6 +26,7 @@ export type Result = { ok: true } | { ok: false; error: string };
 
 export async function listUsers(): Promise<ManagedUser[]> {
   const res = await authed("/auth/users");
+  if (res.status === 401) redirect("/api/session/expired");
   if (!res.ok) throw new Error(`GET /auth/users → ${res.status}`);
   return res.json();
 }

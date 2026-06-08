@@ -3,6 +3,7 @@
  * + addenda. LIVE mode hits the EEP /workflow/* API; MOCK mode synthesises the same
  * shapes locally (TAT computed client-side; assignment/addenda are live-only).
  */
+import { redirect } from "next/navigation";
 import { getToken } from "@/lib/auth/session";
 import { listCases } from "@/lib/api/client";
 import type { CaseSummary } from "./contract";
@@ -53,6 +54,7 @@ async function authed<T>(path: string): Promise<T> {
   const headers = new Headers();
   if (token) headers.set("Authorization", `Bearer ${token}`);
   const res = await fetch(`${EEP_URL}${path}`, { headers, cache: "no-store" });
+  if (res.status === 401) redirect("/api/session/expired");
   if (!res.ok) throw new Error(`EEP ${path} → ${res.status}`);
   return (await res.json()) as T;
 }

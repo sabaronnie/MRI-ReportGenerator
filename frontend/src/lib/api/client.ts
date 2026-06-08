@@ -61,7 +61,7 @@ async function eep<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   if (token) headers.set("Authorization", `Bearer ${token}`);
   const res = await fetch(`${EEP_URL}${path}`, { ...init, headers, cache: "no-store" });
-  if (res.status === 401) redirect("/login?error=expired");
+  if (res.status === 401) redirect("/api/session/expired");
   if (!res.ok) throw new Error(`EEP ${path} → ${res.status}`);
   return (await res.json()) as T;
 }
