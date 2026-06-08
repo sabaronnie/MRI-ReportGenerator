@@ -23,6 +23,11 @@ RUN pip install --no-cache-dir spineps \
     && pip install --no-cache-dir --force-reinstall "numpy==2.0.2" \
     && python -c "import numpy; assert numpy.__version__ == '2.0.2', numpy.__version__"
 
+# Pre-download the SPINEPS model weights (semantic t2w + instance) at build so the first request is
+# offline/fast. The v1.0.9 release ships checkpoint_final.pth but the loader asks for checkpoint_best.pth
+# -> copy final->best in each fold.
+RUN python -c "import shutil; from pathlib import Path; from spineps.utils import auto_download as ad; from spineps.utils.filepaths import get_mri_segmentor_models_dir as gd; m=gd(); [ad.download_weights(u, Path(m, ad.download_names[k]+'_'+v)) for k,u,v in [('t2w',ad.semantic['t2w'],ad.current_highest_version),('instance',ad.instances['instance'],ad.current_instance_highest_version),('t2w_labeling',ad.labeling['t2w_labeling'],ad.current_labeling_highest_version)] if not (Path(m, ad.download_names[k]+'_'+v).exists())]; [shutil.copy(str(f), str(f.with_name('checkpoint_best.pth'))) for f in Path(m).rglob('checkpoint_final.pth') if not f.with_name('checkpoint_best.pth').exists()]; print('spineps weights ready')"
+
 COPY services/segmentation /app/services/segmentation
 
 EXPOSE 8085

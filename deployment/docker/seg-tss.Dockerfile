@@ -15,6 +15,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /
 RUN pip install --no-cache-dir gunicorn flask nibabel numpy scipy dcm2niix
 # Pulls nnUNetv2 + torch (CUDA build runs on CPU too — one image for both node types).
 RUN pip install --no-cache-dir "totalspineseg[nnunetv2]"
+# auglab (TotalSpineSeg's aug lib) does `from kornia.core import Tensor`, removed in kornia 0.8 ->
+# pin kornia<0.8 so the nnUNet trainer modules import (else every TSS run fails at import).
+RUN pip install --no-cache-dir "kornia<0.8"
 
 # Pre-download the model weights at build time so the first request doesn't (and the node can be
 # offline). `totalspineseg_init` fetches the release weights into TOTALSPINESEG_DATA.
