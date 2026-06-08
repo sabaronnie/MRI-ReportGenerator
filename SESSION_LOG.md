@@ -11,6 +11,34 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-08 (cont. 2) — Andrew (reporting wired as 2nd IEP → GT3 met, live on AWS)
+
+**Branch:** `feat/eep/scaffold` — pushed.
+
+**What was done:**
+- **Closed the last hard-stop risk (GT3/T3/T4).** Wrapped the existing `services/reporting/` builder
+  + HTML renderers in a **Flask IEP** (`services/reporting/app.py`: `POST /render` + health/ready/metrics).
+  Wired the EEP to orchestrate it: `services/eep/clients/reporting.py`, `orchestration.render_case_report`
+  (normalizes a stored case → handoff → reporting), `REPORTING_URL` config, `/readyz` now reports
+  `reporting_ready`, and a new public **`GET /cases/{id}/report.html`** that renders a clinical report
+  on demand via the reporting IEP. The EEP now orchestrates TWO independent IEPs (measurements + reporting).
+- **Containerized + deployed it:** `deployment/docker/reporting.Dockerfile`, `deployment/k8s/reporting.yaml`
+  (ClusterIP), compose + deploy-script wiring. Targeted redeploy (reporting + eep, preserved frontend CORS).
+- **Verified live on EKS:** `/readyz` → `measurements_ready:true` AND `reporting_ready:true`;
+  `GET /cases/demo-stenosis-0003/report.html` → 200, renders a radiology-style report (exam header,
+  level findings C5/C6, impression, disclaimers). Screenshot `../aws-live-report.png`. 5 pods running
+  (2 eep, frontend, measurements, reporting).
+
+**Demo URLs (live, ephemeral):** frontend `http://a359d7957b43847a69ba05ef7b9fad98-1651813190.eu-north-1.elb.amazonaws.com`,
+EEP `http://a08443535da2a4ee5856aeb58f0ae7f7-167484581.eu-north-1.elb.amazonaws.com` (`/docs`, `/metrics`),
+report `…/cases/demo-stenosis-0003/report.html`.
+
+**Pending / next (presentation tomorrow):** GT1/GT2/GT3 all MET. Next required boxes (RUBRIC_TRACKER):
+Prometheus+Grafana monitoring (M3), automated e2e test on deployed system (Q1), finish Tradeoffs doc (T5),
+MLOps framing (M1/M2). Teardown after the demo: `deployment/aws/teardown.sh`.
+
+---
+
 ## 2026-06-08 (cont.) — Andrew (LIVE ON AWS — EKS deploy end-to-end, GT1+GT2 met)
 
 **Branch:** `feat/eep/scaffold` (+ `feat/frontend/scaffold`) — both pushed.

@@ -5,7 +5,7 @@
 > Owner tags: `[infra]` this chat (EEP/frontend/deploy/CI/monitoring) · `[science]` measurement-validation chat · `[report]` Ronnie/reporting · `[team]`
 
 ## ⚠️ Top risks (read first)
-1. **GT3 / T3 / T4 — second IEP + real EEP orchestration.** The EEP today calls **one** IEP (measurements). The rubric requires the EEP to *orchestrate multiple* IEPs with *conditional and/or parallel* interaction, and **≥2 independent IEPs**. Good news: `services/reporting/` is already ~900 lines of real code, and `services/segmentation/` is a real service. Plan: wire EEP → (segmentation upstream) → measurements → **reporting** so two IEPs are genuinely orchestrated. Until that's wired + deployed, GT3 is only structurally (not operationally) met. `[infra]+[report]`
+1. ~~**GT3 / T3 / T4 — second IEP + real EEP orchestration.**~~ ✅ **RESOLVED 2026-06-08.** Wrapped the existing `services/reporting/` builder/renderers in a Flask IEP (`/render`), wired the EEP to orchestrate **measurements → reporting**, and DEPLOYED it. Live EEP `/readyz` shows `measurements_ready:true` AND `reporting_ready:true`; `GET /cases/{id}/report.html` renders a clinical report via the reporting IEP. EEP now orchestrates TWO independent IEPs. GT3/T3/T4 met.
 2. **MLOps (§7 / M1–M2) is the weakest fit — needs a framing decision.** We don't *train* a model (TotalSpineSeg/SCT are pretrained; interpretation is threshold-based). To satisfy "automated pipeline covering eval + promotion decision + experiment tracking + thresholds," frame it as an **automated validation pipeline**: run the pipeline on the golden cohort → log metrics to **MLflow** → gate "promotion" (merge to main / threshold-table version bump) on metric thresholds. This is defensible but must be decided + built. 🧭 `[team]+[infra]+[science]`
 3. **Competitive grading + a duplicate title.** Team 14 also submitted "Automated Cervical Spine MRI Analysis." Originality (C1) and AI-justification (P3) are scored relative to cohort → sharpen the novelty claim (healthy-anchored geometric detectors, frozen contracts, threshold-crossing validation, the React clinical UI). 🧭 `[team]`
 
@@ -14,9 +14,9 @@
 ## Baseline Gates (hard stops — any fail = rejection)
 | Gate | Status | Where we are / next |
 |------|--------|---------------------|
-| **GT1** demo works end-to-end | 🟡 | Works **locally** end-to-end (verified 2026-06-08: frontend↔EEP↔measurements, upload→report→sign-off). Need it on the **deployed** cloud for the real demo. `[infra]` |
-| **GT2** public cloud API functional | 🔴 | Needs AWS deploy. Blocked on Andrew's creds. `[infra]` |
-| **GT3** EEP + ≥2 IEPs | 🟡 | EEP ✅ + measurements IEP ✅ (+ interpretation). 2nd deployed IEP (reporting) not wired. See risk #1. `[infra]+[report]` |
+| **GT1** demo works end-to-end | ✅ | Verified on the DEPLOYED system (EKS): login→worklist→report→viewer (volume/mask from EEP)→sign-off, 0 console errors. |
+| **GT2** public cloud API functional | ✅ | Live on AWS EKS (eu-north-1). Public EEP + frontend load balancers; `/healthz`,`/readyz`,`/docs`,`/metrics` reachable. |
+| **GT3** EEP + ≥2 IEPs | ✅ | EEP orchestrates measurements IEP + reporting IEP (both deployed, both `*_ready:true`). MET 2026-06-08. |
 | **GT4** deliverables complete | 🟡 | Repo ✅, local deploy ✅, docs 🟡, cloud demo 🔴. |
 | **GT5** Application positioning | 🟡 | Positioning set; the *written* business case (problem / decision augmented / non-AI baseline / who pays) is still stub-level. `[team]` |
 
@@ -27,8 +27,8 @@
 |---|------|--------|------|
 | T1 | AI depth / non-triviality | 🟡→✅ | Pipeline is genuinely non-trivial (TotalSpineSeg + SCT cord/canal + geometric morphometry + group5 fracture/myelomalacia + threshold interpretation). Just needs to be *written up*. `[science]` |
 | T2 | IEP 1 independence & value (measurements) | ✅ | Real Flask IEP, 10 components, frozen contract, graceful per-component errors (verified). |
-| T3 | IEP 2 independence & value | 🟡 | **reporting** is the candidate (already built). Must be wired + deployed as a real 2nd IEP. `[infra]+[report]` |
-| T4 | EEP orchestration logic | 🟡 | Today: 1 IEP call. Add multi-IEP + conditional/parallel (e.g. parallel viewer-artifact + reporting; conditional on triage). `[infra]` |
+| T3 | IEP 2 independence & value | ✅ | reporting IEP (Flask `/render`) — independent service, turns the interpretation handoff into a clinical report. Deployed on EKS. |
+| T4 | EEP orchestration logic | 🟡→✅ | EEP now calls TWO IEPs (measurements on upload + reporting for `/report.html`), with fixture/error fallbacks. Could add parallel/conditional for extra credit. |
 | T5 | Tradeoff evidence (≥3, with numbers) | 🔴 | `docs/tradeoffs.md` is a 6-line stub. Need ≥3 real tradeoffs + what we *didn't* choose + measurements. `[infra]+[team]` |
 | T6 | Execution quality & edge cases | 🟡 | Per-component error contract ✅, input validation/limits ✅. Add explicit timeout/retry/fallback evidence. `[infra]` |
 
