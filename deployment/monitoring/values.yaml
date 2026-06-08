@@ -1,0 +1,54 @@
+# Helm values for prometheus-community/kube-prometheus-stack on EKS.
+# Tuned for a small 2-node demo cluster: short retention, modest resources, Grafana public via LB.
+# Install: see deployment/monitoring/install.sh
+
+fullnameOverride: kps
+
+# --- Prometheus ---
+prometheus:
+  prometheusSpec:
+    # Discover ServiceMonitors/PodMonitors/Rules created outside this chart (our app's), not just
+    # those carrying the chart's release label.
+    serviceMonitorSelector: {}
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelector: {}
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelector: {}
+    ruleSelectorNilUsesHelmValues: false
+    # Demo-sized: keep memory bounded on t3.medium nodes.
+    retention: 6h
+    resources:
+      requests: { cpu: "150m", memory: "400Mi" }
+      limits:   { cpu: "1",    memory: "1200Mi" }
+
+# --- Grafana ---
+grafana:
+  adminPassword: "mri-demo-admin"   # demo only; rotate / use a Secret for anything real
+  service:
+    type: LoadBalancer
+    port: 80
+    targetPort: 3000
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
+      searchNamespace: ALL          # pick up dashboard ConfigMaps in any namespace
+  resources:
+    requests: { cpu: "50m",  memory: "128Mi" }
+    limits:   { cpu: "300m", memory: "256Mi" }
+
+# --- Trim components we don't need for this demo (keep node-exporter + kube-state-metrics
+#     so the default k8s/cluster dashboards still work) ---
+alertmanager:
+  enabled: false
+
+prometheus-node-exporter:
+  resources:
+    requests: { cpu: "20m", memory: "32Mi" }
+    limits:   { cpu: "100m", memory: "64Mi" }
+
+kube-state-metrics:
+  resources:
+    requests: { cpu: "20m", memory: "64Mi" }
+    limits:   { cpu: "100m", memory: "128Mi" }

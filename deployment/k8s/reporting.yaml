@@ -40,5 +40,6 @@ spec:
   type: ClusterIP
   selector: { app: reporting }
   ports:
-    - port: 8082
+    - name: http
+      port: 8082
       targetPort: 8082

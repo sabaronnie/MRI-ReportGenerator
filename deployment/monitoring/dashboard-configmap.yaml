@@ -1,0 +1,104 @@
+# Custom Grafana dashboard for the MRI-ReportGenerator services. The kube-prometheus-stack Grafana
+# sidecar imports any ConfigMap labelled grafana_dashboard: "1".
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mri-services-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  mri-services.json: |
+    {
+      "uid": "mri-services",
+      "title": "MRI-ReportGenerator — Services",
+      "tags": ["mri", "eece503n"],
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "10s",
+      "time": { "from": "now-30m", "to": "now" },
+      "templating": {
+        "list": [
+          { "name": "datasource", "type": "datasource", "query": "prometheus", "hide": 0, "current": {} }
+        ]
+      },
+      "panels": [
+        {
+          "type": "timeseries", "title": "EEP throughput (req/s)",
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+          "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": "sum(rate(eep_requests_total[1m]))", "legendFormat": "requests/s", "refId": "A" }
+          ]
+        },
+        {
+          "type": "stat", "title": "EEP error rate (5xx)",
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+          "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1,
+            "thresholds": { "mode": "absolute", "steps": [
+              { "color": "green", "value": null }, { "color": "yellow", "value": 0.01 }, { "color": "red", "value": 0.05 } ] } }, "overrides": [] },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": "sum(rate(eep_requests_total{status=~\"5..\"}[5m])) / clamp_min(sum(rate(eep_requests_total[5m])), 0.0001)",
+              "legendFormat": "5xx ratio", "refId": "A" }
+          ]
+        },
+        {
+          "type": "timeseries", "title": "EEP latency p50 / p95 (s)",
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+          "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": "histogram_quantile(0.50, sum(rate(eep_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p50", "refId": "A" },
+            { "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": "histogram_quantile(0.95, sum(rate(eep_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p95", "refId": "B" }
+          ]
+        },
+        {
+          "type": "timeseries", "title": "Measurements — component p95 duration (s)",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": "histogram_quantile(0.95, sum(rate(measurement_duration_seconds_bucket[5m])) by (le, measurement))", "legendFormat": "{{measurement}}", "refId": "A" }
+          ]
+        },
+        {
+          "type": "timeseries", "title": "Measurement outcomes (ok/error) per s",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": "sum(rate(measurement_results_total[5m])) by (status)", "legendFormat": "{{status}}", "refId": "A" }
+          ]
+        },
+        {
+          "type": "timeseries", "title": "Reporting — render rate & p95 (s)",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+          "fieldConfig": { "defaults": {}, "overrides": [] },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": "sum(rate(reporting_render_total[5m])) by (status)", "legendFormat": "renders/s {{status}}", "refId": "A" },
+            { "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": "histogram_quantile(0.95, sum(rate(reporting_render_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p95 (s)", "refId": "B" }
+          ]
+        },
+        {
+          "type": "barchart", "title": "ML signal — pathology flags by type (output distribution)",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+          "fieldConfig": { "defaults": {}, "overrides": [] },
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": "sum(measurement_pathology_flags_total) by (flag)", "legendFormat": "{{flag}}", "refId": "A", "instant": true }
+          ]
+        }
+      ]
+    }
