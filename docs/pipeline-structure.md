@@ -73,14 +73,23 @@ The reporting IEP emits (per `docs/contracts/data-contract-v0.1.md` on `feat/con
 Quality flags (e.g. `tilt_outlier`) must NOT be shown as patient abnormalities (see
 `interpretation.QUALITY_FLAG_MARKERS`).
 
-## 6. Integration gaps to close for a live end-to-end pipeline
-1. **Wire G2 disc components** into the orchestrator `COMPONENTS` (currently excluded).
-2. **Promote G6 from scaffold to `classify()`** so each measurement gets its cited band status.
-3. **Wire `patient.age`/`patient.sex`** through `load_context`/`run_all` into `build_interpreted_measurements`
-   and implement the age/sex percentile lookup for canal/SAC (Nell 2019) and cord (PAM50).
-4. **Confirm the reporting IEP** renders `interpretations` + `patient` + `triage_badge`.
-5. **Frontend:** collect `age` + `sex` (skip `height` or mark it record-only); POST them with the MRI; render
-   the report blocks above.
+## 6. Integration status (updated 2026-06-08 — most gaps now closed in code)
+1. ✅ **G2 disc wired** into the orchestrator `COMPONENTS` — disc numbers + interpretations now in the report.
+2. ✅ **`classify()` already in use** — every catalogued measurement gets its cited band status (it was not a
+   pure scaffold; non-catalogued keys fall back to flag-only).
+3. ✅ **Demographics wired** — `load_context`/`run_all` carry `age/sex/height`; the report has a `patient`
+   block; `demographics_used` is populated per measurement; **sex adjusts the dural-sac cut** (Nell M10/F9).
+   `height` is captured **record-only** (no cervical norm normalises by height). Age/sex *percentile* lookups
+   for canal/SAC/cord beyond the dural-sac sex cut are still future work (cord is delegated to SCT PAM50).
+4. ✅ **DHI flag corrected** — debunked absolute DHI<0.30 replaced with the cited relative >30% cross-level
+   drop (Suzuki 2018).
+5. 🟡 **Reporting IEP** must render `interpretations` + `patient` + `triage_badge` (confirm on infra side).
+6. 🟡 **EEP → measurements**: the EEP `POST /cases` must forward `{age, sex}` into `load_context` (the
+   measurement service already accepts them) — this is the frontend/infra integration point.
+7. 🟡 **G3** needs the SCT canal/cord segmentations in the context to populate canal/SAC/cord (works when
+   provided; errors gracefully otherwise).
+8. ⚪ **Interpretation as a standalone Flask IEP** — deliberately NOT done: it runs inside the measurements
+   IEP (the 2 deployed IEPs are measurements + reporting). Splitting it out is optional, not required for GT3.
 
 ## 7. What the frontend chat needs from us (deliver right after G4 validation closes)
 A short integration handoff: the exact request shape (MRI + `{age, sex}`), the response shape (§5), the

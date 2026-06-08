@@ -16,7 +16,7 @@ distribution-separation; no per-case radiologist GT exists). Cohort: 12 healthy 
 | **G2** | disc DHI / bulge / signal | over-flag fixed (J22) | within-MMCSD: signal DEAD; **disc/VB AP ratio + AP width discriminate** (AUC ~0.62, level-controlled) | ⚠️ **partial — geometric disc-spread validated; signal/bulge negative** |
 | **G4** | Cobb canal-cut; segmental; post-tangent | sign fixed | noisy / no norm | ⚠️ superseded by C1 / not validated |
 | **G1** | morphometry heights + slip (SERVICE) | Ha/Hp backwards (corner method) | — | ❌ **service port not done** (our endplate method works; not ported) |
-| **G6** | interpretation catalog | thresholds cited | n/a | 🔧 **built + unit-tested, NOT end-to-end run** |
+| **G6** | interpretation catalog | thresholds cited; `classify()` wired; demographics (age/sex) flow + sex-adjusted dural-sac cut | end-to-end run OK (J25) | 🟢 **wired end-to-end; G2 in orchestrator; DHI<0.30 → relative fix** |
 
 ## Per-group detail
 

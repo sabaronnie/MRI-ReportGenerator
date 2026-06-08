@@ -480,6 +480,29 @@ the target metric (revert otherwise). All 137 service tests stayed green after e
   at 11. Honest verdict: G4 is **directional/borderline**, not validated; it will likely cross with
   balanced healthy n but remain a modest discriminator (AUC ~0.68), unlike the strong G3 stenosis signal.
 
+## J25 — Wiring the pipeline end-to-end: G2 into the orchestrator + demographics into interpretation
+- **Goal:** make the measurements→interpretation→report pipeline actually run end-to-end for a demo, and
+  let patient age/sex/height flow in (many cervical norms are age/sex-dependent).
+- **G2 wired:** added the four disc components (`disc_si_height`, `disc_height_index`, `disc_ap_bulge`,
+  `pfirrmann_grade`) to the orchestrator `COMPONENTS`. They were built+tested but never in the run loop, so
+  the live report had no disc numbers. Now `DHI`/`posterior_bulge_mm`/`pfirrmann_grade`/`disc_vb_ap_ratio`
+  flow through and `classify()` interprets them (their output keys already match the catalog).
+- **Demographics wired:** `load_context`/`run_all` now carry `age/sex/height`; the report has a `patient`
+  block; `build_interpreted_measurements` records `demographics_used` per measurement and passes `sex` to
+  `classify`, which applies the cited **sex-specific dural-sac cut (Nell 2019 M<10/F<9 mm)** — verified: a
+  9.5 mm dural sac reads *stenosis* for M, *borderline* for F. **Height is captured record-only** — no
+  cervical threshold normalises by patient height (checked the verified-research set; only age/sex norms
+  exist). If a height-normalised paper surfaces, the hook is ready.
+- **Found + fixed a live wrong-flag:** `disc_height_index` still used the **debunked absolute DHI<0.30** cut
+  (uncited animal/lumbar borrow). Replaced with the cited **relative >30% cross-level drop** (Suzuki 2018)
+  against the patient's own median DHI — on a symptomatic case it now fires 0/9 (no disc anomalously short)
+  instead of false-firing on nearly all.
+- **Correction to my own earlier claim:** `build_interpreted_measurements` was NOT a pure scaffold — it
+  already called `classify()` for catalogued keys. The real gaps were G2-not-wired + demographics + the
+  DHI flag, all now closed. All 137 service tests stayed green throughout.
+- **Lesson:** "built + unit-tested" hid an integration gap (G2 never in the run loop) and a stale threshold
+  (DHI<0.30) — only running the *whole* orchestrator end-to-end surfaced both. Wiring is its own validation.
+
 ---
 *Open methodology gaps tracked elsewhere:* teammate threshold/citation fixes (disc DHI<0.30, bulge flat-wall,
 Pfirrmann cut-points) — see `group5/AUDIT_groups1-4_measurements.md`; C6/C7 Cobb **precision** is now closed by
