@@ -11,6 +11,21 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-09 — Andrew (Dashboard + landing page + sidebar tabs + animation uniformity)
+
+**Branch:** `feat/app/fullstack-local` — pushed.
+
+**What was done:** Installed `@efferd/header-2` + `@efferd/dashboard-4`, integrated both into our app.
+- **Clinical Dashboard** (`/dashboard`) — rewrote the e-commerce dashboard to our data: KPI cards (total/urgent/awaiting/signed), **triage donut** + **flags-by-group bar** (recharts via shadcn `chart`), quick actions. Backed by new **EEP `GET /workflow/stats`** (aggregates from the case store).
+- **Landing page** (`/`) from header-2, rebranded: our logo, hero + teal FloatingPaths, how-it-works, safety box; "Sign in" → /login. (`/` was just a redirect before.)
+- **Sidebar tabs:** added Dashboard + Upload (dropped the duplicate Upload CTA) → 4 tabs.
+- **Animation uniformity:** replaced native `<select>`s (worklist filters, admin role, create-user role) with the animated shadcn `Select` — now consistent fade/zoom with dropdown/dialog. (The shadcn dropdown/select/dialog primitives were already uniform; the native selects were the "basic" ones.)
+- Removed the vendored e-commerce dashboard + unused re-pulled shell files. tsc clean; **prod build green**; landing + dashboard verified in-browser (dashboard in mock — see below), 0 console errors.
+
+**Files:** new `src/app/(app)/dashboard/`, `src/components/dashboard/*`, `src/components/{header,mobile-nav,portal}.tsx`, `src/hooks/use-scroll.ts`, `ui/{chart,item}.tsx`; modified `app/page.tsx`, `lib/api/workflow.ts`, `app-shared.tsx`, `app-sidebar.tsx`, `worklist-filters.tsx`, admin dialogs; `services/eep/workflow/router.py` (+`/stats`); +recharts.
+
+**Pending / next action:** ⚠️ **Docker Desktop was down this session** (machine restart) and wouldn't start via CLI — **start Docker + `docker compose up -d --build` in `deployment/compose/`** to bring the stack back, then the live dashboard `/workflow/stats` (real flag breakdown) is the only thing not yet verified live (rendering verified in mock + prod build). Deploy still goes through the infra chat (merge this branch into `feat/seg/deploy` first).
+
 ## 2026-06-08 (cont. 4) — Andrew (LINK measurement pipeline → report + radiologist ZIP)
 
 **Branch:** `feat/app/fullstack-local` — pushed.
