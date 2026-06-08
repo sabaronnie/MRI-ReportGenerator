@@ -55,6 +55,22 @@ Catalog + classify + interpretation engine unit-tested. Threshold corrections id
 over-flag on MRI; 1.35 mm bulge unverified; van Santbrink offset inverted). End-to-end run gated on the
 measurement validation above.
 
+## Local validations done while the 50-case batch segments (2026-06-08, journal J19-J21)
+All on masks already on disk (12 healthy Spine-Generic, C3-C7, both 0.8 mm and 4 mm). Script:
+`research/group5/run_g1_local_validations.py` (proto), results `g1_local_validation_results.json`.
+
+- **G1 tilt recalibration:** healthy tilt = median 27.0°, mean 27.8 ± 6.9° (p99 42.5°, max 43.5°). Current
+  `TILT_DEG_MAX = 20°` over-flags **83% of healthy vertebrae** (50/60). **ACTION: raise to ~45°** (mean+2.5SD,
+  0% healthy false-flag). Quality/sanity flag, not a disease detector. → `cervical_body_morphometry.py:67`.
+- **G1 AP depth + height precision:** AP depth 18.9 ± 2.2 mm (CV 9-14%, tight); ~2 mm above the 15-17 mm CT
+  norm (T2-MRI + max-extent offset, expected). Ha/Hp 0.94 ± 0.13, caudal trend C3 0.86 → C7 1.00 (reproduces
+  the cohort norm — consistency check, same cohort). Sizes sane; no fix needed.
+- **Resolution robustness (0.8 vs 4 mm):** AP depth |Δ| 0.81 mm bias −0.15 mm (**robust**); Ha/Hp bias −0.009
+  group-level (**robust for the mean**, ~0.14 per-body scatter); canal-cut Cobb |Δ| 15.6° (**NOT robust** —
+  third argument for the SPINEPS C1 method over canal-cut). mm metrics immune as predicted.
+
 ## One-line state
 G3 validated; G4 method-validated/directional; G1+G5 screens healthy-validated (compression arm gap);
-G2 not validated (active remediation, 50-case within-MMCSD run); G6 built, pending.
+G2 not validated (active remediation, 50-case within-MMCSD run); G6 built, pending. Local: G1 tilt cut
+recalibrate 20°→~45° (over-flagged 83% healthy); AP depth + Ha/Hp precision confirmed; mm metrics
+resolution-robust, canal-cut Cobb is not.

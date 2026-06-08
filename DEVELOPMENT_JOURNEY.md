@@ -339,6 +339,56 @@ keep it honest and specific (numbers, dates, evidence, citations). Chronological
 - **Lesson:** 'directional, p=0.13' looked like a weak result but the effect size revealed it as underpowered
   -- the same diagnostic discipline that (oppositely) showed G2's disc height is genuinely flat (d~0).
 
+## J19 — G1 tilt flag recalibrated: the 20° cut over-flagged 83% of HEALTHY cervical bodies
+- **Question:** `cervical_body_morphometry.TILT_DEG_MAX = 20.0` flags a vertebra whose body SI-axis tilts
+  >20° from global vertical as an outlier. Is 20° right for *cervical* anatomy? Measured the healthy tilt
+  distribution (12 Spine-Generic necks, 60 C3-C7 bodies; tilt = angle between the body's PCA SI-axis and
+  vertical, the same definition the service uses, computed via our validated endplate-fit).
+- **Finding:** healthy cervical tilt is **median 27.0°, mean 27.8 ± 6.9°** (p95 41.4°, p99 42.5°, max 43.5°).
+  The 20° cut trips **50/60 = 83% of HEALTHY vertebrae** — it is a near-vertical (thoraco-lumbar-style)
+  assumption that is simply wrong for the lordotic mid/lower cervical spine, where bodies are physiologically
+  tilted 20-40° from absolute vertical. This is a quality/sanity flag, not a disease detector, so the cut
+  belongs above the healthy range.
+- **Fix (data → threshold):** recalibrate `TILT_DEG_MAX` from 20° to **~45°** (mean+2.5SD ≈ 45°, clears p99
+  42.5° and max 43.5° with margin → 0% healthy false-flag). Earlier eyeball estimate was ~28° (≈ the median);
+  the data shows that is still too low — the median, by definition, would flag half the healthy cohort.
+- **Lesson:** an unsourced borrowed threshold (20°) silently mass-flagged healthy anatomy; only measuring the
+  healthy distribution exposed it. The recalibration is to the OWN-cohort distribution (specificity-anchored),
+  same discipline as the Ha/Hp norm (J-series, vb_hahp_norm_verified).
+
+## J20 — G1 AP depth + height precision: healthy C3-C7 cluster tightly (sanity confirmed)
+- **Question:** are G1's AP-width and vertebral-height outputs in a plausible, tightly-clustered mm range on
+  healthy necks (they were previously "not checked vs norms")? Measured AP depth (PCA AP extent) and Ha/Hp on
+  the 12 healthy.
+- **Finding:** AP depth clusters tightly — **18.9 ± 2.2 mm** across C3-C7 (per-level CV 9-14%), monotonic
+  C3 19.6 → C7 18.4 mm. This reads ~2 mm **above** the ~15-17 mm CT/anatomic norm, expected for T2 MRI +
+  a max-AP-extent (endplate-corner) measure vs mid-body CT calipers — magnitude is right, precision is good.
+  Ha/Hp = **0.94 ± 0.13** overall with a physiological caudal trend (C3 0.86 anterior-wedged → C7 1.00
+  rectangular). NOTE this reproduces COHORT_HAHP_MEAN/SD exactly because it IS that cohort — a consistency/
+  reproducibility check, not independent validation.
+- **Fix:** none needed (sizes sane). Flagged for the report: cite AP depth against a *cervical-MRI* norm if one
+  is pulled (Nell 2019 per-level percentiles held but numbers not yet extracted); current support is order-of-
+  magnitude CT.
+- **Lesson:** "looks reasonable" is not validation — but tight per-level clustering (SD ~2 mm) is real evidence
+  the geometry is stable; the honest caveat is the +2 mm MRI/method offset vs the CT norm.
+
+## J21 — Resolution robustness: mm metrics survive 4 mm through-plane; canal-cut Cobb does NOT
+- **Question:** each healthy neck exists at 0.8 mm and at 4 mm through-plane (Duke-like). Do Ha/Hp, AP depth and
+  Cobb agree across resolution (test-retest precision)?
+- **Finding:** **AP depth is resolution-robust** — mean |0.8-4 mm| = 0.81 mm, bias −0.15 mm (negligible).
+  **Ha/Hp has zero group-level bias** (−0.009) but ~0.14 per-vertebra scatter → robust for the cohort MEAN
+  (which is what the norm uses; confirms the in-code "0.8 mm and 4 mm agree" claim *at the group level*), coarse
+  per body. **Canal-cut Cobb C3-C7 is NOT robust** — mean |0.8-4 mm| = 15.6° (n=9) — consistent with it being
+  the inferior angular method (canal-cut C6-C7 SD 18.5°, J11/J12) that the SPINEPS endplate-voxel C1 method
+  (J12) supersedes.
+- **Fix:** none for the mm metrics (validated robust). The Cobb fragility is a *third* independent argument for
+  the SPINEPS C1 method over canal-cut (after precision and C7 coverage); the 4 mm Cobb test should be repeated
+  on SPINEPS masks once available.
+- **Lesson:** resolution-robustness must be checked per-metric: physical-dimension (mm) metrics are immune as
+  predicted (mirrors the cross-scanner argument, validation_design_rationale), but a derived angular metric from
+  a fragile body-isolation can amplify coarse-slice noise — robustness is a property of the *method*, not just
+  the quantity.
+
 ---
 *Open methodology gaps tracked elsewhere:* teammate threshold/citation fixes (disc DHI<0.30, bulge flat-wall,
 Pfirrmann cut-points) — see `group5/AUDIT_groups1-4_measurements.md`; C6/C7 Cobb **precision** is now closed by
