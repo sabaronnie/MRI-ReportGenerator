@@ -11,6 +11,20 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-08 (cont. 4) — Andrew (LINK measurement pipeline → report + radiologist ZIP)
+
+**Branch:** `feat/app/fullstack-local` — pushed.
+
+**What was done:** Linked the measurement pipeline output to the report UI/PDF and produced the radiologist deliverable.
+- **§3 mapping committed:** `services/eep/tools/run_all_to_case.py` (pipeline `run_all` → contract envelope: passthrough measurements/flags/interpretations; derive impression + triage; demographics; §4 sex-neutral caveat when sex absent).
+- **Clean clinical rendering:** report shows a clinical allowlist (canal/cord/SAC/disc/alignment) + any flag (not all 150+ rows); values rounded (2dp ratios / 1dp mm·deg), `unknown` unit dropped, Cobb rounded — in PDF (`pdf_report.py`) + builder (`builder.py`) + worklist table (`findings-table.tsx`).
+- **Radiologist ZIP built** (local, **not in git** — mmcsd is research-use): `Project/radiologist-deliverable/cervical-mri-radiologist-demo.zip` = 2 branded PDFs + 2 MRIs + README/license. Values match handoff §5 EXACTLY (sub-amu01 none/canal min 14.5/Cobb +16.7°/0 flags; mmcsd urgent/canal min 10.0/SAC C6 3.4/Cobb +4.3°/dural-sac 10.0 flagged). Both cases also live in the running worklist for the §6.1 cross-check.
+- Demo fixtures `case-demo-*.json` gitignored. 3 reporting tests green; prod build/tsc clean; 0 console errors.
+
+**Files changed:** `services/eep/tools/{run_all_to_case,__init__}.py` (new), `services/reporting/{pdf_report,builder}.py`, `frontend/src/components/report/findings-table.tsx`, `.gitignore`.
+
+**Pending / next action:** (1) Andrew cross-checks the 2 reports against a local re-run (§6.2) — send the ZIP/values. (2) Full LIVE-upload link still needs: merge `services/measurements`+`services/interpretation` from `research/andrew/writeups` into the measurements IEP image, and **EEP `POST /cases` forward `{age,sex}` into `load_context`** (routers/cases.py = infra-owned → coordinate). The ZIP used ground-truth `run_all` JSON, so it didn't need the live upload path. [[demographics_interpretation_coupling]]
+
 ## 2026-06-08 (cont. 3) — Andrew (session 401-loop fix + real branded report PDF)
 
 **Branch:** `feat/app/fullstack-local` — pushed.
