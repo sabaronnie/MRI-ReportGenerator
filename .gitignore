@@ -145,3 +145,9 @@ services/eep/sample_data/
 
 # AWS deploy runtime artifact (load balancer host)
 deployment/aws/.eep_host
+
+# Auth user store (SQLite) — never commit
+services/eep/data/
+*.db
+*.db-wal
+*.db-shm

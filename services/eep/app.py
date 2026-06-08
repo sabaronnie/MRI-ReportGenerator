@@ -10,12 +10,14 @@ from __future__ import annotations
 import time
 from collections import defaultdict, deque
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, PlainTextResponse
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 
 from . import config, store
+from .auth import router as auth_router
+from .auth.deps import get_current_user
 from .orchestration import measurements_ready, reporting_ready
 from .routers import cases
 
@@ -80,4 +82,6 @@ def metrics():
     return PlainTextResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
-app.include_router(cases.router)
+# Auth: /auth/login is public; /cases* require a valid JWT (see services/eep/auth).
+app.include_router(auth_router.router)
+app.include_router(cases.router, dependencies=[Depends(get_current_user)])
