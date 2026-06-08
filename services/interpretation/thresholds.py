@@ -194,7 +194,8 @@ _DISC_VB_RATIO_CITATION = (
     "Cohort-derived cut (no published cervical disc-AP/VB-AP-width ratio norm exists -- "
     "search NEGATIVE). Mechanism literature-grounded: disc AP diameter increases with "
     "degeneration (Machino 2021, PMID 34098133, n=1211 cervical MRI). Bulge-beyond-margin "
-    "concept = Fardon v2.0 2014 (Spine J 14:2525-2545; orig PMID 11242315, lumbar borrow)."
+    "concept = Fardon v2.0 2014 (Spine J 14(11):2525-2545, doi:10.1016/j.spinee.2014.04.022; "
+    "lumbar borrow)."
 )
 _DISC_VB_RATIO_CAVEAT = (
     "Cohort-calibrated (MMCSD), NOT a literature threshold; discriminates only modestly "
