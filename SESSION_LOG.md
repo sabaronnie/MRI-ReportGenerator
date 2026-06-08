@@ -24,7 +24,9 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 **Files:** new `src/app/(app)/dashboard/`, `src/components/dashboard/*`, `src/components/{header,mobile-nav,portal}.tsx`, `src/hooks/use-scroll.ts`, `ui/{chart,item}.tsx`; modified `app/page.tsx`, `lib/api/workflow.ts`, `app-shared.tsx`, `app-sidebar.tsx`, `worklist-filters.tsx`, admin dialogs; `services/eep/workflow/router.py` (+`/stats`); +recharts.
 
-**Pending / next action:** ⚠️ **Docker Desktop was down this session** (machine restart) and wouldn't start via CLI — **start Docker + `docker compose up -d --build` in `deployment/compose/`** to bring the stack back, then the live dashboard `/workflow/stats` (real flag breakdown) is the only thing not yet verified live (rendering verified in mock + prod build). Deploy still goes through the infra chat (merge this branch into `feat/seg/deploy` first).
+**Update (later 2026-06-09):** Docker hang fixed (force-killed the stuck engine procs, relaunched — up in 6s). Stack back; **dashboard verified LIVE** (5 cases, 2 urgent, flags-by-group populated), 0 errors. Mapped `spondy_pct_of_lower_AP` → Alignment so the dashboard "Other" bucket is gone (now Canal/cord 5 · Vertebra 1 · Alignment 5).
+
+**Pending / next action:** Deploy goes through the infra chat (merge this branch into `feat/seg/deploy` first). Live-upload link still needs EEP `POST /cases` to forward `{age,sex}` (routers/cases.py = infra-owned) + measurement/interpretation code merged into the measurements IEP image. Demographics capture UI (upload form age/sex) not yet built. PRs still unopened. See the handoff prompt for the full picture.
 
 ## 2026-06-08 (cont. 4) — Andrew (LINK measurement pipeline → report + radiologist ZIP)
 
