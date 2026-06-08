@@ -210,6 +210,8 @@ _CORD_AP_CAVEAT = (
 )
 # SAC <3 mm = high compression risk (radiograph-origin, verify). Torg <0.8 developmental stenosis.
 _SAC_CUT = 3.0
+_SAC_SEVERE_CUT = 1.0   # SAC <3 over-flags 7-15% healthy on MRI (Nell calls it doubtful; A.3) ->
+                        # 1-3 mm is a conservative review heuristic; only <1 mm is a hard high-risk flag.
 _SAC_CITATION = (
     "SAC <3 mm = high compression risk (plan-cited Fehlings 2015 / Nouri 2016) -- radiograph-origin, "
     "verify for MRI (pending Phase-4); Nell 2019 (PMC6764695) healthy percentiles"
@@ -327,12 +329,17 @@ THRESHOLDS: dict[str, ThresholdSpec] = {
         tag="raw",
         bands=(
             Band("no_bulge", None, _BULGE_PRESENT_CUT, "within"),
-            Band("bulge_present", _BULGE_PRESENT_CUT, _BULGE_CORD_RISK_CUT, "outside"),
-            Band("cord_risk", _BULGE_CORD_RISK_CUT, None, "outside"),
+            # >1 mm = bulge (Nakashima) but NON-SPECIFIC (87.6% of asymptomatic) -> REVIEW, not a hard
+            # flag. The 1.35 mm "cord-risk" cut is dropped: research handoff A.6 flags it as unverified /
+            # likely confabulated (do not cite until AUB full-text confirms).
+            Band("bulge_present_nonspecific", _BULGE_PRESENT_CUT, None, "review"),
         ),
         citation=_BULGE_CITATION,
         modality_caveat=_BULGE_CAVEAT,
-        provenance_note="Replaces in-code >=2 mm / ratio>=1.10 flag; also needs the tilted-chord fix.",
+        provenance_note=(
+            "Replaces in-code >=2 mm / ratio>=1.10 flag; >1 mm is non-specific (review, not outside); "
+            "1.35 mm cord-risk band REMOVED (unverified/confabulated, A.6)."
+        ),
     ),
     "pfirrmann_grade": ThresholdSpec(
         key="pfirrmann_grade",
@@ -388,11 +395,15 @@ THRESHOLDS: dict[str, ThresholdSpec] = {
         tag="derived",
         bands=(
             Band("normal", _SAC_CUT, None, "within"),
-            Band("high_risk", None, _SAC_CUT, "outside"),
+            Band("reduced_heuristic", _SAC_SEVERE_CUT, _SAC_CUT, "review"),
+            Band("severe", None, _SAC_SEVERE_CUT, "outside"),
         ),
         citation=_SAC_CITATION,
         modality_caveat=_SAC_CAVEAT,
-        provenance_note="SAC<3 mm high-risk; radiograph-origin, verify (pending Phase-4).",
+        provenance_note=(
+            "DEMOTED (A.3): SAC<3 mm radiograph-borrow over-flags 7-15% healthy on MRI -> 1-3 mm is "
+            "review-only, only <1 mm is a hard high-risk flag. Dural-sac AP is the primary stenosis metric."
+        ),
     ),
     "Torg_Pavlov_ratio": ThresholdSpec(
         key="Torg_Pavlov_ratio",
@@ -401,11 +412,13 @@ THRESHOLDS: dict[str, ThresholdSpec] = {
         tag="derived",
         bands=(
             Band("normal", _TORG_CUT, None, "within"),
-            Band("developmental_stenosis_screen", None, _TORG_CUT, "outside"),
+            # NEVER a standalone flag: 93% of normal men fall <0.8 on MRI (Tierney; A.4). Supporting
+            # feature only -> review, never outside.
+            Band("low_torg_supporting", None, _TORG_CUT, "review"),
         ),
         citation=_TORG_CITATION,
         modality_caveat=_TORG_CAVEAT,
-        provenance_note="Planned; radiograph-origin <0.8; MRI adjustment pending Phase-4.",
+        provenance_note="DEMOTED (A.4): Torg<0.8 is a SUPPORTING feature only, never a standalone flag (93% of normal men fall below on MRI).",
     ),
     "Cobb_C3_C7": ThresholdSpec(
         key="Cobb_C3_C7",
