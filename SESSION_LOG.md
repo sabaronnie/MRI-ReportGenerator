@@ -11,6 +11,20 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-08 (cont.) — Andrew (full-stack chat: real JWT auth + admin panel; app-shell; logo; view-report)
+
+**Branch:** `feat/app/fullstack-local` (new; = frontend + merged backend from `feat/eep/scaffold`). Pushed.
+
+**What was done:**
+- **Merged the full backend** into the frontend worktree (clean; only SESSION_LOG conflicted → kept both). Ran the whole stack locally: `docker compose` (eep :8080 + measurements :8081 + reporting :8082, `/readyz` both IEPs ready) + `npm run dev` live → :3000.
+- **Real authentication (replaces the mock cookie).** Researched OWASP/2026 first (`docs/auth-design.md`). EEP-enforced JWT: new `services/eep/auth/` package — **Argon2id** hashing (scrypt fallback), **HS256 JWT (alg pinned)**, **SQLite** user store (seeds 4 demo accounts, pw `demo12345`), `/auth` router (login/me/logout + admin user CRUD), `current_user` dep re-checks the DB each request (immediate deactivate/delete revocation). Guards `/cases*`; `/healthz /readyz /metrics /auth/login` open. **10 pytest green.** Only EEP core file touched = `app.py` (mount router + guard) + `requirements.txt` (+pyjwt, argon2-cffi) — **flag the infra chat**.
+- **Frontend auth:** login = email+password → JWT in httpOnly cookie → forwarded as Bearer; viewer/report now go through same-origin Next.js proxy routes (`/api/cases/[id]/{volume,mask,report}`) that attach the token. **Real admin panel** (`/admin`): create user, inline role change, enable/disable, reset password, delete — wired to the EEP. Removed the dev no-login bypass. Login page reworked (password field, social buttons dropped).
+- **Earlier this session:** efferd app-shell-4 → clinical sidebar shell (route group `(app)`); efferd auth-5 login; site logo + favicon; "View report" button. Production build green; e2e (admin creates user → that user logs in → RBAC hides Admin) verified, 0 console errors.
+
+**Files changed:** new `services/eep/auth/**` + test; `services/eep/app.py`, `requirements.txt`; `docs/auth-design.md`; frontend `lib/auth/*`, `lib/api/{client,proxy,admin}.ts`, `app/api/cases/[id]/**`, `app/(app)/admin/**`, `components/{auth-page,nav-user,admin/*}`, app-shell components, `brand.tsx`, `public/logo.png`, `app/icon.png`.
+
+**Pending / next action:** ⚠️ **tell the infra chat I edited `services/eep/app.py` + `requirements.txt`** (auth wiring) so the next `feat/eep/scaffold` merge stays clean. Andrew wants to **brainstorm more functionality** next. In any deploy, set `JWT_SECRET` (≥32 bytes) + `ADMIN_PASSWORD`/`DEMO_PASSWORD` env. Sample data + `users.db` are gitignored. Other queued frontend items: per-case MRI in the viewer, more demo cases (need Colab segmentation).
+
 ## 2026-06-07/08 — Andrew (frontend BUILT M1–M6; starting EEP + containerization)
 
 **Branch:** `feat/frontend/scaffold` (worktree `frontend-worktree/`, 39 commits, pushed, **unmerged**). EEP work continues on `feat/eep/scaffold` (worktree `eep-worktree/`).
