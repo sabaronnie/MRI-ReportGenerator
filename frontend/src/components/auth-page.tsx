@@ -1,9 +1,7 @@
 "use client";
 
-import { AppleIcon } from "@/components/icons/apple-icon";
 import { GithubIcon } from "@/components/icons/github-icon";
 import { GoogleIcon } from "@/components/icons/google-icon";
-import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import {
 	InputGroup,
@@ -12,23 +10,44 @@ import {
 } from "@/components/ui/input-group";
 import { AuthDivider } from "@/components/auth-divider";
 import { FloatingPaths } from "@/components/floating-paths";
-import { ChevronLeftIcon, AtSignIcon } from "lucide-react";
+import { AtSignIcon, Scan } from "lucide-react";
+import { login } from "@/lib/auth/actions";
+import { cn } from "@/lib/utils";
 
-export function AuthPage() {
+/** Our brand mark — mirrors the header so the auth page stays on-brand. */
+function Brand({ className }: { className?: string }) {
 	return (
-		<main className="relative md:h-screen md:overflow-hidden lg:grid lg:grid-cols-2">
-			<div className="relative hidden h-full flex-col border-r bg-secondary p-10 lg:flex dark:bg-secondary/20">
-				<div className="absolute inset-0 bg-linear-to-b from-transparent via-transparent to-background" />
-				<Logo className="mr-auto h-4.5" />
+		<span className={cn("flex items-center gap-2.5", className)}>
+			<span className="grid h-8 w-8 place-items-center rounded-md bg-primary text-primary-foreground shadow-sm">
+				<Scan className="h-[18px] w-[18px]" strokeWidth={2.25} />
+			</span>
+			<span className="flex flex-col leading-none">
+				<span className="font-serif text-[17px] font-semibold tracking-tight text-foreground">
+					Cervical&nbsp;MRI
+				</span>
+				<span className="mt-0.5 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+					Reporting
+				</span>
+			</span>
+		</span>
+	);
+}
 
-				<div className="z-10 mt-auto">
+export function AuthPage({ error }: { error?: boolean }) {
+	return (
+		<div className="relative md:h-screen md:overflow-hidden lg:grid lg:grid-cols-2">
+			<div className="relative hidden h-full flex-col border-r bg-secondary p-10 lg:flex">
+				<div className="absolute inset-0 bg-linear-to-b from-transparent via-transparent to-background" />
+				<Brand className="z-10 mr-auto" />
+
+				<div className="z-10 mt-auto max-w-md">
 					<blockquote className="space-y-2">
-						<p className="text-xl">
-							&ldquo;This Platform has helped me to save time and serve my
-							clients faster than ever before.&rdquo;
+						<p className="font-serif text-2xl leading-snug">
+							Structured cervical-spine MRI measurements and triage notes for
+							every level — drafted in seconds, signed by you.
 						</p>
-						<footer className="font-mono font-semibold text-sm">
-							~ Ali Hassan
+						<footer className="font-mono text-sm text-muted-foreground">
+							Cervical MRI Reporting — clinician-in-the-loop
 						</footer>
 					</blockquote>
 				</div>
@@ -47,57 +66,64 @@ export function AuthPage() {
 					<div className="absolute top-0 right-0 h-320 w-60 rounded-full bg-[radial-gradient(50%_50%_at_50%_50%,--theme(--color-foreground/.04)_0,--theme(--color-foreground/.01)_80%,transparent_100%)] [translate:5%_-50%]" />
 					<div className="absolute top-0 right-0 h-320 w-60 -translate-y-87.5 rounded-full bg-[radial-gradient(50%_50%_at_50%_50%,--theme(--color-foreground/.04)_0,--theme(--color-foreground/.01)_80%,transparent_100%)]" />
 				</div>
-				<Button className="absolute top-7 left-5" variant="ghost" render={<a href="#" />} nativeButton={false}><ChevronLeftIcon data-icon="inline-start" />Home
-                					</Button>
 
-				<div className="mx-auto space-y-4 sm:w-sm">
-					<Logo className="h-4.5 lg:hidden" />
+				<div className="mx-auto space-y-5 sm:w-sm">
+					<Brand className="lg:hidden" />
 					<div className="flex flex-col space-y-1">
-						<h1 className="font-bold text-2xl tracking-wide">
-							Sign In or Join Now!
+						<h1 className="font-serif text-3xl font-semibold tracking-tight">
+							Sign in
 						</h1>
 						<p className="text-base text-muted-foreground">
-							login or create your efferd account.
+							Access your cervical-spine reporting workspace.
 						</p>
+						{error ? (
+							<p className="text-sm text-rose-600">
+								Could not sign you in. Try again.
+							</p>
+						) : null}
 					</div>
 					<div className="space-y-2">
-						<Button className="w-full">
-							<GoogleIcon data-icon="inline-start" />
-							Continue with Google
-						</Button>
-						<Button className="w-full">
-							<AppleIcon data-icon="inline-start" />
-							Continue with Apple
-						</Button>
-						<Button className="w-full">
-							<GithubIcon data-icon="inline-start" />
-							Continue with GitHub
-						</Button>
+						<form action={login}>
+							<input type="hidden" name="email" value="radiologist@demo" />
+							<Button variant="outline" className="w-full" type="submit">
+								<GoogleIcon data-icon="inline-start" />
+								Continue with Google
+							</Button>
+						</form>
+						<form action={login}>
+							<input type="hidden" name="email" value="radiologist@demo" />
+							<Button variant="outline" className="w-full" type="submit">
+								<GithubIcon data-icon="inline-start" />
+								Continue with GitHub
+							</Button>
+						</form>
 					</div>
 
 					<AuthDivider>OR</AuthDivider>
 
-					<form className="space-y-2">
+					<form action={login} className="space-y-2">
 						<p className="text-start text-muted-foreground text-xs">
-							Enter your email address to sign in or create an account
+							Enter your work email to sign in.
 						</p>
 						<InputGroup>
 							<InputGroupInput
-								placeholder="your.email@example.com"
+								name="email"
+								placeholder="you@hospital.org"
 								type="email"
+								autoComplete="email"
+								required
 							/>
 							<InputGroupAddon align="inline-start">
-								<AtSignIcon
-								/>
+								<AtSignIcon />
 							</InputGroupAddon>
 						</InputGroup>
 
-						<Button className="w-full" type="button">
-							Continue With Email
+						<Button className="w-full" type="submit">
+							Continue with email
 						</Button>
 					</form>
 					<p className="mt-8 text-muted-foreground text-sm">
-						By clicking continue, you agree to our{" "}
+						By continuing, you agree to our{" "}
 						<a
 							className="underline underline-offset-4 hover:text-primary"
 							href="#"
@@ -115,6 +141,6 @@ export function AuthPage() {
 					</p>
 				</div>
 			</div>
-		</main>
+		</div>
 	);
 }

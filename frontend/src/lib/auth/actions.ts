@@ -5,11 +5,15 @@ import { redirect } from "next/navigation";
 import { SESSION_COOKIE } from "./session";
 import { findUser } from "./users";
 
-/** Mock login: look up the demo user by email and set the session cookie. */
+/**
+ * Mock login (frontend-only, "as if auth is done"): set the session cookie.
+ * A known demo email still selects that role; any other email signs in as the
+ * primary radiologist persona so the demo flow always works. Real auth will be
+ * wired into the EEP later.
+ */
 export async function login(formData: FormData) {
-  const email = String(formData.get("email") ?? "");
-  const user = findUser(email);
-  if (!user) redirect("/login?error=unknown_user");
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const user = findUser(email) ?? findUser("radiologist@demo")!;
   (await cookies()).set(SESSION_COOKIE, JSON.stringify(user), {
     httpOnly: true,
     sameSite: "lax",
