@@ -11,6 +11,45 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-09 — Andrew (executor: documentation finalization + 2 unblocked items)
+
+**Branch:** `research/andrew/writeups` (CANONICAL; pushed).
+
+**What was done (doc-finalization hard run):**
+- **disc/VB ratio (UNBLOCKED, reframed not replaced):** the ≥1.10 cut is now documented as **cohort-derived**
+  (no published cervical disc/VB-AP-ratio norm exists — search NEGATIVE) with the **mechanism cited**
+  (Machino 2021 PMID 34098133, disc AP widens with degeneration). Added a `disc_vb_ap_ratio` spec to the
+  G6 catalog. `disc_ap_bulge.py` + `thresholds.py`. 138 tests green.
+- **C1/P3 deliverable written for real** (`overleaf/deliverables/C1_P3_novelty.tex`, compiles w/ tectonic):
+  novelty + AI-justification (healthy-anchored disease-agnostic detectors, no-per-case-GT validation,
+  scanner-immunity insight, honest negatives, cited review-only interpretation). No Team 14 dependency.
+- **Consistency sweep — G4 = NOT a discriminator + G2 = partial now read identically everywhere:** fixed
+  stale "directional/underpowered" verdicts in `pipeline-structure.md` (also G2-wired J25, G6 classify),
+  paper `01/10/13_*`, `T1_ai_depth.tex`, `docs/ai-depth.md`, appendix `B_catalog` (removed deleted 1.35mm
+  bulge band, added disc_vb_ap_ratio). Marked `results-run1` superseded; added verdict pointer to
+  `validation.md`. Narrative docs (journal, results-full) left as dated history.
+- **references.bib:** verified+tightened spineps/mmcsd/duke/zhang (Crossref/arXiv); enriched with verified
+  Machino/Fardon/Forsberg/Grochmal/Urbanschitz/Sevin (NCBI eutils). **Caught a confabulated PMID:** Fardon
+  "11242315" was actually Katz/Medical Care — corrected to DOI 10.1016/j.spinee.2014.04.022. Remaining
+  unverifiable author lists left FLAGged, not guessed.
+- **Limitations completeness:** paper + results-final now state PMC8082364 (no cervical compression-fracture
+  MRI dataset) + the absent-baseline negatives (no Ha/Hp ICC, SAC-mm ICC, disc/VB ratio norm, cervical Cobb GT).
+- **TPTBox/`spinestats` = Apache-2.0** (verified) → NOT an AGPL blocker for the SPINEPS image. Recorded in
+  segmentation README, which now documents all 3 engines (TSS/SCT+SCIseg/SPINEPS). overleaf README adds C1/P3.
+- **All overleaf/*.tex compile with tectonic** (4 deliverables + paper main.tex, 260KB).
+
+**Pending / next action — CROSS-BRANCH items NOT done (need Andrew, infra-owned, push not authorized here):**
+1. `docs/positioning.md` (on `feat/eep/scaffold`) — fill the P2 baseline numbers; has NO clean `[SCIENCE:]`
+   markers so it's a prose edit (the current "κ≈0.26 (lumbar)" is mis-attributed; should be cervical
+   Pfirrmann κ 0.265 Urbanschitz). Paste-ready text handed to Andrew in chat.
+2. `docs/RUBRIC_TRACKER.md` (on `feat/eep/scaffold`) — mark T1/P2/P4/C1-P3 done + final verdicts in `[science]`
+   rows. Infra-owned (flag-before-edit). Paste-ready text in chat.
+3. `docs/validation/validation-design-and-decisions.md` (on `feat/docs/validation-rationale`) — predates the
+   G4 reversal / G2-partial; needs a refresh note. Not on writeups.
+   → Decide: apply on those branches yourself, or authorize this chat to edit+push them.
+
+---
+
 ## 2026-06-08→09 — Andrew (executor: finalize validation + deliverables + segmentation wrappers)
 
 **Branch:** `research/andrew/writeups` (CANONICAL — has everything; pushed to origin).
