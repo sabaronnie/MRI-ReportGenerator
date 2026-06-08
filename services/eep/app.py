@@ -20,6 +20,7 @@ from .auth import router as auth_router
 from .auth.deps import get_current_user
 from .orchestration import measurements_ready, reporting_ready
 from .routers import cases
+from .workflow import router as workflow_router
 
 app = FastAPI(title="MRI-ReportGenerator EEP", version="0.1.0")
 
@@ -82,6 +83,7 @@ def metrics():
     return PlainTextResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
-# Auth: /auth/login is public; /cases* require a valid JWT (see services/eep/auth).
+# Auth: /auth/login is public; /cases* and /workflow* require a valid JWT.
 app.include_router(auth_router.router)
 app.include_router(cases.router, dependencies=[Depends(get_current_user)])
+app.include_router(workflow_router.router)

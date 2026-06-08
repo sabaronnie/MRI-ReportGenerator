@@ -5,21 +5,14 @@ store. Run: pytest services/eep/tests/test_auth.py
 """
 
 import os
-import tempfile
 import time
 
-# Point the user store at a temp DB + set a test secret BEFORE importing the app.
-_TMP_DB = os.path.join(tempfile.mkdtemp(), "users_test.db")
-os.environ["USERS_DB_PATH"] = _TMP_DB
-os.environ["JWT_SECRET"] = "test-secret"
-os.environ["DEMO_PASSWORD"] = "demo12345"
+import jwt
+import pytest
+from fastapi.testclient import TestClient
 
-import jwt  # noqa: E402
-import pytest  # noqa: E402
-from fastapi.testclient import TestClient  # noqa: E402
-
-from services.eep.app import app  # noqa: E402
-from services.eep.auth import security  # noqa: E402
+from services.eep.app import app  # env is set in conftest.py (temp DBs + test secret)
+from services.eep.auth import security
 
 client = TestClient(app)
 
