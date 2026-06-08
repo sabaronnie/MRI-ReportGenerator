@@ -1,0 +1,183 @@
+% =====================================================================
+% Rubric Deliverable C1 / P3 — Novelty & AI Justification
+% MRI-ReportGenerator (EECE503N). Self-contained; compile with tectonic.
+% =====================================================================
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{verbatim}
+\usepackage{textcomp}
+\usepackage[hidelinks]{hyperref}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\setlist{nosep, leftmargin=1.4em}
+\sloppy
+
+\title{\textbf{Novelty \& AI Justification}\\[2pt]
+\large Rubric Deliverable C1 / P3 --- MRI-ReportGenerator (Cervical Spine MRI Analysis)}
+\author{EECE503N Final Project}
+\date{2026-06-09}
+
+\begin{document}
+\maketitle
+
+\noindent\textbf{Scope.} This document states what is \emph{novel} about MRI-ReportGenerator and
+\emph{justifies} the AI design choices behind it. It is the C1/P3 deliverable (novelty /
+AI-justification). It deliberately does \textbf{not} re-explain the measurement algorithms or the
+validation numbers --- those live in the T1 technical-depth deliverable
+(\texttt{T1\_ai\_depth.tex}), the paper (\texttt{overleaf/paper/}), the per-group verdict
+(\texttt{docs/validation/group-status-2026-06-08.md}), the consolidated results
+(\texttt{docs/validation/results-final-2026-06-08.md}), and the development journal
+(\texttt{DEVELOPMENT\_JOURNEY.md}, J1--J26). This deliverable \emph{references} them and argues the
+contribution.
+
+\medskip
+\noindent\textbf{Medical framing (hard rule).} The system produces measurements and \emph{findings
+flagged for physician review}, never diagnoses. The novelty claims below are framed accordingly.
+
+% ---------------------------------------------------------------------
+\section{The novelty in one sentence}
+The contribution is \textbf{not} a new neural network. It is a \emph{system design}: a cervical-spine
+MRI pipeline built from \textbf{healthy-anchored, disease-agnostic geometric detectors}, validated by a
+\textbf{threshold-crossing / distribution-separation methodology} purpose-built for a domain where
+\textbf{no public dataset pairs cervical MRI with per-case expert measurements}, and surfaced through a
+\textbf{fully cited threshold catalog} that only ever flags findings for physician review. Each of those
+four italicised choices is a deliberate, defensible departure from the obvious approach, and together
+they are what a thin ``wrapper over a segmentation model'' does not have.
+
+% ---------------------------------------------------------------------
+\section{Why a non-AI baseline exists --- and why automation is justified}
+The non-AI baseline is \textbf{manual radiologist measurement}. It is the right thing to improve on for
+two cited reasons (full numbers and citations in the positioning document and
+\texttt{manual\_baseline\_cost}):
+\begin{itemize}
+  \item \textbf{Slow.} Cervical MRI reporting runs $\approx 2.7$\,min median / $3.8$\,min mean of
+  PACS interaction (Forsberg 2017, PMID 27714473), with a further self-reported $5$--$10$\,min/case of
+  manual geometry (Zhu 2024, PMID 38269650); no formal time-motion study isolates the geometry step ---
+  itself a documented gap.
+  \item \textbf{Unreliable on exactly what we automate.} Inter-observer agreement collapses for the
+  structures this pipeline measures: cord AP ICC $0.66$ axial (Grochmal 2018, PMID 29913296),
+  cord-compression metrics ICC $0.35$--$0.56$ (Fehlings 2006, PMID 16816769), cervical disc grading on
+  the original Pfirrmann scale $\kappa = 0.265$ (Urbanschitz 2021, PMID 34966859), and Cobb angle
+  $\sim 0.88$ for a single trained reader but $\sim 0.55$ across mixed readers (Sevin 2025,
+  PMID 41011045).
+\end{itemize}
+A reproducible, deterministic measurement layer is therefore a genuine improvement, not a solution in
+search of a problem. This grounds the \emph{Application} positioning.
+
+% ---------------------------------------------------------------------
+\section{Four novelty axes (what is genuinely different)}
+
+\subsection{Disease-agnostic detectors anchored on healthy norms}
+Most ``AI for spine MRI'' work trains a classifier to recognise a \emph{named pathology} (stenosis,
+herniation, myelopathy) from labelled diseased examples. We do the opposite: we measure
+\textbf{geometry and signal against a healthy reference}, so a canal of $8$\,mm reads ``narrow,
+flagged for review'' \emph{regardless of cause}. The detector is defined by the normal range, not by a
+disease class. Consequences that are themselves the novelty:
+\begin{itemize}
+  \item It generalises beyond the diseases in any training set --- there is no disease label to overfit.
+  \item It needs no diseased training cohort, only a healthy reference distribution, which removes the
+  train/test leakage failure mode that plagues small-cohort medical classifiers.
+  \item Where a published cervical-MRI norm does not exist, the threshold is \emph{cohort-derived} and
+  labelled as such (e.g.\ the Ha/Hp compression z-screen and the disc/VB AP-ratio cut --- both stated as
+  cohort-calibrated, not literature values, with the underlying mechanism cited: Machino 2021,
+  PMID 34098133, for disc widening with degeneration).
+\end{itemize}
+
+\subsection{A validation methodology designed for ``no per-case ground truth''}
+The standard evaluation --- per-case sensitivity/specificity against a radiologist gold standard --- is
+\textbf{impossible on public data} for cervical MRI, because no dataset pairs the images with per-case
+expert measurements (established by repeated dataset searches). Rather than fabricate a weak label, we
+designed an evaluation that fits the constraint:
+\begin{enumerate}
+  \item \textbf{Healthy-anchoring (specificity):} confirm healthy anatomy reads inside the normal range
+  on a healthy cohort (Spine-Generic).
+  \item \textbf{Threshold-crossing / distribution separation (sensitivity proxy):} confirm symptomatic
+  anatomy crosses into the abnormal range on a symptomatic cohort (MMCSD, CSM/CSR), via
+  distribution-separation statistics (Mann--Whitney), never per-case accuracy.
+\end{enumerate}
+Designing and defending a sound evaluation when the textbook one is unavailable is a methods
+contribution in its own right (paper \S13; J14--J26).
+
+\subsection{The physical-dimension scanner-immunity insight}
+A non-obvious finding shaped the whole evaluation: \textbf{physical-dimension (mm) metrics are
+scanner-immune} and validate \emph{across} datasets, while \textbf{intensity/ratio metrics are
+acquisition-sensitive} and must be validated \emph{within} one dataset. This is why the millimetre canal
+/ SAC / cord measurements (G3) separate cleanly cross-dataset (p$=$0.0001) but disc \emph{signal} does
+not, and why disc metrics were validated within-MMCSD only. Recognising this distinction --- and
+structuring the validation around it --- is novel methodology, not a parameter choice (J16, J23).
+
+\subsection{Cited, auditable interpretation --- never a black box, never a diagnosis}
+Every interpreted finding maps to a \emph{cited} threshold in the G6 catalog
+(\texttt{services/interpretation/thresholds.py}), with provenance, modality caveats, and an honest label
+when a threshold is a documented borrow or a cohort-derived value. The output is a status
+(within / review / outside) ``flagged for physician review,'' never a diagnosis. A radiologist can check
+each number against its source. This auditability is a deliberate departure from end-to-end
+diagnostic models and is the appropriate design for a clinical application.
+
+% ---------------------------------------------------------------------
+\section{Honesty about negatives \emph{is} part of the novelty}
+A credible system says what does \emph{not} work. We report, and do not hide, three negatives that a
+results-chasing project would have buried:
+\begin{itemize}
+  \item \textbf{G4 cervical alignment (Cobb) is NOT a disease discriminator.} On a balanced multi-site
+  cohort (26 healthy vs 41 symptomatic) the effect evaporates: $d=0.28$, AUC $0.57$, $p=0.32$. An earlier
+  $n=11$ result ($d=0.76$) was a lordosis-biased small sample. We report G4 as a validated
+  \emph{measurement}, not a screen (J24, J26).
+  \item \textbf{Disc signal and posterior bulge do not discriminate} within the symptomatic cohort
+  (AUC $0.50$ each, level-controlled); only the disc/VB AP-ratio carries a modest signal (AUC $0.62$)
+  (J23).
+  \item \textbf{The compression-fracture abnormal arm is unvalidated} because no labelled cervical-MRI
+  compression-fracture dataset exists (documented limitation; VerSe authors note cervical fractures are
+  rare and usually non-osteoporotic, PMC8082364).
+\end{itemize}
+Reporting these as negatives --- rather than tuning a number until it looks clean --- is the same
+discipline that makes the positive results (G3 stenosis, p$=$0.0001) trustworthy.
+
+% ---------------------------------------------------------------------
+\section{AI justification: why this is the right AI architecture}
+The pretrained-and-compose design (three frozen segmentation engines feeding our measurement and
+interpretation layer; see T1 for the composition detail) is the defensible choice for a clinical
+application:
+\begin{itemize}
+  \item \textbf{Auditability.} Outputs trace to a measurement and a cited threshold, not an opaque model.
+  \item \textbf{No overfitting by construction.} Frozen segmenters + healthy-anchored / cited thresholds
+  mean the system cannot have memorised the evaluation cohort.
+  \item \textbf{Graceful degradation.} Per-component error contracts mean one failed measurement (e.g.\ a
+  missing SPINEPS mask) degrades a single method, not the whole report.
+  \item \textbf{The differentiator is the clinical layer.} The measurement validity, the cited
+  interpretation, and the report --- the parts that decide whether a radiologist trusts the output ---
+  are exactly the parts we built and validated.
+\end{itemize}
+
+% ---------------------------------------------------------------------
+\section{Relation to similarly-scoped work}
+This project shares a high-level title space with other cervical-spine MRI efforts. The differentiation
+above is stated on its own terms and does not depend on any one comparator: the combination of
+disease-agnostic healthy-anchored detectors, a no-per-case-GT validation methodology, the
+scanner-immunity insight, and a fully cited review-only interpretation layer is the contribution. A
+direct, point-by-point head-to-head against a specific comparator project can be appended here once that
+project's scope and abstract are available; it is not required to establish the novelty, which stands on
+the four axes above.
+% NOTE: if a specific comparator (e.g. a duplicate-title team) shares its abstract/scope, add a
+% head-to-head differentiation table in this section. The novelty argument above does NOT depend on it.
+
+% ---------------------------------------------------------------------
+\section{Summary for the grader}
+\begin{itemize}
+  \item The novelty is a \textbf{system}: healthy-anchored disease-agnostic detectors, a validation
+  methodology built for the no-per-case-GT constraint, the physical-dimension scanner-immunity insight,
+  and a cited review-only interpretation layer.
+  \item The AI choice (compose frozen, validated segmenters; build and validate the clinical layer) is
+  \textbf{justified}, not a shortcut --- it gives auditability, no overfitting, and graceful degradation.
+  \item Credibility comes from \textbf{reported negatives} (G4 not a discriminator; disc signal/bulge
+  dead; compression-fracture arm unvalidated) as much as from the strong G3 result.
+  \item Full technical depth: \texttt{T1\_ai\_depth.tex}; methods and numbers: the paper and
+  \texttt{results-final-2026-06-08.md}; narrative: \texttt{DEVELOPMENT\_JOURNEY.md}.
+\end{itemize}
+
+\end{document}

@@ -86,20 +86,21 @@ def test_disc_bulge_below_one_mm_is_no_bulge():
     assert r.flag is False
 
 
-def test_disc_bulge_one_to_135_is_bulge_present():
+def test_disc_bulge_above_1mm_is_nonspecific_review():
+    # >1 mm = bulge (Nakashima) but NON-SPECIFIC (87.6% of asymptomatic) -> review, not a hard flag (A.6)
     r = classify("posterior_bulge_mm", 1.2)
-    assert r.status == "outside_reference"
-    assert r.severity == "bulge_present"
-    assert r.flag is True
+    assert r.status == "review_only"
+    assert r.severity == "bulge_present_nonspecific"
+    assert r.flag is False
 
 
-def test_disc_bulge_above_135_is_cord_risk_with_tilted_chord_caveat():
+def test_disc_bulge_no_confabulated_cord_risk_band():
+    # the 1.35 mm "cord-risk" cut was REMOVED (unverified/likely confabulated, research A.6)
     r = classify("posterior_bulge_mm", 1.5)
-    assert r.status == "outside_reference"
-    assert r.severity == "cord_risk"
-    assert r.flag is True
+    assert r.status == "review_only"
+    assert r.severity == "bulge_present_nonspecific"
+    assert r.flag is False
     assert "Nakashima" in r.citation
-    assert "tilted chord" in r.caveat.lower()
 
 
 def test_pfirrmann_grade_is_research_grade_review_only():
@@ -155,12 +156,19 @@ def test_cord_ap_is_delegated_to_sct_normalize_hc():
     assert "PAM50" in r.citation
 
 
-def test_sac_below_3mm_is_high_risk():
+def test_sac_1_to_3mm_is_review_not_hard_flag():
+    # SAC<3 mm radiograph-borrow over-flags 7-15% healthy on MRI -> 1-3 mm is review-only (A.3)
     r = classify("SAC", 2.5)
+    assert r.status == "review_only"
+    assert r.severity == "reduced_heuristic"
+    assert r.flag is False
+
+
+def test_sac_below_1mm_is_severe_flag():
+    r = classify("SAC", 0.5)
     assert r.status == "outside_reference"
-    assert r.severity == "high_risk"
+    assert r.severity == "severe"
     assert r.flag is True
-    assert "radiograph" in r.caveat.lower()
 
 
 def test_sac_at_or_above_3mm_is_normal():
@@ -170,11 +178,12 @@ def test_sac_at_or_above_3mm_is_normal():
     assert r.flag is False
 
 
-def test_torg_below_08_flags_developmental_stenosis():
+def test_torg_below_08_is_supporting_only_never_flag():
+    # NEVER a standalone flag: 93% of normal men fall <0.8 on MRI -> supporting feature only (A.4)
     r = classify("Torg_Pavlov_ratio", 0.7)
-    assert r.status == "outside_reference"
-    assert r.severity == "developmental_stenosis_screen"
-    assert r.flag is True
+    assert r.status == "review_only"
+    assert r.severity == "low_torg_supporting"
+    assert r.flag is False
     assert "Torg" in r.citation
 
 

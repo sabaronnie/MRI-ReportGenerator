@@ -223,6 +223,310 @@ keep it honest and specific (numbers, dates, evidence, citations). Chronological
   single-context investigation missed. Also corrected a false assumption: supine MRI does NOT read ~5° less
   lordotic than standing for C2-C7 (F1000: diff −0.50°, n.s.) — fix the Group 6 Cobb caveat accordingly.
 
+## J13 — Integrating Group 5 into the measurement service: an anatomy-orientation fixture bug, caught by the test
+- **Context:** during the 2026-06-07 structure refactor, Group 5 was wired into the measurement
+  orchestrator via a new adapter (`services/measurements/group5/fracture_screen.py`) so the validated
+  vertebral-body compression screen emits through the same report path as the other groups. A new
+  synthetic integration test (`test_group5_fracture_screen.py`) shipped red.
+- **The mistake:** the test's synthetic "compressed C4" placed the truncated vertebral wall on the
+  **wrong anterior/posterior side** for the measurement's RAS convention. The screen therefore read
+  Ha=12.5 / Hp=7.2 → ratio **1.737** (healthy-looking) instead of the intended ~0.58, so the
+  compression flag never fired and the test failed.
+- **How we found it / ruled out a regression:** ran the suite on the refactored tree (136/137). Traced
+  the one failure to the *adapter's* new fixture, not the science: the validated `vertebral_fracture.py`
+  moved byte-identical and read the healthy C3 correctly (1.0) in the same test; the adapter only
+  forwards orientation. The dataset owner (Ronnie) confirmed the adapter is correct and the fix belongs
+  in the fixture.
+- **The fix:** swap the two C4 wall blocks so the truncation lands on the side the validated
+  `measure_vertebra` reads as anterior (Ha). Touched the test only — no change to the science or the adapter.
+- **Validated:** the screen now reads Ha/Hp ≈ 0.58 → `outside_reference / compression_screen_positive`;
+  full suite **137/137 green**.
+- **Lesson (recurring):** synthetic fixtures must match the real RAS anatomy/orientation the code assumes —
+  the same class of trap as the canal/body-isolation orientation issues in J2/J6. Integration tests across
+  a service boundary catch convention mismatches that unit tests on clean rectangles don't.
+
+## J14 — First threshold-crossing validation on real healthy + unhealthy MRI: G3 discriminates cleanly
+- **What we did:** ran the full pipeline on 12 healthy (Spine-Generic) + 10 symptomatic (MMCSD cervical
+  spondylosis: 5 CSM + 5 CSR) — TSS + SCT on Colab A100, then our measurement methods locally — and
+  compared each measurement's distribution healthy-vs-unhealthy against the cited thresholds.
+- **Headline — G3 (canal/cord/SAC) separates cleanly:** canal-AP minimum healthy median **11.7 mm**
+  (0% < 10) vs unhealthy **8.6 mm** (**100% < 10**); SAC minimum healthy **4.7 mm** (0% < 3) vs unhealthy
+  **2.3 mm** (**80% < 3**); cord-AP thinner unhealthy (5.5 vs 6.3 mm). The two canal distributions barely
+  touch (healthy floor 10.5 vs unhealthy ceiling 9.97). First hard proof the pipeline reads normal on
+  healthy and crosses into abnormal on real pathology.
+- **G4 Cobb — right direction, noisy:** unhealthy more kyphotic (−13° vs −3° healthy) = expected loss of
+  lordosis, but canal-cut is noisy (+56° healthy outlier; 9/12 measurable) → SPINEPS C1 is the fix for
+  absolute values; the cohort direction already separates.
+- **G1 Ha/Hp = 0% flags in BOTH cohorts — CORRECT, not a failure.** Spondylosis is degenerative, not
+  compression-fracture, so MMCSD heights are normal (true negatives) — empirically confirming the design
+  reasoning that MMCSD doesn't exercise the compression axis (needs a dedicated fracture set, the one data
+  gap). Healthy 0% over-flag re-confirms 5.2 specificity on the full 12.
+- **Honest caveats (logged):** n small (12/10); the 10 unhealthy were *selected to have mid-cervical
+  lesions* so part of the G3 separation is by construction — a random draw from the 250 MMCSD is the next
+  test; healthy = young controls (wide canals). Notably the earlier worry that SAC<3 / canal<10 *over-flag*
+  healthy on MRI did NOT materialize (0% healthy). Full numbers + reproduction:
+  `docs/validation/results-run1-2026-06-07.md`.
+
+## J15 — Full-cohort validation with statistics: G3 separates at p=0.0001; G4-C1 directional; G1 correctly null
+- **What we did:** ran every group on the full cohort (12 healthy Spine-Generic + 10 MMCSD unhealthy) and
+  added Mann-Whitney U tests + per-measure figures (`docs/validation/results-full-2026-06-08.md`).
+- **G3 (canal/cord/SAC) — VALIDATED:** canal-AP min healthy 11.7 vs unhealthy 8.6 mm (**p=0.0001**); SAC
+  min 4.7 vs 2.3 mm (**p=0.0001**); cord AP 6.3 vs 5.5 mm (p=0.009). Distributions barely touch. Strong
+  threshold-crossing on real MRI.
+- **G4 Cobb C1 (SPINEPS endplate) — method-validated, directional:** healthy +15.2° (matches F1000
+  literature 15.4°) vs unhealthy +8.8° (loss of lordosis), but p=0.13 (n.s. at n=10/11). C1 dramatically
+  cleaner than canal-cut (which gave a +56° healthy outlier). Validated the C1 *method* on an independent
+  cohort; as a *discriminator* it is directional only (alignment is less specific than stenosis for CSM).
+- **G1 Ha/Hp — correctly NULL:** 0.81 vs 0.80, p=0.92, 0 flags either cohort. Expected and correct —
+  spondylosis is not compression fracture (true negatives), empirically confirming MMCSD doesn't exercise
+  the compression axis. Re-confirms 5.2 specificity on all 12 healthy.
+- **Lesson:** the validation behaves as designed — strong where the disease lives (stenosis→G3), directional
+  where the metric is less specific (alignment→G4), and silent where the cohort has no such pathology
+  (compression→G1). Honest caveat logged: the 10 unhealthy were lesion-selected, so a random MMCSD draw is
+  the next test; n is small; no GT → separation not sens/spec.
+
+## J16 — Validation as a bug detector: G2 disc (DHI + AP bulge) read BACKWARDS → real bug, root-caused
+- **What we found:** on the same cohort, **both** Group-2 disc metrics fail the threshold-crossing test by
+  pointing the WRONG way: DHI healthy 0.23 vs unhealthy 0.26 (healthy looks *more* degenerated, p=0.05,
+  wrong sign), and AP bulge healthy 2.95 vs unhealthy 0.91 mm (healthy looks *more* bulged, p=0.005, wrong
+  sign). A metric that scores healthy worse than pathology is invalid by construction.
+- **Root cause (confirmed via intermediates):** the DHI denominator (adjacent VB middle height) is
+  **over-measured at the junction levels** — healthy `h_upperVB_middle_mm` C2-C3 = 26.6 mm, C7-T1 = 20.5 mm
+  vs the true ~12-13 mm — collapsing DHI and firing `reduced_dhi` 77% on healthy. Mid-cervical VB heights
+  (C3-C6 ≈ 12-14 mm) are fine → the bug is level-specific (C2 / cervicothoracic junction). This is exactly
+  the denominator discrepancy Mohammad predicted in his G2 handoff.
+- **What we did NOT do (and why):** did not blind-rewrite Mohammad's Duke-tuned disc algorithm overnight —
+  per our teammate-code rule, a fix to his code without his review and without GT would be irresponsible.
+  Documented + flagged with the exact evidence + a candidate fix (robustify `measure_adjacent_body_slice`
+  so junction/C2 VB heights aren't over-measured), to be done with him, then re-validate.
+- **Lesson:** the validation harness earned its keep — it caught a real, sign-level measurement bug that a
+  unit test on clean shapes would miss, and localized it to a specific denominator at specific levels.
+
+## J17 — The G2 disc bug, diagnosed and partially fixed: a cited relative flag, and an honest non-result
+- **The bug (from J16):** DHI and bulge read backwards (healthy scored worse than the symptomatic cohort).
+- **Diagnosis (decompose numerator vs denominator, mid-cervical C3-C6):** healthy disc-middle height
+  4.00 mm vs unhealthy 4.12 mm (**numerator is flat -- disc height does not separate the cohorts**);
+  healthy VB-denominator 12.70 mm vs unhealthy 11.39 mm (**the backwards DHI is denominator-driven** --
+  healthy bodies measure taller). Against Mohammad's anchor (disc 5.2 mm, denom 9 mm, DHI 0.55), our
+  denominator (~12.7 mm) is in fact closer to the true cervical body height (~12-13 mm); his ~9 mm is an
+  under-measured AP-strip, so his DHI 0.55 is inflated, not a target to match.
+- **Why a denominator swap would have been the WRONG fix:** it would make our numbers resemble his by
+  under-measuring (not move toward truth) and still would not discriminate, because the disc-height
+  numerator is flat. Caught before shipping (per the "revert if it's the wrong fix" rule).
+- **The fix that is correct + cited (additive, safe):** the real defect is the in-code absolute
+  `DHI < 0.30` flag, already debunked as uncited. Replaced/augmented with a CROSS-LEVEL relative rule -- a
+  disc whose middle height is >30% below the patient's own reference disc height (Suzuki 2018) -- which
+  cancels the cross-dataset calibration. Result: healthy false-positive firing **77% -> 3%** (unhealthy
+  56% -> 2%). Additive (Mohammad's DHI value + `reduced_dhi` untouched) so it cannot break his pipeline;
+  committed on `feat/measurements/disc-dhi-relative-flag` for his review.
+- **The honest non-result:** the relative flag fires ~equally on both cohorts (3% vs 2%) -- i.e. disc
+  HEIGHT does not discriminate this CSM/CSR cohort. That is clinically correct: cervical degeneration here
+  is signal loss and bulge/herniation, not mid-cervical height collapse. So G2's real discriminator is the
+  Miyazaki SIGNAL grade, not height; the bulge metric remains separately broken (backwards) and unfixed.
+- **Lesson:** "fixing" a metric is not the same as making it discriminate. We fixed the false-firing
+  (a real defect) honestly, and reported that the metric still does not separate -- rather than tuning the
+  denominator to fabricate a clean-looking number.
+
+## J18 — G4 'directional' diagnosed: a LARGE effect, just underpowered (not a weak metric)
+- **Question:** is C1 Cobb's directional-only discrimination (healthy +15.2 vs unhealthy +6.0, p=0.13) a weak
+  metric or just small n? Tested effect size + alternative metrics on the SPINEPS masks (11 healthy, 10 unhealthy).
+- **Finding:** **Cobb C3-C7 has a LARGE effect, Cohen d=0.91** -- the separation is real, it just needs ~19
+  cases/group for 80% power (we have 10). C3-C7 beats the alternatives: C2-C7 d=0.60 (endpoint noise),
+  focal min-segmental d=0.64, #kyphotic-segments d=0.37 (weak). So global C3-C7 is the right discriminating
+  metric and the only thing missing is statistical power.
+- **Fix (not code -- data):** segment ~19-20+ unhealthy MMCSD cases with SPINEPS (Run B) -> re-run C1 Cobb
+  -> expected p<0.05. No method change; C3-C7 stays the metric.
+- **Lesson:** 'directional, p=0.13' looked like a weak result but the effect size revealed it as underpowered
+  -- the same diagnostic discipline that (oppositely) showed G2's disc height is genuinely flat (d~0).
+
+## J19 — G1 tilt flag recalibrated: the 20° cut over-flagged 83% of HEALTHY cervical bodies
+- **Question:** `cervical_body_morphometry.TILT_DEG_MAX = 20.0` flags a vertebra whose body SI-axis tilts
+  >20° from global vertical as an outlier. Is 20° right for *cervical* anatomy? Measured the healthy tilt
+  distribution (12 Spine-Generic necks, 60 C3-C7 bodies; tilt = angle between the body's PCA SI-axis and
+  vertical, the same definition the service uses, computed via our validated endplate-fit).
+- **Finding:** healthy cervical tilt is **median 27.0°, mean 27.8 ± 6.9°** (p95 41.4°, p99 42.5°, max 43.5°).
+  The 20° cut trips **50/60 = 83% of HEALTHY vertebrae** — it is a near-vertical (thoraco-lumbar-style)
+  assumption that is simply wrong for the lordotic mid/lower cervical spine, where bodies are physiologically
+  tilted 20-40° from absolute vertical. This is a quality/sanity flag, not a disease detector, so the cut
+  belongs above the healthy range.
+- **Fix (data → threshold):** recalibrate `TILT_DEG_MAX` from 20° to **~45°** (mean+2.5SD ≈ 45°, clears p99
+  42.5° and max 43.5° with margin → 0% healthy false-flag). Earlier eyeball estimate was ~28° (≈ the median);
+  the data shows that is still too low — the median, by definition, would flag half the healthy cohort.
+- **Lesson:** an unsourced borrowed threshold (20°) silently mass-flagged healthy anatomy; only measuring the
+  healthy distribution exposed it. The recalibration is to the OWN-cohort distribution (specificity-anchored),
+  same discipline as the Ha/Hp norm (J-series, vb_hahp_norm_verified).
+
+## J20 — G1 AP depth + height precision: healthy C3-C7 cluster tightly (sanity confirmed)
+- **Question:** are G1's AP-width and vertebral-height outputs in a plausible, tightly-clustered mm range on
+  healthy necks (they were previously "not checked vs norms")? Measured AP depth (PCA AP extent) and Ha/Hp on
+  the 12 healthy.
+- **Finding:** AP depth clusters tightly — **18.9 ± 2.2 mm** across C3-C7 (per-level CV 9-14%), monotonic
+  C3 19.6 → C7 18.4 mm. This reads ~2 mm **above** the ~15-17 mm CT/anatomic norm, expected for T2 MRI +
+  a max-AP-extent (endplate-corner) measure vs mid-body CT calipers — magnitude is right, precision is good.
+  Ha/Hp = **0.94 ± 0.13** overall with a physiological caudal trend (C3 0.86 anterior-wedged → C7 1.00
+  rectangular). NOTE this reproduces COHORT_HAHP_MEAN/SD exactly because it IS that cohort — a consistency/
+  reproducibility check, not independent validation.
+- **Fix:** none needed (sizes sane). Flagged for the report: cite AP depth against a *cervical-MRI* norm if one
+  is pulled (Nell 2019 per-level percentiles held but numbers not yet extracted); current support is order-of-
+  magnitude CT.
+- **Lesson:** "looks reasonable" is not validation — but tight per-level clustering (SD ~2 mm) is real evidence
+  the geometry is stable; the honest caveat is the +2 mm MRI/method offset vs the CT norm.
+
+## J21 — Resolution robustness: mm metrics survive 4 mm through-plane; canal-cut Cobb does NOT
+- **Question:** each healthy neck exists at 0.8 mm and at 4 mm through-plane (Duke-like). Do Ha/Hp, AP depth and
+  Cobb agree across resolution (test-retest precision)?
+- **Finding:** **AP depth is resolution-robust** — mean |0.8-4 mm| = 0.81 mm, bias −0.15 mm (negligible).
+  **Ha/Hp has zero group-level bias** (−0.009) but ~0.14 per-vertebra scatter → robust for the cohort MEAN
+  (which is what the norm uses; confirms the in-code "0.8 mm and 4 mm agree" claim *at the group level*), coarse
+  per body. **Canal-cut Cobb C3-C7 is NOT robust** — mean |0.8-4 mm| = 15.6° (n=9) — consistent with it being
+  the inferior angular method (canal-cut C6-C7 SD 18.5°, J11/J12) that the SPINEPS endplate-voxel C1 method
+  (J12) supersedes.
+- **Fix:** none for the mm metrics (validated robust). The Cobb fragility is a *third* independent argument for
+  the SPINEPS C1 method over canal-cut (after precision and C7 coverage); the 4 mm Cobb test should be repeated
+  on SPINEPS masks once available.
+- **Lesson:** resolution-robustness must be checked per-metric: physical-dimension (mm) metrics are immune as
+  predicted (mirrors the cross-scanner argument, validation_design_rationale), but a derived angular metric from
+  a fragile body-isolation can amplify coarse-slice noise — robustness is a property of the *method*, not just
+  the quantity.
+
+## J22 — Applying the validation findings to the SERVICE code (4 fixes, each kept only on evidence)
+Andrew took over all teammate group code; the four mask-independent fixes below were each run through the
+real 12 healthy + 10 unhealthy service contexts (`test_service_g1_g2.py`) and kept only if they corrected
+the target metric (revert otherwise). All 137 service tests stayed green after each.
+
+- **G1 tilt cut 20→45° (`cervical_body_morphometry.py`)** — the service confirmed the 20° cut flagged
+  **88% of healthy** vertebrae (median 27.9°); at 45° → **0% healthy** (and 0% on the straighter CSM necks,
+  which the flag should leave alone). Quality flag, can't cause clinical false-negatives. Committed.
+
+- **G1 heights via endplate-line, not corner extrema (`cervical_body_morphometry.py`)** — wired the already-
+  vendored `endplate_line_heights` into the service (it was present but only `_endplate_cobb` used it). Fixed
+  healthy Ha/Hp **1.08 → 0.93** (corner extrema read anterior TALLER than posterior — backwards; the line fit
+  gives the physiological posterior>anterior ~0.94). Healthy stays ≥ unhealthy (0.93 vs 0.89). Corner
+  fallback retained for degenerate slices. Committed.
+
+- **G2 posterior-bulge reference from endplate corners (`disc_ap_bulge.py`)** — the chord WAS already tilted
+  (upper-PI→lower-PS), so the memory's "flat vertical line" was already fixed; the residual backwards result
+  came from the *corner-extrema* posterior corners sitting too anterior. Sourcing PI/PS from the endplate-line
+  fit dropped healthy bulge **2.93 mm → 0.00 mm**, over-flag **60% → 8%** (healthy discs read flush, correct),
+  no longer backwards (healthy 8% ≈ unhealthy 7%). **Caught a latent bug:** `DISC_TO_VERTS` yields level-NAME
+  strings, so `seg==name` silently matched nothing and fell back every time — resolved via `VERT_LABELS`. No
+  cross-dataset discrimination (8% vs 7%) — that is the confound, deferred to the within-MMCSD 50-case run.
+  Committed.
+
+- **G4 SPINEPS C1 Cobb plumbed into the context (`context.py` + `c3c7_cobb_angle.py`)** — `load_context` now
+  carries an optional SPINEPS seg-vert (native grid, to preserve the thin endplate sheets); `c3c7_cobb_angle`
+  prefers `spineps_endplate_cobb_angle` when present, falls back to canal-cut otherwise. With seg-vert: 11/12
+  healthy + 10/10 unhealthy use C1, healthy median **15.2°** (= F1000 lit 15.4°). **Bonus:** SPINEPS rescues 3
+  healthy necks canal-cut couldn't measure (C7 obscured) → coverage up. p=0.13 still (n=11v10) — discrimination
+  is the SPINEPS-on-50 batch (RUN 2). Committed.
+
+## J23 — G2 within-MMCSD validation (49 cases, confound-free): signal is dead, disc-SPREAD discriminates
+- **Design:** the cross-dataset healthy-vs-unhealthy test is scanner-confounded for the acquisition-
+  sensitive disc metrics, so we validated WITHIN the MMCSD cohort: per disc level, lesion vs non-lesion
+  (labels `high_pain_text.xlsx` 2C2-3..2C7-T1, 1=lesion), native `tss/input` grayscale (no resample
+  darkening), the fixed endplate-corner bulge. 46/49 cases, 276 discs (87 lesion / 189 non-lesion).
+  CRITICAL control: lesion discs cluster at mid-cervical (wider) levels, so every metric was re-tested
+  LEVEL-CENTERED (residual vs its own level median) to remove the level main-effect.
+- **Findings (level-stratified = the valid numbers):**
+  - **Signal (nucleus/CSF ratio, Miyazaki grade): NO discrimination** — AUC 0.50, p=0.93 / 0.96. Even with
+    the correct native grayscale, disc signal does not separate lesion from non-lesion. A clean NEGATIVE
+    result; the signal axis is abandoned for this cohort (and the absolute all-grade-4 confirms the ratio
+    calibration is unreliable, not just confounded).
+  - **Posterior bulge (even fixed): flat** — AUC 0.50. TSS segments the disc to anatomical borders, not the
+    protruding nucleus, so geometric protrusion-past-chord can't see a herniation. Documented limitation.
+  - **Disc AP width: real effect, MOSTLY the level confound** — raw d=1.04 / AUC 0.79 collapses to d=0.39 /
+    AUC 0.61 (p=0.0022) once level-centered. A genuine ~1.5 mm within-level residual remains, but reporting
+    the raw 0.79 would have been a confounded over-claim.
+  - **Disc/VB AP ratio: survives cleanly** — AUC 0.62, p=0.0018, consistent per-level signs. The disc
+    spreads toward the vertebral-body width as it degenerates; this normalizes for body size and is the
+    best G2 discriminator.
+  - **DHI: weak but correct direction** — AUC 0.59, p=0.015 (lesion discs slightly lower); the raw test
+    even read backwards (AUC 0.41) purely from the level confound, which the stratification fixed.
+- **Verdict:** G2's discriminating signal is disc GEOMETRIC SPREAD (disc/VB AP ratio + AP width), modest
+  (AUC ~0.61-0.62) but confound-controlled — NOT signal, NOT posterior-bulge. No validated cutoff (no
+  per-case GT); reported as a continuous separation. The fixes from J22 (bulge reference, DHI relative flag)
+  remove the backwards/over-flag artifacts; this run says what actually carries information.
+- **Lesson:** the level confound nearly produced a fake headline (AP width "AUC 0.79"). Stratifying by the
+  obvious nuisance variable (level) before believing a within-cohort separation is the discipline that kept
+  G2 honest — same family as the cross-scanner caution in validation_design_rationale.
+- **Follow-up (option A, combined score):** tested whether combining the three geometric metrics (disc/VB
+  ratio + DHI + AP width, level-centered) beats the best single one, via logistic regression with
+  CASE-grouped 5-fold CV (out-of-fold AUC, so the combo can't fit its own test data). Result: combined
+  **CV-AUC 0.616 vs best single 0.617 (Δ −0.001) — NO GAIN.** The metrics are redundant (all measure disc
+  spread), so the combo adds complexity for nothing -> kept the single disc/VB AP ratio, added no service
+  code. Also confirmed: more cases (we have ~200 unused MMCSD) would tighten the CI, NOT raise the AUC
+  ceiling — that ceiling is set by the coarse binary lesion label + features TSS can't see (signal,
+  protrusion), so G2's real lift needs radiologist per-disc grades, not more rows.
+
+## J24 — G4 Cobb at scale (41 unhealthy): borderline, not the clean win — and an honest power lesson
+- **Question:** does the larger SPINEPS cohort push the C3-C7 Cobb separation to p<0.05? (J18 predicted yes:
+  d=0.91 at n=10 → need ~19/group.) Ran SPINEPS C1 Cobb on 11 healthy vs **41** unhealthy.
+- **Finding:** healthy +15.2° (lordotic) vs unhealthy +8.3°, **Cohen d=0.76, AUC 0.68** — a real,
+  clinically-sensible effect (CSM/CSR reduces lordosis; one neck frankly kyphotic at −14.9°). But
+  **two-sided p=0.070 (NOT significant)**; one-sided p=0.035 (significant *under the pre-specified
+  directional hypothesis* that healthy > symptomatic lordosis, which is established clinically).
+- **Why it didn't cross cleanly:** (1) the n=10 pilot **over-estimated** the effect (d 0.91 → 0.76 with
+  more data — small-sample effect inflation); (2) the bottleneck is the **healthy** arm (n=11, SD ±10.2°
+  from genuine biological variation in normal cervical lordosis), and we added cases to the *unhealthy*
+  arm (n=41) — enlarging the bigger group does little when the smaller group limits power; (3) cervical
+  alignment is biologically a **weaker/less-specific** CSM marker than canal stenosis (cf. G3 p=0.0001).
+- **Production path verified:** the service `c3c7_cobb_angle` with the plumbed SPINEPS seg-vert used the
+  C1 method on 5/5 spot-checked cases and matched the direct computation exactly (J22 plumbing works
+  end-to-end on the real cohort).
+- **Fix (data, not method):** segment ~10-18 **healthy** Spine-Generic controls with SPINEPS (≈30 are
+  available) to balance the design — that is what should carry two-sided p<0.05. C3-C7 stays the metric.
+- **Lesson:** an underpowered effect size is a *noisy* estimate — d=0.91 (n=10) was optimistic. And power
+  is set by the *smaller* arm: scaling the unhealthy cohort 4× barely moved the p because healthy stayed
+  at 11. Honest verdict: G4 is **directional/borderline**, not validated; it will likely cross with
+  balanced healthy n but remain a modest discriminator (AUC ~0.68), unlike the strong G3 stenosis signal.
+
+## J25 — Wiring the pipeline end-to-end: G2 into the orchestrator + demographics into interpretation
+- **Goal:** make the measurements→interpretation→report pipeline actually run end-to-end for a demo, and
+  let patient age/sex/height flow in (many cervical norms are age/sex-dependent).
+- **G2 wired:** added the four disc components (`disc_si_height`, `disc_height_index`, `disc_ap_bulge`,
+  `pfirrmann_grade`) to the orchestrator `COMPONENTS`. They were built+tested but never in the run loop, so
+  the live report had no disc numbers. Now `DHI`/`posterior_bulge_mm`/`pfirrmann_grade`/`disc_vb_ap_ratio`
+  flow through and `classify()` interprets them (their output keys already match the catalog).
+- **Demographics wired:** `load_context`/`run_all` now carry `age/sex/height`; the report has a `patient`
+  block; `build_interpreted_measurements` records `demographics_used` per measurement and passes `sex` to
+  `classify`, which applies the cited **sex-specific dural-sac cut (Nell 2019 M<10/F<9 mm)** — verified: a
+  9.5 mm dural sac reads *stenosis* for M, *borderline* for F. **Height is captured record-only** — no
+  cervical threshold normalises by patient height (checked the verified-research set; only age/sex norms
+  exist). If a height-normalised paper surfaces, the hook is ready.
+- **Found + fixed a live wrong-flag:** `disc_height_index` still used the **debunked absolute DHI<0.30** cut
+  (uncited animal/lumbar borrow). Replaced with the cited **relative >30% cross-level drop** (Suzuki 2018)
+  against the patient's own median DHI — on a symptomatic case it now fires 0/9 (no disc anomalously short)
+  instead of false-firing on nearly all.
+- **Correction to my own earlier claim:** `build_interpreted_measurements` was NOT a pure scaffold — it
+  already called `classify()` for catalogued keys. The real gaps were G2-not-wired + demographics + the
+  DHI flag, all now closed. All 137 service tests stayed green throughout.
+- **Lesson:** "built + unit-tested" hid an integration gap (G2 never in the run loop) and a stale threshold
+  (DHI<0.30) — only running the *whole* orchestrator end-to-end surfaced both. Wiring is its own validation.
+
+## J26 — G4 with a balanced healthy cohort: the effect EVAPORATES — Cobb does NOT discriminate
+- **Setup:** added 15 new SPINEPS healthy controls (Spine-Generic balgrist/nottwil/brnoUhb/amu/fsl) to the
+  original 12 → 26 healthy vs 41 unhealthy, the balanced design J24 said should cross p<0.05.
+- **Result — the opposite of the prediction:** healthy mean fell **+15.2° → +10.7°**; vs unhealthy +8.0°.
+  **Cohen d 0.76 → 0.28, AUC 0.68 → 0.57, two-sided p 0.070 → 0.32.** G4 Cobb does **NOT** separate
+  healthy from CSM.
+- **Why (the mechanism):** huge BETWEEN-SITE variation in healthy cervical lordosis — beijingGE +20.9°,
+  amu +11.6°, nottwil +6.0°, balgrist **+0.9°** (one −12.7° kyphotic). The original 12 were a
+  lordosis-BIASED sample (amu/beijingGE/fslAchieva); adding balgrist/nottwil dropped the healthy mean into
+  the symptomatic range. The promising d=0.76 was a small-sample + site-selection artifact, not a real
+  effect — exactly the "underpowered effect size is a noisy estimate" lesson from J24, now realised.
+- **Two confounds that make this expected, not surprising:** (1) supine MRI **positioning** (neck
+  flexion/extension) varies by site protocol and directly sets Cobb — the multi-site healthy carry
+  positioning variance the single-protocol MMCSD does not; (2) cervical lordosis is genuinely a
+  population-variable trait (SD ±10°, range −13° to +32° in healthy here).
+- **What survives:** the METHOD is still valid — well-positioned controls read +15–20°, matching the
+  standing-radiograph literature, and the SPINEPS endplate-voxel fit is precise (J12). G4 measures Cobb
+  correctly; Cobb just isn't a disease discriminator. Verdict: **method-validated, NOT a discriminator**
+  (unlike G3 canal stenosis, p=0.0001). This vindicates the standing caution that alignment is a
+  biologically weak/non-specific CSM marker.
+- **Lesson:** chasing statistical significance on an underpowered "large effect" was the trap — the right
+  move was to get a representative sample, which dissolved the effect. Reporting G4 as "validated" off the
+  n=11 result would have been the fake-clean-number failure Andrew explicitly warned against.
+
 ---
 *Open methodology gaps tracked elsewhere:* teammate threshold/citation fixes (disc DHI<0.30, bulge flat-wall,
 Pfirrmann cut-points) — see `group5/AUDIT_groups1-4_measurements.md`; C6/C7 Cobb **precision** is now closed by

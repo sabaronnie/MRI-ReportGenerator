@@ -1,0 +1,8 @@
+# SPINEPS segmentation IEP — SEPARATE image from TSS/SCT.
+# SPINEPS pins numpy==2.0.2, which breaks the TotalSpineSeg/nnU-Net ABI -> do NOT co-install.
+flask>=3.0
+nibabel>=5.0
+numpy==2.0.2          # HARD pin: required by SPINEPS/numba ABI (newer numpy -> _blas_supports_fpe crash)
+scipy>=1.10
+spineps               # pulls torch + TPTBox; install AFTER pinning numpy, restart interpreter
+# torch: installed transitively by spineps; pin to the CUDA build matching the deploy node's driver.

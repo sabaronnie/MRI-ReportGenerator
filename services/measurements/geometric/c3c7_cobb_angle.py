@@ -19,7 +19,7 @@ from typing import Any
 import nibabel as nib
 
 from ..context import ComponentResult, MeasurementContext, MeasurementError
-from ._endplate_cobb import cobb_angle
+from ._endplate_cobb import cobb_angle, spineps_endplate_cobb_angle
 
 
 NAME = "c3c7_cobb_angle"
@@ -30,22 +30,56 @@ C3_LABEL = 13
 C7_LABEL = 17
 CANAL_LABEL = 2
 
+# SPINEPS instance numbers for C3 and C7 (the function adds the endplate-voxel offset internally).
+C3_INSTANCE = 3
+C7_INSTANCE = 7
+
 UPPER_LEVEL = "C3"
 LOWER_LEVEL = "C7"
 REQUIRED_CORNERS = ("AI", "PI")
 
+_CANAL_CUT_METHOD = (
+    "endplate-LINE fit (Theil-Sen) to the canal-cut C3 and C7 bodies; Cobb = angle "
+    "between the two inferior-endplate lines (Wang 2023: line-fit ICC 0.97 vs "
+    "four-corner 0.75; project J7-J12). Replaces the 2-corner AI->PI method."
+)
+_SPINEPS_METHOD = (
+    "SPINEPS endplate-VOXEL line fit (Option C1): Cobb = angle between the C3 and C7 inferior "
+    "endplate sheets read directly from the SPINEPS instance mask. Best C6/C7 endpoint precision "
+    "(project J12: C6-C7 SD 5.9 vs canal-cut 18.5 deg). Preferred when seg-vert is present."
+)
+
 
 def compute(ctx: MeasurementContext, prior_results: dict[str, Any]) -> ComponentResult:
-    """C3-C7 Cobb from endplate-LINE fits on the canal-cut C3 and C7 bodies (lordosis-positive)."""
-    axcodes = nib.aff2axcodes(ctx.seg_affine)
-    cobb_deg = cobb_angle(
-        ctx.seg_data,
-        axcodes,
-        ctx.voxel_spacing_mm,
-        top_label=C3_LABEL,
-        bottom_label=C7_LABEL,
-        canal_label=CANAL_LABEL,
-    )
+    """C3-C7 Cobb (lordosis-positive). Prefers the SPINEPS endplate-voxel method when a seg-vert
+    mask is plumbed into the context (best endpoint precision); otherwise fits endplate LINES on
+    the canal-cut C3 and C7 bodies."""
+    cobb_deg = None
+    method = _CANAL_CUT_METHOD
+
+    if ctx.seg_vert_data is not None:
+        sp = spineps_endplate_cobb_angle(
+            ctx.seg_vert_data,
+            ctx.seg_vert_axcodes,
+            ctx.seg_vert_zooms,
+            C3_INSTANCE,
+            C7_INSTANCE,
+        )
+        if sp is not None and sp == sp:          # measurable (not None / NaN)
+            cobb_deg = sp
+            method = _SPINEPS_METHOD
+
+    if cobb_deg is None:                          # no seg-vert, or SPINEPS endplate unmeasurable
+        axcodes = nib.aff2axcodes(ctx.seg_affine)
+        cobb_deg = cobb_angle(
+            ctx.seg_data,
+            axcodes,
+            ctx.voxel_spacing_mm,
+            top_label=C3_LABEL,
+            bottom_label=C7_LABEL,
+            canal_label=CANAL_LABEL,
+        )
+
     if cobb_deg is None:
         raise MeasurementError(
             "c3c7_cobb_angle: C3 or C7 inferior endplate is not measurable from the segmentation "
@@ -58,11 +92,7 @@ def compute(ctx: MeasurementContext, prior_results: dict[str, Any]) -> Component
         intermediate={},
         flags={},
         metadata={
-            "method": (
-                "endplate-LINE fit (Theil-Sen) to the canal-cut C3 and C7 bodies; Cobb = angle "
-                "between the two inferior-endplate lines (Wang 2023: line-fit ICC 0.97 vs "
-                "four-corner 0.75; project J7-J12). Replaces the 2-corner AI->PI method."
-            ),
+            "method": method,
             "levels": [UPPER_LEVEL, LOWER_LEVEL],
             "sign_convention": "lordosis_positive_kyphosis_negative",
             "supine_caveat": (

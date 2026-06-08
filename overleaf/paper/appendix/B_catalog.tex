@@ -1,0 +1,43 @@
+\section{Appendix B: The cited-threshold catalog}
+\label{app:catalog}
+Every measurement key interpreted by Group 6, with its severity bands, unit, tag, and the locked primary-source citation. Reproduced from \texttt{services/interpretation/thresholds.py}. Identifiers are copied verbatim from verified-research notes.
+\begin{center}\footnotesize
+\begin{longtable}{p{2.6cm} p{3.3cm} p{4.5cm} p{4.4cm}}
+\toprule
+key (unit, tag) & clinical name & bands & citation \\
+\midrule \endhead
+\texttt{vb\_hahp\_ratio} (ratio, derived) & vertebral-body anterior/posterior height ratio (Ha/Hp) compression screen & normal [0.81,+inf); borderline [0.68,0.81); compression\_screen\_positive [-inf,0.68) & Tan 2004 (Eur Spine J, PMC3476578); Lee 2012 (PMC3393857); Kaur 2025 (J Human Anat); Chen 2013 (PLoS One, PMC3859485); Nell 2019 (PMC6764695) \\
+\addlinespace
+\texttt{spondy\_slip\_mm} (mm, raw) & vertebral slip magnitude (anterolisthesis / retrolisthesis) & neutral [-inf,1); borderline [1,2); slip\_present\_screen [2,+inf) & Murakami 2020 (PMID 32591548); Murata 2019 (PMID 30899028); de Dios 2023 (cervical-MRI slip, MDC 1.5 mm); White 1975 (PMID 1132209, 3.5 mm = instability) \\
+\addlinespace
+\texttt{posterior\_bulge\_mm} (mm, raw) & posterior disc bulge excursion & no\_bulge [-inf,1); bulge\_present\_nonspecific [1,+inf) (review) & Nakashima 2015 (PMID 25584950, n=1211; $>$1 mm = bulge but NON-SPECIFIC, 87.6\% of asymptomatic $\rightarrow$ review). The 1.35 mm cord-risk band was REMOVED (unverified / likely confabulated, \S A.6). Documented NEGATIVE: posterior bulge does not discriminate (AUC 0.50, J23) -- TSS segments to anatomical borders, not protrusion \\
+\addlinespace
+\texttt{disc\_vb\_ap\_ratio} (ratio, derived) & disc AP width / adjacent vertebral-body AP width ratio & within\_cohort [-inf,1.10); disc\_spread\_review [1.10,+inf) & COHORT-DERIVED cut (NO published cervical disc/VB-AP-ratio norm exists -- search NEGATIVE); mechanism literature-grounded: disc AP diameter widens with degeneration (Machino 2021, PMID 34098133, n=1211 MRI); Fardon v2.0 2014 (Spine J 14(11):2525-2545, doi:10.1016/j.spinee.2014.04.022, lumbar bulge-margin borrow). G2's discriminator (AUC 0.62, level-controlled, J23); review-only, no per-case GT \\
+\addlinespace
+\texttt{pfirrmann\_grade} (grade, derived) & cervical disc signal grade (Miyazaki, modified Pfirrmann) & grade\_I [1,2); grade\_II [2,3); grade\_III [3,4); grade\_IV [4,5); grade\_V [5,6) & Miyazaki 2008 (PMID 18525490) cervical modified grading (NOT lumbar Pfirrmann); CSF-normalized ratio cervical-validated (Liu 2023 PMID 37156851, Watanabe 2025 PMID 39645168). DOI / Grade I-V table PDF check pending (human-gated) \\
+\addlinespace
+\texttt{DHI} (ratio, derived) & disc height index & review-only (no cited cut) & DHI$<$0.30 DEBUNKED (uncited, animal-lumbar borrow). Reduced disc height = $>$30\% drop vs adjacent (Suzuki 2018) or absolute $<$3 mm (van Santbrink 2026); closest cervical DHI formula = Machino 2021 (PMID 34098133, paywalled). No validated absolute cervical DHI cut-point -- pending Phase-4. \\
+\addlinespace
+\texttt{dural\_sac\_AP\_min} (mm, raw) & functional canal / dural-sac AP minimum (SCT) & normal [13,+inf); borderline [10,13); stenosis\_provisional [-inf,10) & Nell 2019 (PMC6764695, C2-C7 healthy age/sex percentiles); stenosis bands $>$13/10-13/$<$10 mm are a clinical convention (Ulbrich 2014; Thelen 2019/SHIP) of OSSEOUS-canal / radiograph origin -- pending Phase-4 MRI soft-tissue confirmation \\
+\addlinespace
+\texttt{cord\_AP} (mm, raw) & spinal cord AP diameter & review-only (no cited cut) & Valosek 2024 PAM50 healthy-control database via SCT -normalize-hc (age/sex). No fixed mm cut hard-coded here \\
+\addlinespace
+\texttt{SAC} (mm, derived) & space available for the cord (canal AP - cord AP) & normal [3,+inf); high\_risk [-inf,3) & SAC $<$3 mm = high compression risk (plan-cited Fehlings 2015 / Nouri 2016) -- radiograph-origin, verify for MRI (pending Phase-4); Nell 2019 (PMC6764695) healthy percentiles \\
+\addlinespace
+\texttt{Torg\_Pavlov\_ratio} (ratio, derived) & Torg-Pavlov ratio (canal AP / vertebral-body AP) & normal [0.8,+inf); developmental\_stenosis\_screen [-inf,0.8) & Torg 1987 / Pavlov 1987: ratio $<$0.8 = developmental canal stenosis -- RADIOGRAPH origin; MRI thresholds may need adjustment (pending Phase-4) \\
+\addlinespace
+\texttt{Cobb\_C3\_C7} (deg, derived) & global cervical Cobb angle (C3-C7, lordosis-positive) & lordotic [10,+inf); straightened [0,10); kyphotic [-inf,0) & NASSJ 2025 (PMC12744292, asymptomatic C2-C7 \textasciitilde{}18.7 deg, range \textasciitilde{}10-35 deg); plan also cites Yukawa 2018 (\textasciitilde{}13.9 +/- 12.3 deg). Lordosis-positive. \\
+\addlinespace
+\texttt{segmental\_angle} (deg, raw) & per-level segmental angle & review-only (no cited cut) & -- \\
+\addlinespace
+\texttt{posterior\_tangent\_C3\_C7} (deg, derived) & posterior tangent angle (C3-C7) & review-only (no cited cut) & -- \\
+\addlinespace
+\texttt{AP\_width} (mm, quality) & vertebral-body AP width & within\_sanity [12,22); ap\_width\_outlier [-inf,12); ap\_width\_outlier [22,+inf) & Nell 2019 (PMC6764695) healthy per-level AP-width percentiles for clinical comparison; the in-code 12-22 mm is an ENGINEERING sanity window, not a clinical pathology threshold \\
+\addlinespace
+\texttt{tilt\_deg} (deg, quality) & vertebral-body tilt (vs global SI axis) & review-only (no cited cut) & -- \\
+\addlinespace
+\texttt{myelomalacia} (present, derived) & cord T2-hyperintensity screen (myelomalacia) & none [-inf,0.5); signal\_anomaly\_present [0.5,+inf) & SCIseg (sct\_deepseg lesion\_sci\_t2); Naga Karthik 2024 (PMC11065035). Measured healthy specificity 10/11 (\textasciitilde{}91\%) \\
+\addlinespace
+\bottomrule
+\end{longtable}
+\end{center}

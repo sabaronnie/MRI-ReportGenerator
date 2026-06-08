@@ -7,8 +7,9 @@ from typing import Any
 import numpy as np
 
 from ..context import ComponentResult, MeasurementContext, MeasurementError
-from .cervical_body_morphometry import AP_AXIS, SI_AXIS
-from .disc_si_height import DISC_LABELS, DISC_TO_VERTS, join_flags, measure_adjacent_body_slice
+from .cervical_body_morphometry import AP_AXIS, SAG_AXIS, SI_AXIS
+from .disc_si_height import DISC_LABELS, DISC_TO_VERTS, VERT_LABELS, join_flags, measure_adjacent_body_slice
+from ._vertebral_geometry import endplate_lines
 
 
 NAME = "disc_ap_bulge"
@@ -54,7 +55,8 @@ def compute(ctx: MeasurementContext, prior_results: dict[str, Any]) -> Component
 
         disc_mask_2d = seg[slice_idx, :, :] == disc_label
         posterior_bulge_mm, ref_line_length_mm = _posterior_bulge(
-            disc_mask_2d, upper, lower, spacing_pa, spacing_si
+            disc_mask_2d, upper, lower, spacing_pa, spacing_si,
+            seg=seg, slice_idx=slice_idx, upper_vb=upper_vb, lower_vb=lower_vb,
         )
 
         row_flags = []
@@ -90,6 +92,12 @@ def compute(ctx: MeasurementContext, prior_results: dict[str, Any]) -> Component
         measurements["disc_vb_ap_ratio"][disc_name] = float(ratio)
         measurements["posterior_bulge_mm"][disc_name] = float(posterior_bulge_mm)
         measurements["vb_ap_width_ref"][disc_name] = float(vb_ref)
+        # ratio>=1.10 is a COHORT-DERIVED cut (no published cervical disc-AP/VB-AP-width ratio
+        # norm exists -- search NEGATIVE, memory disc_vb_ap_ratio_norm), calibrated from the
+        # MMCSD/healthy distribution exactly like the Ha/Hp z-screen -- NOT a made-up/literature
+        # number. Mechanism is literature-grounded: cervical disc AP diameter widens with
+        # degeneration (Machino 2021, PMID 34098133). It is G2's one discriminator (AUC 0.62,
+        # level-controlled, J23); surfaced for physician review, no per-case ground truth.
         flags["disc_bulge_present"][disc_name] = posterior_bulge_mm >= 2.0 or ratio >= 1.10
         flags["disc_ap_unreliable"][disc_name] = reliable != "yes"
 
@@ -108,16 +116,48 @@ def compute(ctx: MeasurementContext, prior_results: dict[str, Any]) -> Component
     )
 
 
-def _posterior_bulge(disc_mask_2d: np.ndarray, upper, lower, spacing_pa: float, spacing_si: float) -> tuple[float, float]:
-    if upper is None or lower is None:
-        return 0.0, float("nan")
+def _endplate_posterior_corner(seg, slice_idx, vb_label, which, spacing_pa, spacing_si):
+    """Posterior VB corner (ap_mm, si_mm) from the validated endplate-LINE fit, or None.
 
-    upper_pi = upper.corners_voxel["PI"]
-    lower_ps = lower.corners_voxel["PS"]
-    ap0 = float(upper_pi[1]) * spacing_pa
-    si0 = float(upper_pi[2]) * spacing_si
-    ap1 = float(lower_ps[1]) * spacing_pa
-    si1 = float(lower_ps[2]) * spacing_si
+    `which` is 'PI' (upper VB, posterior-inferior) or 'PS' (lower VB, posterior-superior).
+    Canonical RAS: the VB body slice is seg[slice_idx] with axes (AP, SI), anterior=HIGH ap.
+    """
+    # vb_label arrives as a level NAME ("C4") from DISC_TO_VERTS; resolve to its TSS integer.
+    label = VERT_LABELS.get(vb_label) if isinstance(vb_label, str) else vb_label
+    if label is None:
+        return None
+    body_2d = seg[slice_idx] == label
+    if int(body_2d.sum()) < 20:
+        return None
+    el = endplate_lines(body_2d, ap_axis=0, si_axis=1, ap_spacing=spacing_pa,
+                        si_spacing=spacing_si, anterior="high")
+    return el["corners"][which] if el is not None else None
+
+
+def _posterior_bulge(disc_mask_2d: np.ndarray, upper, lower, spacing_pa: float, spacing_si: float,
+                     seg=None, slice_idx=None, upper_vb=None, lower_vb=None) -> tuple[float, float]:
+    # Reference chord = the two adjacent posterior VB corners (upper posterior-inferior ->
+    # lower posterior-superior). Source the corners from the endplate-LINE fit, which is
+    # reliable on concave/sloped cervical endplates; corner-extrema mis-place the posterior
+    # corner too far anterior and inflate the apparent bulge (healthy read 2.93mm / 60%
+    # over-flag, BACKWARDS vs unhealthy -- the endplate chord drops healthy to ~0, flush; J21b).
+    # Fall back to the corner-extrema corners when the endplate fit is unmeasurable.
+    ap0 = si0 = ap1 = si1 = None
+    if seg is not None and slice_idx is not None:
+        pu = _endplate_posterior_corner(seg, slice_idx, upper_vb, "PI", spacing_pa, spacing_si)
+        pl = _endplate_posterior_corner(seg, slice_idx, lower_vb, "PS", spacing_pa, spacing_si)
+        if pu is not None and pl is not None:
+            ap0, si0 = pu
+            ap1, si1 = pl
+    if ap0 is None:
+        if upper is None or lower is None:
+            return 0.0, float("nan")
+        upper_pi = upper.corners_voxel["PI"]
+        lower_ps = lower.corners_voxel["PS"]
+        ap0 = float(upper_pi[1]) * spacing_pa
+        si0 = float(upper_pi[2]) * spacing_si
+        ap1 = float(lower_ps[1]) * spacing_pa
+        si1 = float(lower_ps[2]) * spacing_si
 
     ref_len = float(np.hypot(ap1 - ap0, si1 - si0))
     if ref_len == 0.0:

@@ -51,7 +51,7 @@
 | Alternative | Why rejected |
 |---|---|
 | Duke's own nnU-Net model (from their paper) | Binary only — no per-level labeling. We would have to build our own connected-components labeling; TotalSpineSeg already solved this. |
-| SPINEPS ([Möller 2025](https://doi.org/10.1007/s00330-024-11155-y)) | Excellent whole-spine model, but focus is lumbar + thoracic, and cervical-specific validation is thinner. Also not actively maintained vs TotalSpineSeg. |
+| SPINEPS ([Möller 2025](https://doi.org/10.1007/s00330-024-11155-y)) | Not used as the primary segmenter (focus is lumbar + thoracic; cervical-specific validation thinner). **Update (2026-06-09): SPINEPS was later adopted NARROWLY** — its per-vertebra endplate voxels (instance labels 102–107) drive the G4 endplate-voxel Cobb method, which beat the canal-cut Cobb on precision and C7 coverage (see DEVELOPMENT_JOURNEY J11–J12). It is a third, dedicated segmentation engine, not a TotalSpineSeg replacement. |
 | Train our own nnU-Net on Duke | 3.5 TB disk + 32 GB RAM + weeks of training. No value-add over TotalSpineSeg for cervical. |
 
 **Code asset:** [neuropoly/totalspineseg](https://github.com/neuropoly/totalspineseg) — install with `pip install totalspineseg[nnunetv2]`. Fully open-source (LGPLv3).
@@ -123,4 +123,4 @@ Failures flag the case for manual review rather than silently producing bad meas
 
 (Append brief notes by date/author as research progresses. Don't delete old notes.)
 
-- _(none yet)_
+- 2026-06-09 (Andrew): SPINEPS adopted narrowly as a third segmentation engine for the G4 endplate-voxel Cobb (endplate instance voxels 102–107), see J11–J12. Pipeline now runs three engines — TotalSpineSeg (primary), Spinal Cord Toolbox (cord/canal + SCIseg lesion), SPINEPS (endplate Cobb). Doc↔code now agree.

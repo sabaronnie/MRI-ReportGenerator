@@ -27,6 +27,7 @@ from scipy.ndimage import label as cc_label
 from scipy.ndimage import zoom as ndi_zoom
 
 from ..context import ComponentResult, MeasurementContext, MeasurementError
+from ._vertebral_geometry import endplate_line_heights
 
 
 NAME = "cervical_body_morphometry"
@@ -64,7 +65,13 @@ SUBVOXEL_FACTOR = 4
 # Flags / soft sanity checks.
 AP_WIDTH_LOW_MM = 12.0
 AP_WIDTH_HIGH_MM = 22.0
-TILT_DEG_MAX = 20.0
+# tilt_outlier is a SEGMENTATION/slice QUALITY flag (body PCA SI-axis vs global vertical),
+# not a disease detector. The old 20 deg cut was a near-vertical (thoraco-lumbar) assumption:
+# on the lordotic cervical spine, healthy mid/lower bodies are physiologically tilted ~28 deg
+# from absolute vertical, so 20 deg flagged 88% of HEALTHY C3-C7 (Spine-Generic, n=60; J19).
+# Recalibrated to the healthy distribution (median 27.9, mean 28.9 +/- 7.3, p99 42.5, max 43.5):
+# 45 deg = mean + ~2.5SD -> 0% healthy false-flag with margin.
+TILT_DEG_MAX = 45.0
 WEDGE_RATIO = 0.70
 BICONCAVE_RATIO = 0.70
 
@@ -405,13 +412,28 @@ def _measure_body_slice(
     ap_only = abs(corners_mm["A_mid"][1] - corners_mm["P_mid"][1])
     ap_si_mismatch = abs(corners_mm["A_mid"][0] - corners_mm["P_mid"][0])
 
+    # Heights via the validated endplate-LINE fit, not corner extrema. Cervical endplates
+    # are concave/sloped (Chen 2013), so single-corner AS/AI/PS/PI extrema misread the wall
+    # heights -- on healthy necks they read anterior TALLER than posterior (Ha/Hp ~1.08) vs
+    # the physiological ~0.94 (posterior > anterior wedge). The line fit (Wang 2023, ICC 0.97
+    # vs 0.75) PCA-orients the body and reads the superior/inferior endplate gap at each wall
+    # margin (J20). Runs on the sub-voxel-refined mask; falls back to corner heights if the
+    # fit fails (degenerate/too-few-voxel slice). anterior = HIGH AP index in canonical RAS.
+    el_h = endplate_line_heights(refined, ap_axis=0, si_axis=1, ap_spacing=fine_pa,
+                                 si_spacing=fine_si, anterior="high")
+    h_ant, h_mid, h_post = el_h["Ha"], el_h["Hm"], el_h["Hp"]
+    if not (h_ant > 0 and h_post > 0):
+        h_ant = _dist_mm(corners_mm["AS"], corners_mm["AI"])
+        h_mid = _dist_mm(corners_mm["M_sup"], corners_mm["M_inf"])
+        h_post = _dist_mm(corners_mm["PS"], corners_mm["PI"])
+
     return SliceMeasurement(
         level=level,
         slice_idx=int(slice_idx),
         AP_width=ap_only,
-        H_anterior=_dist_mm(corners_mm["AS"], corners_mm["AI"]),
-        H_middle=_dist_mm(corners_mm["M_sup"], corners_mm["M_inf"]),
-        H_posterior=_dist_mm(corners_mm["PS"], corners_mm["PI"]),
+        H_anterior=h_ant,
+        H_middle=h_mid,
+        H_posterior=h_post,
         tilt_deg=tilt_deg,
         corners_mm=corners_mm,
         corners_voxel=corners_voxel,

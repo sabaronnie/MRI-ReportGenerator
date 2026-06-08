@@ -20,11 +20,11 @@ Caches, virtualenvs, patient data, and model weights are intentionally excluded
 
 ```
 MRI-ReportGenerator/
-├── CLAUDE.md                          # Auto-loaded rules + context; read first, every session
-├── README.md                          # Repo overview / quickstart
+├── README.md                          # Repo overview / quickstart / read-order (start here)
 ├── CODEOWNERS                         # GitHub per-path review ownership
-├── SESSION_LOG.md                     # Append-only session handoff log (newest entry on top)
+├── DEVELOPMENT_JOURNEY.md             # Mistake→fix→validation narrative (J1–J26)
 ├── cervical-spine-master-plan.md      # Top-level plan + index; implementation-status table
+│   # (CLAUDE.md / SESSION_LOG.md / handoffs/ are local-only Claude-workflow files, gitignored — not published)
 ├── .gitignore                         # Ignore rules (data, secrets, weights, caches)
 │
 ├── plans/                             # Per-phase deep-dive research docs (one file per phase)
@@ -87,8 +87,9 @@ These are the patterns to follow when adding anything new, so the structure stay
 consistent:
 
 ### 1. Meta / governance files live at the repo root
-`CLAUDE.md`, `SESSION_LOG.md`, `cervical-spine-master-plan.md`, `README.md`,
-`CODEOWNERS`, `.gitignore`. Nothing else belongs at the root.
+`README.md`, `cervical-spine-master-plan.md`, `DEVELOPMENT_JOURNEY.md`, `CODEOWNERS`,
+`.gitignore`. Nothing else belongs at the root. (Claude-workflow files — `CLAUDE.md`,
+`SESSION_LOG.md`, `handoffs/` — are kept local-only and gitignored, not published.)
 
 ### 2. `plans/` holds one markdown file per pipeline phase
 - Filename pattern: `phase-<N>[-<sublabel>]-<topic>.md`.
@@ -169,8 +170,8 @@ The full ignore list is in [.gitignore](.gitignore).
 
 ## Quick replication checklist (for Claude)
 
-1. Create the root meta-files: `CLAUDE.md`, `SESSION_LOG.md`,
-   `cervical-spine-master-plan.md`, `README.md`, `CODEOWNERS`, `.gitignore`.
+1. Create the root meta-files: `README.md`, `cervical-spine-master-plan.md`,
+   `DEVELOPMENT_JOURNEY.md`, `CODEOWNERS`, `.gitignore`.
 2. Create `plans/` with the 10 phase files, each using the standard header block.
 3. Create `services/segmentation/` and `services/measurements/` using the
    self-contained service layout (incl. `__init__.py`, `app.py`,

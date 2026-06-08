@@ -1,0 +1,46 @@
+\section{Related Work}
+\label{sec:related}
+
+\subsection{Spine segmentation tools}
+Three openly licensed, pre-trained engines underpin our pipeline.
+\textbf{TotalSpineSeg}~\cite{totalspineseg} (LGPLv3) is an nnU-Net--based tool that labels individual
+vertebrae and discs (and a canal/cord region) on spine MRI, producing per-structure integer labels in a
+canonical space. \textbf{The Spinal Cord Toolbox (SCT)}~\cite{sct} (LGPLv3) provides validated
+deep-learning segmentation of the spinal cord and the dural-sac/canal (\texttt{sct\_deepseg}), per-slice
+morphometry (\texttt{sct\_process\_segmentation}), a normative healthy-control cord database
+(PAM50, via \texttt{-normalize-hc})~\cite{valosek2024}, and the SCIseg model for intramedullary
+lesion segmentation~\cite{sciseg2024}. \textbf{SPINEPS}~\cite{spineps} segments vertebrae with explicit
+endplate prediction; as we show, its endplate voxels are the key to an accurate Cobb angle. We use each
+tool for the structure it segments best rather than treating them as interchangeable.
+
+\subsection{Vertebral endplate/corner geometry and the Cobb angle}
+Vertebral-body heights and the Cobb angle both depend on locating the vertebral endplates. The classic
+approach extracts four (or six) corner landmarks and measures between them, but corner-extrema methods are
+unstable on real lordotic cervical necks because cervical endplates are concave and sloped: the
+most-posterior voxel in a flat band lands on the concave interior, mislocating the corner~\cite{chen2013}.
+The one head-to-head cervical study, Wang~et~al.~\cite{wang2023}, shows that \emph{fitting a line to the
+full endplate boundary} beats four-corner extrema (ICC 0.97 vs.\ 0.75; MAE \SI{3.23}{\degree} vs.\
+\SI{5.42}{\degree}). The accuracy ceiling for an automated cervical-T2 Cobb is set by Zhang~et~al.'s
+endplate-line nnU-Net (ICC 0.94, MAE \SI{2.44}{\degree})~\cite{zhang2025}. These findings directly drive
+our methods: we replace corner extrema with robust endplate-line fitting, and ultimately fit the line to
+SPINEPS' own predicted endplate voxels.
+
+\subsection{Normative values and thresholds}
+Our thresholds are grounded in primary sources: healthy cervical vertebral \hahp{} and body
+heights~\cite{tan2004,lee2012,kaur2025}; healthy cervical canal, SAC, Torg, and vertebral-width
+percentiles~\cite{nell2019}; cord cross-section normatives~\cite{valosek2024}; disc bulge
+thresholds~\cite{nakashima2015}; the cervical (Miyazaki) disc-degeneration grade~\cite{miyazaki2008};
+asymptomatic cervical lordosis~\cite{nassj2025}; and the Genant vertebral-deformity grade as a
+thoracolumbar-derived standard used with explicit caveats~\cite{genant1993}. Where a commonly cited
+threshold is in fact a radiograph- or CT-derived value (Torg--Pavlov; some canal cut-points), we flag it
+as such because it can over-flag on MRI soft-tissue measurements.
+
+\subsection{Datasets}
+Public spine datasets with usable cervical MRI are scarce. \textbf{Spine-Generic}~\cite{spinegeneric}
+provides multi-vendor healthy-control cervical T2 acquisitions and is our healthy anchor.
+\textbf{MMCSD}~\cite{mmcsd} (Yu~et~al., \emph{Scientific Data}) provides 250 surgical
+cervical-spondylosis cases with real NIfTI volumes and per-case CSM/CSR labels plus per-level lesion
+flags --- the labelled symptomatic cohort we use. \textbf{Duke CSpineSeg}~\cite{duke2025} provides
+clinical cervical T2 with expert vertebra/disc masks but no per-case pathology labels and no per-case
+measurements. We confirmed across repeated searches that no public dataset pairs cervical MRI with
+per-case expert \emph{measurements}; this absence shapes our validation design.
