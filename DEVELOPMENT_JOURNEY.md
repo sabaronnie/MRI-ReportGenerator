@@ -449,6 +449,14 @@ the target metric (revert otherwise). All 137 service tests stayed green after e
 - **Lesson:** the level confound nearly produced a fake headline (AP width "AUC 0.79"). Stratifying by the
   obvious nuisance variable (level) before believing a within-cohort separation is the discipline that kept
   G2 honest — same family as the cross-scanner caution in validation_design_rationale.
+- **Follow-up (option A, combined score):** tested whether combining the three geometric metrics (disc/VB
+  ratio + DHI + AP width, level-centered) beats the best single one, via logistic regression with
+  CASE-grouped 5-fold CV (out-of-fold AUC, so the combo can't fit its own test data). Result: combined
+  **CV-AUC 0.616 vs best single 0.617 (Δ −0.001) — NO GAIN.** The metrics are redundant (all measure disc
+  spread), so the combo adds complexity for nothing -> kept the single disc/VB AP ratio, added no service
+  code. Also confirmed: more cases (we have ~200 unused MMCSD) would tighten the CI, NOT raise the AUC
+  ceiling — that ceiling is set by the coarse binary lesion label + features TSS can't see (signal,
+  protrusion), so G2's real lift needs radiologist per-disc grades, not more rows.
 
 ---
 *Open methodology gaps tracked elsewhere:* teammate threshold/citation fixes (disc DHI<0.30, bulge flat-wall,
