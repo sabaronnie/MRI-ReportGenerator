@@ -2,17 +2,13 @@ import { Upload } from "lucide-react";
 import { requireRole } from "@/lib/auth/session";
 import { uploadAction } from "./actions";
 import { Button } from "@/components/ui/button";
-import { BackButton } from "@/components/back-button";
 
 export const metadata = { title: "Upload · Cervical MRI" };
 
 export default async function UploadPage() {
   await requireRole(["radiologist", "technologist", "admin"]);
   return (
-    <div className="mx-auto max-w-xl px-6 py-10">
-      <div className="mb-4">
-        <BackButton label="Worklist" />
-      </div>
+    <div className="mx-auto w-full max-w-xl">
       <h1 className="font-serif text-[28px] font-semibold tracking-tight">Upload a scan</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         Sagittal T2 cervical MRI — DICOM series (.zip) or NIfTI (.nii.gz).

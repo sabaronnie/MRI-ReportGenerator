@@ -3,7 +3,7 @@
 import { useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { signOffAction } from "@/app/cases/[id]/actions";
+import { signOffAction } from "@/app/(app)/cases/[id]/actions";
 
 export function SignOffButton({ caseId }: { caseId: string }) {
   const [pending, start] = useTransition();

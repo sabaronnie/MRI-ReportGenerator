@@ -1,104 +1,62 @@
 "use client";
 
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-	Avatar,
-	AvatarFallback,
-	AvatarImage,
-} from "@/components/ui/avatar";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { UserIcon, BellIcon, CommandIcon, LifeBuoyIcon, BookOpenIcon, CreditCardIcon, LogOutIcon } from "lucide-react";
+import { LogOutIcon } from "lucide-react";
+import { logout } from "@/lib/auth/actions";
+import { ROLE_LABEL } from "@/lib/auth/users";
+import type { Role } from "@/lib/api/contract";
 
-const user = {
-	name: "Shaban Haider",
-	email: "shaban@efferd.com",
-	avatar: "https://github.com/shabanhr.png",
-};
+type NavUserProps = { user: { name: string; email?: string; role: Role } };
 
-export function NavUser() {
-	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger render={<Avatar className="size-8" />}><AvatarImage src={user.avatar} /><AvatarFallback>{user.name.charAt(0)}</AvatarFallback></DropdownMenuTrigger>
-			<DropdownMenuContent align="end" className="w-60">
-				<DropdownMenuItem className="flex items-center justify-start gap-2">
-					<DropdownMenuLabel className="flex items-center gap-3">
-						<Avatar className="size-10">
-							<AvatarImage src={user.avatar} />
-							<AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-						</Avatar>
-						<div>
-							<span className="font-medium text-foreground">{user.name}</span>{" "}
-							<br />
-							<div className="max-w-full overflow-hidden overflow-ellipsis whitespace-nowrap text-muted-foreground text-xs">
-								{user.email}
-							</div>
-							<div className="mt-0.5 text-[10px] text-muted-foreground">
-								Store owner
-							</div>
-						</div>
-					</DropdownMenuLabel>
-				</DropdownMenuItem>
-				<DropdownMenuSeparator />
-				<DropdownMenuGroup>
-					<DropdownMenuItem>
-						<UserIcon
-						/>
-						Profile
-					</DropdownMenuItem>
-				</DropdownMenuGroup>
-				<DropdownMenuSeparator />
-				<DropdownMenuGroup>
-					<DropdownMenuItem>
-						<BellIcon
-						/>
-						Notifications
-					</DropdownMenuItem>
-					<DropdownMenuItem>
-						<CommandIcon
-						/>
-						Keyboard shortcuts
-					</DropdownMenuItem>
-				</DropdownMenuGroup>
-				<DropdownMenuSeparator />
-				<DropdownMenuGroup>
-					<DropdownMenuItem>
-						<LifeBuoyIcon
-						/>
-						Seller help
-					</DropdownMenuItem>
-					<DropdownMenuItem>
-						<BookOpenIcon
-						/>
-						Seller guides
-					</DropdownMenuItem>
-				</DropdownMenuGroup>
-				<DropdownMenuSeparator />
-				<DropdownMenuGroup>
-					<DropdownMenuItem>
-						<CreditCardIcon
-						/>
-						Plan & billing
-					</DropdownMenuItem>
-				</DropdownMenuGroup>
-				<DropdownMenuSeparator />
-				<DropdownMenuGroup>
-					<DropdownMenuItem
-						className="w-full cursor-pointer"
-						variant="destructive"
-					>
-						<LogOutIcon
-						/>
-						Log out
-					</DropdownMenuItem>
-				</DropdownMenuGroup>
-			</DropdownMenuContent>
-		</DropdownMenu>
-	);
+export function NavUser({ user }: NavUserProps) {
+  const initial = user.name.charAt(0).toUpperCase();
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <button
+            type="button"
+            aria-label="Account menu"
+            className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          />
+        }
+      >
+        <Avatar className="size-8 cursor-pointer ring-1 ring-inset ring-border transition-shadow hover:ring-primary/40">
+          <AvatarFallback className="bg-accent text-xs font-semibold text-accent-foreground">
+            {initial}
+          </AvatarFallback>
+        </Avatar>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel className="flex items-center gap-3 py-2">
+          <Avatar className="size-9">
+            <AvatarFallback className="bg-accent text-sm font-semibold text-accent-foreground">
+              {initial}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0">
+            <div className="truncate font-medium text-foreground">{user.name}</div>
+            <div className="text-xs text-muted-foreground">{ROLE_LABEL[user.role]}</div>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          variant="destructive"
+          className="cursor-pointer"
+          onClick={() => logout()}
+        >
+          <LogOutIcon />
+          Sign out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }

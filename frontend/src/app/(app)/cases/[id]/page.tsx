@@ -18,7 +18,7 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
   const processing = data.job.stage !== "ready";
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-8">
+    <div className="mx-auto w-full max-w-6xl">
       <BackButton label="Worklist" />
 
       <div className="mt-3">

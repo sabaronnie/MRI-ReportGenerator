@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { IBM_Plex_Sans, IBM_Plex_Serif, IBM_Plex_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
-import { AppHeader } from "@/components/app-header";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const plexSans = IBM_Plex_Sans({
   variable: "--font-plex-sans",
@@ -35,9 +35,8 @@ export default function RootLayout({
       lang="en"
       className={`${plexSans.variable} ${plexSerif.variable} ${plexMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-background text-foreground antialiased">
-        <AppHeader />
-        <main className="flex-1">{children}</main>
+      <body className="min-h-svh bg-background text-foreground antialiased">
+        <TooltipProvider>{children}</TooltipProvider>
         <Toaster richColors position="top-center" toastOptions={{ style: { fontFamily: "var(--font-plex-sans)" } }} />
       </body>
     </html>
