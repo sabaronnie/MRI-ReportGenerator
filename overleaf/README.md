@@ -12,9 +12,10 @@ overleaf/
     sections/  appendix/  figures/
     references.bib           the paper's bibliography
   deliverables/              <- rubric write-ups, each self-contained
-    T1_ai_depth.tex          T1 — AI depth / non-triviality  (DONE, compiles)
-    P2_baseline.tex          P2 — non-AI baseline rigor       (DONE, compiles; PMID-verified numbers)
-    P4_publishability.tex    P4 — value / publishability      (DONE, compiles)
+    T1_ai_depth.tex          T1 — AI depth / non-triviality   (DONE, compiles)
+    P2_baseline.tex          P2 — non-AI baseline rigor        (DONE, compiles; PMID-verified numbers)
+    P4_publishability.tex    P4 — value / publishability       (DONE, compiles)
+    C1_P3_novelty.tex        C1/P3 — novelty + AI justification (DONE, compiles with tectonic)
 ```
 
 Local test-compile (optional): `tectonic deliverables/T1_ai_depth.tex` (installed via
