@@ -86,6 +86,10 @@ service tests green. Harness: `research/group5/test_service_g1_g2.py`.
 - **G4 SPINEPS C1 Cobb plumbed** (`context.py` + `c3c7_cobb_angle.py`) — context carries seg-vert,
   c3c7 prefers C1 (healthy 15.2°), falls back to canal-cut; rescues C7-obscured necks. ✅ committed.
 
+Confirmed at scale on the 49-case unhealthy batch (245 levels, 0 errors): tilt @45° **0% over-flag**,
+Ha/Hp median **0.91** (physiological), compression screen **0%** — correctly null on spondylosis. The
+G1 fixes generalize from n=10 to n=49.
+
 ## One-line state
 G3 validated; G4 method-validated/directional; G1+G5 screens healthy-validated (compression arm gap);
 G2 partial (signal/bulge negative, disc/VB AP ratio + AP width discriminate AUC ~0.62 level-controlled,
