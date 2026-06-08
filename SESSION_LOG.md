@@ -11,6 +11,27 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-08 (cont. 5) — Andrew (S3 retries + positioning/demo docs + auth coordination)
+
+**Branch:** `feat/eep/scaffold` — pushed.
+
+- **S3 retries (done):** retry-with-backoff on IEP calls (`services/eep/clients/_http.py`) + 5 tests. Software 15% complete.
+- **Docs:** `docs/positioning.md` (P1–P4 draft, confirm/science placeholders), `docs/demo-script.md`
+  (full runbook), `docs/architecture.md` fleshed + explicit **no-LLM / §6 N/A** note.
+- **Auth coordination (full-stack chat added JWT to the EEP):** made our API + deployed-e2e tests
+  **auth-aware** (`conftest.py` client fixture + e2e log in if `/auth/login` exists) → green before AND
+  after the merge. Wired the EEP manifest for an **optional `eep-auth` Secret** (JWT_SECRET/DEMO_PASSWORD/
+  ADMIN_PASSWORD/ADMIN_EMAIL). Documented env + the 2-shared-file merge plan (take their app.py +
+  requirements.txt) in `docs/deployment.md`.
+- **Found + fixed a real bug:** EEP was 2 replicas with a per-pod in-memory store → uploaded case 404s
+  on the other pod. Scaled to **1 replica** (+ manifest comment + deployment.md rationale; RDS = the
+  documented path to multi-replica). Live e2e now 5/5 against AWS.
+
+**Pending / next:** unchanged — merge PRs #2/#3 (needs a teammate), positioning answers (4) + slides,
+live demo + teardown, science write-ups (executor chat).
+
+---
+
 ## 2026-06-08 (cont. 4) — Andrew (finalize run: tests + tradeoffs + CI + MLOps + PRs)
 
 **Branch:** `feat/eep/scaffold` — pushed. PRs #2 (backend/infra) + #3 (frontend) opened to main.
