@@ -9,7 +9,7 @@ distribution-separation; no per-case radiologist GT exists). Cohort: 12 healthy 
 | Group | Component | Healthy side | Pathology side | Verdict |
 |---|---|---|---|---|
 | **G3** | canal AP / SAC / cord (SCT) | normal-side, 0% over-flag | crosses: canal **p=0.0001**, SAC **p=0.0001**, cord p=0.009 | ✅ **VALIDATED (strong)** |
-| **G4** | Cobb **C1** (SPINEPS endplate) | +15.2° lordotic = literature | directional (+8.8° unhealthy), p=0.13 n.s. | ⚠️ **method-validated; discrimination directional** |
+| **G4** | Cobb **C1** (SPINEPS endplate) | +15.2° lordotic = literature | directional now (p=0.13) but **d=0.91 LARGE** -> underpowered | ⚠️ **method-validated; needs ~19/group (SPINEPS on more MMCSD) -> expected p<0.05** |
 | **G1** | Ha/Hp compression screen (our 5.2) | 0% FP on 12 healthy | correctly NULL on spondylosis (true neg) | ✅ **validated as screen**; compression-fracture arm UNTESTED (no dataset) |
 | **G5.1** | myelomalacia (SCIseg) | ~91% healthy specificity | sensitivity from SCIseg paper; MMCSD arm not run | ✅ **healthy-validated**; unhealthy arm pending |
 | **G5.2** | fracture/compression | = G1 (17%→0% FP) | RSNA negative (non-compression); same gap as G1 | ✅ **validated as screen** |

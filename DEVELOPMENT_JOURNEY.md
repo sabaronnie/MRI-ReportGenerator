@@ -327,6 +327,18 @@ keep it honest and specific (numbers, dates, evidence, citations). Chronological
   (a real defect) honestly, and reported that the metric still does not separate -- rather than tuning the
   denominator to fabricate a clean-looking number.
 
+## J18 — G4 'directional' diagnosed: a LARGE effect, just underpowered (not a weak metric)
+- **Question:** is C1 Cobb's directional-only discrimination (healthy +15.2 vs unhealthy +6.0, p=0.13) a weak
+  metric or just small n? Tested effect size + alternative metrics on the SPINEPS masks (11 healthy, 10 unhealthy).
+- **Finding:** **Cobb C3-C7 has a LARGE effect, Cohen d=0.91** -- the separation is real, it just needs ~19
+  cases/group for 80% power (we have 10). C3-C7 beats the alternatives: C2-C7 d=0.60 (endpoint noise),
+  focal min-segmental d=0.64, #kyphotic-segments d=0.37 (weak). So global C3-C7 is the right discriminating
+  metric and the only thing missing is statistical power.
+- **Fix (not code -- data):** segment ~19-20+ unhealthy MMCSD cases with SPINEPS (Run B) -> re-run C1 Cobb
+  -> expected p<0.05. No method change; C3-C7 stays the metric.
+- **Lesson:** 'directional, p=0.13' looked like a weak result but the effect size revealed it as underpowered
+  -- the same diagnostic discipline that (oppositely) showed G2's disc height is genuinely flat (d~0).
+
 ---
 *Open methodology gaps tracked elsewhere:* teammate threshold/citation fixes (disc DHI<0.30, bulge flat-wall,
 Pfirrmann cut-points) — see `group5/AUDIT_groups1-4_measurements.md`; C6/C7 Cobb **precision** is now closed by
