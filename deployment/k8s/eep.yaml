@@ -8,7 +8,10 @@ metadata:
   namespace: mri
   labels: { app: eep, tier: eep }
 spec:
-  replicas: 2
+  # Single replica: the case store is in-process (in-memory), so uploaded cases live on one pod.
+  # Horizontal scale needs the shared datastore (RDS/Postgres) — the documented next step
+  # (see docs/deployment.md + store.py). Fixtures are seeded per-pod, but uploads are not.
+  replicas: 1
   selector:
     matchLabels: { app: eep }
   template:
@@ -33,6 +36,13 @@ spec:
             - { name: REPORTING_URL,        value: "http://reporting:8082" }
             - { name: EEP_SAMPLE_DIR,       value: "/data/samples" }
             - { name: EEP_ALLOWED_ORIGINS,  value: "${FRONTEND_ORIGIN}" }
+            # Auth (full-stack branch): supplied by the optional `eep-auth` Secret. optional:true so
+            # the pre-auth image still starts when the Secret is absent. Create it before deploying the
+            # auth-enabled image — see docs/deployment.md "Authentication".
+            - { name: JWT_SECRET,     valueFrom: { secretKeyRef: { name: eep-auth, key: JWT_SECRET,     optional: true } } }
+            - { name: DEMO_PASSWORD,  valueFrom: { secretKeyRef: { name: eep-auth, key: DEMO_PASSWORD,  optional: true } } }
+            - { name: ADMIN_PASSWORD, valueFrom: { secretKeyRef: { name: eep-auth, key: ADMIN_PASSWORD, optional: true } } }
+            - { name: ADMIN_EMAIL,    valueFrom: { secretKeyRef: { name: eep-auth, key: ADMIN_EMAIL,    optional: true } } }
           readinessProbe:
             httpGet: { path: /readyz, port: 8080 }
             initialDelaySeconds: 5
