@@ -71,5 +71,15 @@ segmentation environment, not on the analysis host; the deployed pipeline runs S
 ## Open items (state honestly; not executed)
 1. **G3 random-draw robustness** — would need SCT on a non-selected MMCSD draw (Colab); accepted as a
    documented caveat, not run.
-2. **Compression-fracture arm (G1/G5.2)** — blocked: no labelled cervical compression-fracture MRI exists.
+2. **Compression-fracture arm (G1/G5.2)** — blocked: no labelled cervical compression-fracture MRI exists
+   (PMC8082364: cervical fractures rare / usually non-osteoporotic → graded TL-only). One external lead =
+   access-blocked Penn cohort (Madi 2025, PMC11718528).
 3. **Per-case accuracy + G2 disc/VB cut + demographic-threshold accuracy** — need a radiologist read (AUBMC).
+
+## Documented negatives (absent baselines — searched, do not exist)
+No public reference exists to benchmark against, so these are stated as limitations, not measured:
+no cervical-MRI VB-height (Ha/Hp) inter-observer ICC; no cervical SAC-mm ICC; no published cervical
+disc-AP/VB-AP ratio norm (our ≥1.10 cut is cohort-derived; mechanism = disc AP widens with degeneration,
+Machino 2021 PMID 34098133); no healthy cervical-MRI Cobb ground truth (only an n=77 spondylosis MRI+Cobb
+set). Several thresholds are documented radiograph/CT/lumbar borrows (Torg, some canal cuts, lumbar disc
+rules), flagged in the G6 catalog.
