@@ -6,7 +6,9 @@
  * Components call these functions and never know which mode is active — that is what lets
  * us build the whole UI now and swap to the real EEP later with no component changes.
  */
+import { redirect } from "next/navigation";
 import type { CaseEnvelope, CaseSummary, Job, JobStage } from "./contract";
+import { getToken } from "@/lib/auth/session";
 import healthy from "@/mocks/fixtures/case-healthy.json";
 import stenosis from "@/mocks/fixtures/case-stenosis.json";
 import fracture from "@/mocks/fixtures/case-fracture.json";
@@ -52,8 +54,14 @@ function advance(c: CaseEnvelope): void {
   c.case.status = stage === "ready" ? "ready" : "processing";
 }
 
+/** Server-side EEP fetch. Forwards the session JWT as a Bearer token; an expired/
+ * invalid token (401) bounces the user to login. */
 async function eep<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${EEP_URL}${path}`, init);
+  const token = await getToken();
+  const headers = new Headers(init?.headers);
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const res = await fetch(`${EEP_URL}${path}`, { ...init, headers, cache: "no-store" });
+  if (res.status === 401) redirect("/login?error=expired");
   if (!res.ok) throw new Error(`EEP ${path} → ${res.status}`);
   return (await res.json()) as T;
 }
@@ -149,15 +157,17 @@ export function getViewerSources(id: string): { volumeUrl: string; maskUrl?: str
       maskUrl: "/samples/sample_mask_tss.nii.gz",
     };
   }
+  // Same-origin Next.js proxy routes that attach the Bearer token server-side
+  // (the browser can't read the httpOnly token, and the EEP now guards /cases).
   return {
-    volumeUrl: `${EEP_URL}/cases/${encodeURIComponent(id)}/volume`,
-    maskUrl: `${EEP_URL}/cases/${encodeURIComponent(id)}/mask?type=tss`,
+    volumeUrl: `/api/cases/${encodeURIComponent(id)}/volume`,
+    maskUrl: `/api/cases/${encodeURIComponent(id)}/mask`,
   };
 }
 
-/** URL of the rendered clinical report (reporting IEP). Live only — the mock
- * backend has no HTML report endpoint, so returns null there. */
+/** URL of the rendered clinical report (reporting IEP). Live only — proxied
+ * through Next.js so the Bearer token is attached. Mock has no HTML report. */
 export function getReportHtmlUrl(id: string): string | null {
   if (MODE === "mock" || !EEP_URL) return null;
-  return `${EEP_URL}/cases/${encodeURIComponent(id)}/report.html`;
+  return `/api/cases/${encodeURIComponent(id)}/report`;
 }

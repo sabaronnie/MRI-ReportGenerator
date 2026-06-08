@@ -5,7 +5,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -36,7 +35,7 @@ export function NavUser({ user }: NavUserProps) {
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel className="flex items-center gap-3 py-2">
+        <div className="flex items-center gap-3 px-2 py-1.5">
           <Avatar className="size-9">
             <AvatarFallback className="bg-accent text-sm font-semibold text-accent-foreground">
               {initial}
@@ -46,7 +45,7 @@ export function NavUser({ user }: NavUserProps) {
             <div className="truncate font-medium text-foreground">{user.name}</div>
             <div className="text-xs text-muted-foreground">{ROLE_LABEL[user.role]}</div>
           </div>
-        </DropdownMenuLabel>
+        </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           variant="destructive"

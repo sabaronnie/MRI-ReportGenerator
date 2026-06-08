@@ -1,21 +1,10 @@
 import type { Role } from "@/lib/api/contract";
 
-export type SessionUser = { email: string; name: string; role: Role };
+/** The signed-in user (from the EEP, stored in the session cookie). */
+export type SessionUser = { id: string; email: string; name: string; role: Role };
 
-/**
- * Mock user directory — one per role. Replaced by real auth against the EEP later
- * (this is the frontend's mock-first session; production auth lives in the EEP).
- */
-export const DEMO_USERS: SessionUser[] = [
-  { email: "radiologist@demo", name: "Dr. Rana Radiologist", role: "radiologist" },
-  { email: "tech@demo", name: "Tariq Technologist", role: "technologist" },
-  { email: "viewer@demo", name: "Nadia (referring)", role: "viewer" },
-  { email: "admin@demo", name: "Admin", role: "admin" },
-];
-
-export function findUser(email: string): SessionUser | undefined {
-  return DEMO_USERS.find((u) => u.email === email);
-}
+/** A user record as returned by the EEP admin API. */
+export type ManagedUser = SessionUser & { active: boolean; created_at: string };
 
 export const ROLE_LABEL: Record<Role, string> = {
   radiologist: "Radiologist",
@@ -23,3 +12,5 @@ export const ROLE_LABEL: Record<Role, string> = {
   viewer: "Viewer",
   admin: "Admin",
 };
+
+export const ROLES: Role[] = ["radiologist", "technologist", "viewer", "admin"];

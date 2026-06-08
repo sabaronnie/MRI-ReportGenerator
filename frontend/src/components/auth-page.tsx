@@ -1,16 +1,13 @@
 "use client";
 
-import { GithubIcon } from "@/components/icons/github-icon";
-import { GoogleIcon } from "@/components/icons/google-icon";
 import { Button } from "@/components/ui/button";
 import {
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
 } from "@/components/ui/input-group";
-import { AuthDivider } from "@/components/auth-divider";
 import { FloatingPaths } from "@/components/floating-paths";
-import { AtSignIcon } from "lucide-react";
+import { AtSignIcon, LockIcon } from "lucide-react";
 import { login } from "@/lib/auth/actions";
 import { Brand } from "@/components/brand";
 
@@ -63,45 +60,51 @@ export function AuthPage({ error }: { error?: boolean }) {
 							</p>
 						) : null}
 					</div>
-					<div className="space-y-2">
-						<form action={login}>
-							<input type="hidden" name="email" value="radiologist@demo" />
-							<Button variant="outline" className="w-full" type="submit">
-								<GoogleIcon data-icon="inline-start" />
-								Continue with Google
-							</Button>
-						</form>
-						<form action={login}>
-							<input type="hidden" name="email" value="radiologist@demo" />
-							<Button variant="outline" className="w-full" type="submit">
-								<GithubIcon data-icon="inline-start" />
-								Continue with GitHub
-							</Button>
-						</form>
-					</div>
-
-					<AuthDivider>OR</AuthDivider>
-
-					<form action={login} className="space-y-2">
-						<p className="text-start text-muted-foreground text-xs">
-							Enter your work email to sign in.
-						</p>
-						<InputGroup>
-							<InputGroupInput
-								name="email"
-								placeholder="you@hospital.org"
-								type="email"
-								autoComplete="email"
-								required
-							/>
-							<InputGroupAddon align="inline-start">
-								<AtSignIcon />
-							</InputGroupAddon>
-						</InputGroup>
+					<form action={login} className="space-y-3">
+						<div className="space-y-1.5">
+							<label htmlFor="email" className="text-sm font-medium text-foreground">
+								Email
+							</label>
+							<InputGroup>
+								<InputGroupInput
+									id="email"
+									name="email"
+									placeholder="you@hospital.org"
+									type="email"
+									autoComplete="email"
+									required
+								/>
+								<InputGroupAddon align="inline-start">
+									<AtSignIcon />
+								</InputGroupAddon>
+							</InputGroup>
+						</div>
+						<div className="space-y-1.5">
+							<label htmlFor="password" className="text-sm font-medium text-foreground">
+								Password
+							</label>
+							<InputGroup>
+								<InputGroupInput
+									id="password"
+									name="password"
+									placeholder="••••••••"
+									type="password"
+									autoComplete="current-password"
+									required
+								/>
+								<InputGroupAddon align="inline-start">
+									<LockIcon />
+								</InputGroupAddon>
+							</InputGroup>
+						</div>
 
 						<Button className="w-full" type="submit">
-							Continue with email
+							Sign in
 						</Button>
+						<p className="text-center text-xs text-muted-foreground">
+							Demo: <span className="font-mono">admin@demo</span> /{" "}
+							<span className="font-mono">demo12345</span>
+						</p>
 					</form>
 					<p className="mt-8 text-muted-foreground text-sm">
 						By continuing, you agree to our{" "}
