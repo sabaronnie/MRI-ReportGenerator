@@ -80,6 +80,7 @@ nnUNet_results/
 
 # --- MLflow / experiment tracking ---
 mlruns/
+mlflow.db
 mlartifacts/
 wandb/
 lightning_logs/
