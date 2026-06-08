@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Menu, X, LogOut, Scan } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
+import { Brand } from "@/components/brand";
 import { logout } from "@/lib/auth/actions";
 import { ROLE_LABEL } from "@/lib/auth/users";
 import type { Role } from "@/lib/api/contract";
@@ -24,18 +25,8 @@ export function HeaderNav({ user, items }: Props) {
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-sm">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <Link href="/worklist" className="flex items-center gap-2.5">
-          <span className="grid h-8 w-8 place-items-center rounded-md bg-primary text-primary-foreground shadow-sm">
-            <Scan className="h-[18px] w-[18px]" strokeWidth={2.25} />
-          </span>
-          <span className="flex flex-col leading-none">
-            <span className="font-serif text-[17px] font-semibold tracking-tight text-foreground">
-              Cervical&nbsp;MRI
-            </span>
-            <span className="mt-0.5 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-              Reporting
-            </span>
-          </span>
+        <Link href="/worklist" className="flex items-center">
+          <Brand size={34} />
         </Link>
 
         {user ? (

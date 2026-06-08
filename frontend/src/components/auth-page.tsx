@@ -10,28 +10,9 @@ import {
 } from "@/components/ui/input-group";
 import { AuthDivider } from "@/components/auth-divider";
 import { FloatingPaths } from "@/components/floating-paths";
-import { AtSignIcon, Scan } from "lucide-react";
+import { AtSignIcon } from "lucide-react";
 import { login } from "@/lib/auth/actions";
-import { cn } from "@/lib/utils";
-
-/** Our brand mark — mirrors the header so the auth page stays on-brand. */
-function Brand({ className }: { className?: string }) {
-	return (
-		<span className={cn("flex items-center gap-2.5", className)}>
-			<span className="grid h-8 w-8 place-items-center rounded-md bg-primary text-primary-foreground shadow-sm">
-				<Scan className="h-[18px] w-[18px]" strokeWidth={2.25} />
-			</span>
-			<span className="flex flex-col leading-none">
-				<span className="font-serif text-[17px] font-semibold tracking-tight text-foreground">
-					Cervical&nbsp;MRI
-				</span>
-				<span className="mt-0.5 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-					Reporting
-				</span>
-			</span>
-		</span>
-	);
-}
+import { Brand } from "@/components/brand";
 
 export function AuthPage({ error }: { error?: boolean }) {
 	return (
