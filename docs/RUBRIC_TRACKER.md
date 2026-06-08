@@ -37,7 +37,7 @@
 |---|------|--------|------|
 | S1 | Service boundaries & contracts | ✅ | Frozen data + report + viewer contracts. Strong. |
 | S2 | Validation & request constraints | ✅ | EEP validates type/size (415/413), per-IP rate limit. |
-| S3 | Errors / timeouts / retries / fallbacks | 🟡 | Fixture fallback ✅, httpx timeout ✅, per-component errors ✅. **Retries** not implemented. `[infra]` |
+| S3 | Errors / timeouts / retries / fallbacks | ✅ | Fixture fallback ✅, httpx timeouts ✅, per-component errors ✅, **retry-with-backoff on IEP calls** (connect/timeout/5xx) ✅ + tested (`services/eep/clients/_http.py`, `test_retries.py`). |
 | S4 | Containerization & orchestration | 🟡 | 3 Dockerfiles ✅ + compose ✅ (built & run 2026-06-08). **k8s manifests REQUIRED — 🔴 not started.** `[infra]` |
 | S5 | Deployment architecture & secrets | 🔴 | AWS arch + Secrets Manager + written doc. Blocked on creds. `[infra]` |
 
