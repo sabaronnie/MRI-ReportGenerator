@@ -11,6 +11,26 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-08 — Andrew (container stack up + REAL EEP↔measurements orchestration + frontend LIVE e2e)
+
+**Branch:** `feat/eep/scaffold` (+ `feat/frontend/scaffold`) — both pushed.
+
+**What was done:**
+- **Backend container stack RUNS.** `docker compose up --build` in `deployment/compose/` builds + runs measurements (Flask/gunicorn :8081) + eep (FastAPI/uvicorn :8080). scipy/numpy/nibabel installed from prebuilt wheels on slim — no build-essential needed.
+- **REAL EEP→IEP orchestration PROVEN.** EEP `/readyz` → `measurements_ready: true`; uploading a scan makes the EEP call the measurements IEP over the docker network and return REAL measurements (differ from the cloned fixture; 4/10 components OK: cervical_body_morphometry, group5_fracture_screen, segmental_angles, spondylolisthesis). The other 6 error *as expected* — the minimal stand-in `segmentation.zip` has only the TSS step2 mask (cord/canal need SCT masks/input_iso = G3 Colab-upstream; c3c7_cobb's C7 endplate unmeasurable on sub-amu01; rest cascade). Graceful per-component error contract confirmed.
+- **Frontend LIVE e2e PASSED** (dev server, `.env.local` MODE=live → :8080). Drove the whole flow with Playwright, 0 console errors: login (radiologist) → worklist reads EEP (showed 4 cases incl. a curl-uploaded one) → case report renders real per-level findings → NiiVue viewer loads volume+mask from EEP (200s) → UI upload → real EEP POST /cases → sign-off → reviewed/signed. Screenshots: `../live-case-upload.png`, `../live-signed-state.png`.
+
+**3 bugs found + fixed (verified):**
+- **measurements image wouldn't boot** — `cord_ap`/`functional_canal_ap` import `services.segmentation.sct_segmenter` (a light stdlib SCT-CLI wrapper) but the Dockerfile didn't copy `services/segmentation` → `ModuleNotFoundError`. Fixed: `COPY services/segmentation` (89e95e7).
+- **live upload never sent the file** — `uploadAction` read the File but `createCase` only passed the filename, then POSTed `/cases` with no body → would 422. Fixed: forward the multipart file to the EEP (frontend 85254bf).
+- **sign-off status reverted** — `store._advance` (sim clock) overwrote `reviewed` back to `ready` on every GET for uploaded cases. Fixed: guard `_advance` once reviewed (6e4ed64).
+
+**Files changed:** `deployment/docker/measurements.Dockerfile`, `services/eep/store.py` (eep branch); `frontend/src/lib/api/client.ts`, `frontend/src/app/upload/actions.ts` (frontend branch). Sample data staged in `deployment/compose/sample_data/` (gitignored, not committed).
+
+**Pending / next action:** GT1 demo spine works locally. **NEXT = AWS deploy (GT2)** — needs Andrew's creds + spend OK: ECR + ECS/Fargate or EKS + ALB (public URL) + replace EEP in-memory store with RDS/Postgres + Secrets Manager. Then monitoring (Prometheus/Grafana on the already-exposed /metrics), CI (GitHub Actions build/test/push), tests, docs/tradeoffs. The 3 images are built locally; `--profile fullstack` for the frontend needs `frontend/` at repo root (after feat/frontend merges). Do not start AWS until Andrew confirms.
+
+---
+
 ## 2026-06-06 (cont.) — Group 5 DONE; corner-fix implemented; MASTER handoff written
 
 **Branch:** `groups-5-6` (all pushed, 0 unpushed, HEAD 46d4bdc)
