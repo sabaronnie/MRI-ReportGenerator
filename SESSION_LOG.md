@@ -11,6 +11,19 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-08 (cont. 2) — Andrew (radiologist workflow features: worklist A/B/C/D)
+
+**Branch:** `feat/app/fullstack-local` — pushed.
+
+**What was done:** Researched real RIS/reporting tools, then built batch 1 of workflow features (additive, zero collision — new `services/eep/workflow/` package + its own `workflow.db`; reads case store + users DB read-only; only shared touch stays `app.py`, one more line).
+- **A** worklist filter/sort/search + **C** turnaround-time: `GET /workflow/worklist` enriches summaries with assignment + derived TAT (on_track/warning/breach/signed vs `WORKFLOW_TAT_TARGET_HOURS`), filters (status/triage/mine/assignee/q), sorts (priority/oldest/newest).
+- **B** claim/release/assign; **D** report addenda (`POST .../addendum`, `GET /workflow/cases/{id}`). 9 pytest green (19 total EEP), live-smoke + Playwright e2e verified, prod build green, 0 console errors.
+- Frontend: worklist filter bar + Age/Assignee columns + Claim; case page TAT badge + claim strip + Addenda section. Degrades gracefully in mock mode. Docs in `docs/workflow-features.md`.
+
+**Files changed:** new `services/eep/workflow/**` + `tests/{test_workflow,conftest}.py`; `services/eep/app.py` (one line); `docs/workflow-features.md`; frontend `lib/api/workflow.ts`, `lib/actions/workflow.ts`, `components/workflow/*`, `components/worklist/{worklist-filters,case-table}.tsx`, `app/(app)/{worklist,cases/[id]}/page.tsx`.
+
+**Pending / next action:** Andrew wants to **brainstorm batch 2** (E notes / F critical-results / G dashboard / H audit). Still flag the infra chat that `services/eep/app.py` is edited (auth + workflow router mounts). New env (deploy): `WORKFLOW_TAT_TARGET_HOURS` (default 24); `workflow.db` gitignored.
+
 ## 2026-06-08 (cont.) — Andrew (full-stack chat: real JWT auth + admin panel; app-shell; logo; view-report)
 
 **Branch:** `feat/app/fullstack-local` (new; = frontend + merged backend from `feat/eep/scaffold`). Pushed.
