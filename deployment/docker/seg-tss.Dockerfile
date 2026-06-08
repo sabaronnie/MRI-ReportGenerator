@@ -11,7 +11,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir gunicorn flask nibabel numpy scipy
+# dcm2niix (pip wheel ships the binary on PATH) so the service also accepts zipped DICOM input.
+RUN pip install --no-cache-dir gunicorn flask nibabel numpy scipy dcm2niix
 # Pulls nnUNetv2 + torch (CUDA build runs on CPU too — one image for both node types).
 RUN pip install --no-cache-dir "totalspineseg[nnunetv2]"
 
