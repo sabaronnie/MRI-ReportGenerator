@@ -11,6 +11,32 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-08→09 — Andrew (executor: finalize validation + deliverables + segmentation wrappers)
+
+**Branch:** `research/andrew/writeups` (CANONICAL — has everything; pushed to origin).
+
+**What was done (big session):**
+- **Validation FINALIZED + reproduced from committed code.** G3 ✅ strong (p=0.0001); G2 ⚠️ partial
+  (disc/VB ratio AUC 0.62, signal/bulge negative); **G4 ❌ NOT a discriminator** (balanced 26 healthy vs
+  41 unhealthy: d=0.28, p=0.32 — the n=11 result was a lordosis-biased small sample, J26); G1 ✅ screen;
+  G5.1 ✅. `docs/validation/results-final-2026-06-08.md` (supersedes run-1). 138 tests green.
+- **4 service fixes + §A threshold corrections** (J22): tilt 20→45°, endplate-line heights (Ha/Hp
+  1.08→0.93), bulge endplate-corner, G4 SPINEPS C1 plumbing; SAC demoted, Torg supporting-only, 1.35mm
+  bulge cut dropped, DHI→relative. **G2 wired into orchestrator + demographics (age/sex/height, sex-adjusted
+  dural-sac)** (J25). Andrew now owns ALL group code (no PR/flag dance).
+- **Paper updated (J17–J26)** + deliverables **T1/P2/P4** (LaTeX, compile via tectonic) — all in
+  `overleaf/` (one Overleaf folder; paper moved there too).
+- **Frontend integration:** handoff written, code pushed, 2 radiologist PDF reports validated ("makes sense").
+- **Segmentation wrappers (for deploy chat):** wrapped **SPINEPS** (new `spineps_app.py`) + added **SCIseg/
+  G5.1** to the SCT wrapper. All 3 engines (TSS/SCT/SPINEPS) on this branch.
+
+**Pending / next action:** mostly DOCUMENTATION — see `handoffs/chat-handoffs/HANDOFF-EXECUTOR-2026-06-09.md`
+for the full list. Top items: C1/P3 deliverable (needs Team 14 scope), fill `positioning.md` [SCIENCE:]
+with P2 numbers, fold disc/VB-ratio norm when the research returns, branch reconciliation to main, TPTBox
+AGPL check. NO more Colab/workflows (Andrew out of budget).
+
+---
+
 ## 2026-06-08 — Andrew (executor: G1/G2/G4 service fixes + 49-case G2 validation + T1 write-up)
 
 **Branches:** `feat/validation/run1-results` (fixes + validation), `research/andrew/writeups` (T1 doc). All UNPUSHED.
