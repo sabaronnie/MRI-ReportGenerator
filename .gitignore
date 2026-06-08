@@ -130,6 +130,15 @@ TODO.local.md
 scratch/
 playground/
 
+# --- Internal / Claude-workflow artifacts (kept local, NOT published to the repo) ---
+# AI-assistant project instructions + per-session logs + chat/team handoffs. Removed from the
+# tracked repo for the final submission; the durable content lives in README.md + docs/ + the paper.
+CLAUDE.md
+SESSION_LOG.md
+STRUCTURE_HANDOFF.txt
+ronnie_response_G1_G3_G4.txt
+handoffs/
+
 # Group 5 — keep imaging data, venv, caches out of git
 group5/data/
 group5/out*/

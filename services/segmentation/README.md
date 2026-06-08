@@ -80,7 +80,7 @@ curl -X POST -F "file=@out.zip" http://localhost:8082/segment-sct -o out_sct.zip
 pytest services/segmentation/tests
 ```
 
-The suite uses synthetic NIfTI (no patient data) and validates only the input-handling logic. End-to-end TotalSpineSeg verification must be done locally on a real case (CLAUDE.md medical-AI rule #5).
+The suite uses synthetic NIfTI (no patient data) and validates only the input-handling logic. End-to-end TotalSpineSeg verification must be done locally on a real case (medical-AI rule: prove on one case before scaling; see root README).
 
 ## License notes
 

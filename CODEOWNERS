@@ -10,7 +10,6 @@
 *   @TEAM_ANDREW
 
 # Top-level rules and shared docs — all three must approve any change
-/CLAUDE.md                         @TEAM_ANDREW @TEAM_RONI @TEAM_HAMAD
 /README.md                         @TEAM_ANDREW @TEAM_RONI @TEAM_HAMAD
 /cervical-spine-master-plan.md     @TEAM_ANDREW @TEAM_RONI @TEAM_HAMAD
 /CODEOWNERS                        @TEAM_ANDREW @TEAM_RONI @TEAM_HAMAD

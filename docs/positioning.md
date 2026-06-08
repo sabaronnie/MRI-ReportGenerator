@@ -1,6 +1,6 @@
 # Positioning — Application (rubric §3.1, P1–P4, GT5)
 
-Positioning: **Application** (per `CLAUDE.md`). This is the product/business framing; the deeper
+Positioning: **Application** (project decision). This is the product/business framing; the deeper
 methods/validation write-ups (T1 AI depth, detailed clinical validation, publishability) live in the
 science-track docs and are referenced here.
 
