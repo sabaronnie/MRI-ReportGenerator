@@ -47,7 +47,7 @@ Local equivalents: [`deployment/docker/`](../deployment/docker/) (images) + [`de
 - **S3 access:** scoped IAM policy on the node role (`s3:GetObject`/`ListBucket` on the samples bucket
   ARN only), not broad S3 access.
 
-## Cost estimate (us-east-1)
+## Cost estimate (eu-north-1 / Stockholm — closest region to the deploying team)
 | Item | If left running 24/7 | Demo-only (spin up/tear down) |
 |------|---------------------:|------------------------------:|
 | EKS control plane ($0.10/hr) | ~$73/mo | ~$1-2 per demo day |

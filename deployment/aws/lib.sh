@@ -2,7 +2,7 @@
 # Shared config + helpers for the AWS deploy scripts. Source this, don't run it.
 set -euo pipefail
 
-export AWS_REGION="${AWS_REGION:-us-east-1}"
+export AWS_REGION="${AWS_REGION:-eu-north-1}"
 export CLUSTER="${CLUSTER:-mri-reportgenerator}"
 export NAMESPACE="${NAMESPACE:-mri}"
 export IMAGE_TAG="${IMAGE_TAG:-latest}"
