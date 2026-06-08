@@ -87,11 +87,26 @@ match mine EXACTLY (same code → same values). These are the link's acceptance 
 The clinical contrast (healthy: open canal + lordotic; CSM: narrowed canal/SAC + straightened) is the
 demo story — make sure your render preserves it.
 
-## 6) WHAT HAPPENS AFTER YOU LINK
-Andrew will render these 2 cases through your UI → send the 2 reports back here → **I re-run the pipeline
-locally and cross-reference every value against your rendered report** to confirm the link is correct.
-Then the 2 frontend-rendered reports + the 2 MRIs go to a radiologist. (I also have the raw `run_all`
-JSON for both cases as the ground-truth — `radiologist_demo/report_*.json` — happy to share.)
+## 6) WHAT HAPPENS AFTER YOU LINK  + the RADIOLOGIST DELIVERABLE (explicit ask)
+Sequence:
+1. Render the 2 cross-ref cases (§5) through your UI.
+2. Send the 2 reports back here → **I re-run the pipeline locally and cross-reference every value
+   against your rendered report** to confirm the link is correct.
+3. **EXPORT each rendered report** as a shareable file — **PDF preferred** (printable HTML is an
+   acceptable fallback). This is a required deliverable: it goes to a radiologist.
+   - NOTE the repo's `services/reporting/render_pdf.py` is currently a STUB (returns the HTML bytes) —
+     real PDF export needs building (browser print-to-PDF of the case page is the quick path). This was
+     the ambiguous "PDF export" request from the demographics handoff — confirming it here as needed.
+4. **Andrew/I then assemble the radiologist ZIP** = the **2 exported reports (PDF) + the 2 MRIs**
+   (`MRI_sub-amu01.nii.gz`, `MRI_mmcsd-csm-002.nii.gz`) + a short README/license note.
+
+So the two things THIS handoff needs back from you: (a) the 2 rendered reports for the value
+cross-check, and (b) those same 2 reports **exported to PDF** for the radiologist zip.
+
+License for the zip: sub-amu01 = Spine-Generic (open, shareable); mmcsd-csm-002 = MMCSD (research use —
+private radiologist review OK; confirm CC BY 4.0 vs NC-ND before any public redistribution).
+
+(I also hold the raw `run_all` JSON for both cases as ground-truth — `radiologist_demo/report_*.json`.)
 
 ## 7) NOTES / GOTCHAS
 - Read thresholds/citations/caveats FROM the response (your contract.ts already says this) — every
