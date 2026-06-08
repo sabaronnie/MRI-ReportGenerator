@@ -1,0 +1,57 @@
+name: Build segmentation images (cloud)
+
+# The 3 segmentation engine images (TotalSpineSeg, SCT, SPINEPS) are ~10 GB each — too big to build
+# reliably on a laptop. This builds them on an amd64 runner (with a disk-cleanup step) and pushes to
+# ECR. Manual trigger: pick the branch that has the FINALIZED segmentation service code (from the
+# science chat) + which engines are ready.
+#
+# Requires repo secrets AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_REGION (see docs/ci.md).
+
+on:
+  workflow_dispatch:
+    inputs:
+      seg_code_ref:
+        description: "Branch/tag with the finalized segmentation service code"
+        required: true
+        default: "feat/seg/services"
+      engines:
+        description: "Which images to build (space-separated: tss sct spineps)"
+        required: true
+        default: "tss sct"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Free up disk (these images are ~10 GB)
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /opt/hostedtoolcache/CodeQL
+          sudo docker image prune -af || true
+          df -h /
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.seg_code_ref }}
+      - uses: docker/setup-buildx-action@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Login to ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: Build + push selected engine images
+        env:
+          REG: ${{ steps.ecr.outputs.registry }}
+        run: |
+          declare -A DF=( [tss]=seg-tss [sct]=seg-sct [spineps]=seg-spineps )
+          for eng in ${{ inputs.engines }}; do
+            repo="mri-${DF[$eng]}"
+            aws ecr describe-repositories --repository-names "$repo" >/dev/null 2>&1 \
+              || aws ecr create-repository --repository-name "$repo" >/dev/null
+            docker build --platform linux/amd64 -f "deployment/docker/${DF[$eng]}.Dockerfile" \
+              -t "$REG/${repo}:latest" .
+            docker push "$REG/${repo}:latest"
+            docker image rm "$REG/${repo}:latest" || true   # reclaim disk between engines
+          done
