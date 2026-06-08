@@ -7,6 +7,7 @@ from pathlib import Path
 import httpx
 
 from .. import config
+from ._http import send_with_retries
 
 
 class MeasurementsClient:
@@ -30,14 +31,19 @@ class MeasurementsClient:
         """POST a segmentation zip to the measurements IEP; return the handoff JSON or None on failure."""
         if not self.configured or not seg_zip.exists():
             return None
-        try:
+
+        def _send() -> httpx.Response:
+            # Re-open the file each attempt — the body is consumed on every send.
             with seg_zip.open("rb") as fh:
-                resp = httpx.post(
+                return httpx.post(
                     f"{self.base_url}/measure",
                     files={"file": (seg_zip.name, fh, "application/zip")},
                     data={"case_id": case_id, "job_id": case_id, "source_file": filename},
                     timeout=self.timeout,
                 )
+
+        try:
+            resp = send_with_retries(_send, retries=config.IEP_RETRIES, backoff_s=config.IEP_BACKOFF_S)
             resp.raise_for_status()
             return resp.json()
         except (httpx.HTTPError, ValueError):

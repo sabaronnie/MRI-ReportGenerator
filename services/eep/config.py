@@ -34,3 +34,7 @@ RATE_LIMIT_WINDOW_S = int(os.environ.get("EEP_RATE_LIMIT_WINDOW_S", "60"))
 
 # Simulated processing timeline (seconds) — the UX clock while a case "processes".
 SIM_TOTAL_S = float(os.environ.get("EEP_SIM_TOTAL_S", "8"))
+
+# IEP call resilience: retries (on connect error / timeout / 5xx) + linear backoff between tries.
+IEP_RETRIES = int(os.environ.get("EEP_IEP_RETRIES", "2"))
+IEP_BACKOFF_S = float(os.environ.get("EEP_IEP_BACKOFF_S", "0.5"))

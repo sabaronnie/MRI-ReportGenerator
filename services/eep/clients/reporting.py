@@ -9,6 +9,7 @@ from __future__ import annotations
 import httpx
 
 from .. import config
+from ._http import send_with_retries
 
 
 class ReportingClient:
@@ -32,8 +33,12 @@ class ReportingClient:
         """POST the handoff contract; return {report, artifacts} or None on failure."""
         if not self.configured:
             return None
+
+        def _send() -> httpx.Response:
+            return httpx.post(f"{self.base_url}/render", json=handoff, timeout=self.timeout)
+
         try:
-            resp = httpx.post(f"{self.base_url}/render", json=handoff, timeout=self.timeout)
+            resp = send_with_retries(_send, retries=config.IEP_RETRIES, backoff_s=config.IEP_BACKOFF_S)
             resp.raise_for_status()
             return resp.json()
         except (httpx.HTTPError, ValueError):
