@@ -90,13 +90,21 @@ def compute(ctx: MeasurementContext, prior_results: dict[str, Any]) -> Component
         measurements["DHI"][disc_name] = h_mid / denom
         measurements["DHI_anterior"][disc_name] = h_ant / denom
         measurements["DHI_posterior"][disc_name] = h_post / denom
-        flags["reduced_dhi"][disc_name] = (h_mid / denom) < 0.30
         flags["disc_height_index_unreliable"][disc_name] = reliable != "yes"
         intermediate["h_upperVB_middle_mm"][disc_name] = float(upper.H_middle) if upper is not None else float("nan")
         intermediate["h_lowerVB_middle_mm"][disc_name] = float(lower.H_middle) if lower is not None else float("nan")
 
     if not rows:
         raise MeasurementError("disc_height_index could not evaluate any discs")
+
+    # Reduced disc height = a RELATIVE >30% drop vs the patient's OWN cross-level median DHI
+    # (Suzuki 2018). The absolute DHI<0.30 cut is debunked (uncited animal/lumbar borrow; research
+    # handoff A.7 / disc_height_dhi_norms). Per-patient relative is ratio/scanner-robust and cut
+    # healthy false-firing 77%->3% in validation (J17).
+    dhi_vals = [v for v in measurements["DHI"].values() if v == v]
+    ref_dhi = float(np.median(dhi_vals)) if dhi_vals else 0.0
+    for disc_name, dhi in measurements["DHI"].items():
+        flags["reduced_dhi"][disc_name] = bool(ref_dhi > 0 and dhi < 0.70 * ref_dhi)
 
     return ComponentResult(
         measurements=measurements,
