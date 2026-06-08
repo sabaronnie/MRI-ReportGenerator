@@ -126,9 +126,16 @@ def build_interpreted_measurements(
                 ev = classify(measurement_name, raw_value, sex=sex)
                 status, severity, flag = ev.status, ev.severity, ev.flag
             else:
-                status = "outside_reference" if has_pathology_flag else "review_only"
+                # No cited threshold for this key -> review_only, NEVER a fabricated clinical flag.
+                # The old "outside_reference if any source-component flag" rule attached the same
+                # component flag to every intermediate/derived key (DHI_anterior, disc_H_*, AP-width,
+                # spondy_pct), over-flagging healthy edge-level discs. The real clinical flags live in
+                # report["flags"] (reduced_dhi, disc_bulge_present, wedge_fracture, ...) and are
+                # surfaced from there; `has_pathology_flag` is retained only to inform the caveat.
+                status = "review_only"
                 severity = None
-                flag = has_pathology_flag
+                flag = False
+                _ = has_pathology_flag
 
             demographics_used = _demographics_used(measurement_name, demographics)
 
