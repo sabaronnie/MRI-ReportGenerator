@@ -22,6 +22,8 @@ spec:
       containers:
         - name: seg-tss
           image: ${ECR_REGISTRY}/mri-seg-tss:${IMAGE_TAG}
+          # Override the image's baked gunicorn timeout (1800s): CPU TotalSpineSeg can exceed 30 min.
+          command: ["gunicorn","-b","0.0.0.0:8083","-w","1","--timeout","5400","services.segmentation.app:app"]
           ports: [{ containerPort: 8083 }]
           readinessProbe: { httpGet: { path: /healthz, port: 8083 }, initialDelaySeconds: 20, periodSeconds: 15 }
           resources:
@@ -47,6 +49,7 @@ spec:
       containers:
         - name: seg-sct
           image: ${ECR_REGISTRY}/mri-seg-sct:${IMAGE_TAG}
+          command: ["gunicorn","-b","0.0.0.0:8084","-w","1","--timeout","5400","services.segmentation.sct_app:app"]
           ports: [{ containerPort: 8084 }]
           readinessProbe: { httpGet: { path: /healthz, port: 8084 }, initialDelaySeconds: 20, periodSeconds: 15 }
           resources:
@@ -72,6 +75,7 @@ spec:
       containers:
         - name: seg-spineps
           image: ${ECR_REGISTRY}/mri-seg-spineps:${IMAGE_TAG}
+          command: ["gunicorn","-b","0.0.0.0:8085","-w","1","--timeout","5400","services.segmentation.spineps_app:app"]
           ports: [{ containerPort: 8085 }]
           readinessProbe: { httpGet: { path: /healthz, port: 8085 }, initialDelaySeconds: 20, periodSeconds: 15 }
           resources:

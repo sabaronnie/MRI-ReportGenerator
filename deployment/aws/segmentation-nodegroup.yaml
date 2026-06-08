@@ -13,9 +13,11 @@ metadata:
   region: eu-north-1
 
 managedNodeGroups:
-  # --- CPU (deployable today; ~8 vCPU / 16 GB fits nnUNet's memory) ---
+  # --- CPU (deployable today; m5.2xlarge = 8 vCPU / 32 GB. Memory-optimized over c5.2xlarge's 16 GB so
+  # all 3 seg pods (requests 6+4+6=16Gi) schedule AND run concurrent ML inference without OOM. Same
+  # 8 vCPU → same "Running On-Demand Standard" quota cost as c5. ~$0.45/hr while up.) ---
   - name: ng-seg-cpu
-    instanceType: c5.2xlarge
+    instanceType: m5.2xlarge
     desiredCapacity: 1
     minSize: 0
     maxSize: 2
