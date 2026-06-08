@@ -65,18 +65,33 @@ class InterpretedMeasurement:
         return asdict(self)
 
 
+# Measurements whose cited normative comparison is age/sex-dependent. The note records HOW the
+# demographic refines the reading; only `dural_sac_AP_min` currently changes the in-catalog band
+# (sex-specific cut, Nell 2019 M10/F9). The rest carry the demographic for the report / external
+# (SCT PAM50) normalisation. No cervical norm normalises by height -> height is record-only.
+_DEMOGRAPHIC_MEASUREMENTS = {
+    "dural_sac_AP_min": "sex-adjusted stenosis cut applied (Nell 2019, M<10/F<9 mm)",
+    "cord_AP": "age/sex norm via SCT PAM50 (Valosek 2024, external)",
+    "SAC": "compare to age/sex percentiles (Nell 2019)",
+    "AP_width": "compare to age/sex percentiles (Nell 2019)",
+}
+
+
 def build_interpreted_measurements(
     report: dict[str, Any],
     measurement_sources: dict[str, str],
     flag_sources: dict[str, str],
+    demographics: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     """Wrap numeric measurement outputs in the standard interpretation container.
 
-    This is a Phase 4 scaffold, not the final threshold engine. Values with a
-    known non-quality pathology flag are marked `outside_reference`; everything
-    else remains `review_only` until a measurement-specific threshold rule is
-    implemented.
+    Catalogued measurements (in `thresholds.THRESHOLDS`) get status/severity/flag from the cited
+    threshold catalog via `classify`, sex-adjusted where a cited sex-specific cut exists; others
+    fall back to the flag-only heuristic. `demographics` ({age, sex, height_cm}) is recorded per
+    measurement in `demographics_used` where its cited norm is age/sex-dependent.
     """
+    demographics = demographics or {}
+    sex = demographics.get("sex")
     components = report.get("components", {})
     flags = report.get("flags", {})
     interpreted: list[dict[str, Any]] = []
@@ -108,12 +123,14 @@ def build_interpreted_measurements(
             # measurement by the report. Measurements not yet in the catalog fall back to the
             # prior flag-only heuristic.
             if measurement_name in THRESHOLDS:
-                ev = classify(measurement_name, raw_value)
+                ev = classify(measurement_name, raw_value, sex=sex)
                 status, severity, flag = ev.status, ev.severity, ev.flag
             else:
                 status = "outside_reference" if has_pathology_flag else "review_only"
                 severity = None
                 flag = has_pathology_flag
+
+            demographics_used = _demographics_used(measurement_name, demographics)
 
             interpreted.append(
                 InterpretedMeasurement(
@@ -124,7 +141,7 @@ def build_interpreted_measurements(
                     status=status,
                     severity=severity,
                     flag=flag,
-                    demographics_used={},
+                    demographics_used=demographics_used,
                     quality_flags=quality_flags,
                     caveat=caveat,
                 ).to_dict()
@@ -276,6 +293,18 @@ def _extract_caveat(metadata: dict[str, Any]) -> str | None:
         if key.endswith("_caveat") and isinstance(value, str) and value.strip():
             return value.strip()
     return None
+
+
+def _demographics_used(measurement_name: str, demographics: dict[str, Any]) -> dict[str, Any]:
+    """Demographics that refine this measurement's reading (empty if none apply / none provided)."""
+    note = _DEMOGRAPHIC_MEASUREMENTS.get(measurement_name)
+    if note is None:
+        return {}
+    used = {k: demographics[k] for k in ("age", "sex") if demographics.get(k) is not None}
+    if not used:
+        return {}
+    used["applies"] = note
+    return used
 
 
 def _infer_unit(measurement_name: str) -> str:

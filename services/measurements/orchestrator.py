@@ -112,11 +112,13 @@ def run_all(ctx: MeasurementContext, enabled: list[str] | None = None) -> dict[s
                 "duration_s": elapsed,
                 "error": str(e),
             }
+    report["patient"] = {"age": ctx.age, "sex": ctx.sex, "height_cm": ctx.height_cm}
     report["interpretations"] = {
         "measurements": build_interpreted_measurements(
             report,
             measurement_sources=measurement_sources,
             flag_sources=flag_sources,
+            demographics={"age": ctx.age, "sex": ctx.sex, "height_cm": ctx.height_cm},
         )
     }
     return report

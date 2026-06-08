@@ -58,6 +58,12 @@ class MeasurementContext:
     seg_vert_data: np.ndarray | None = None
     seg_vert_axcodes: tuple | None = None
     seg_vert_zooms: tuple | None = None
+    # Patient demographics captured at input (alongside the MRI). age + sex feed the
+    # age/sex-dependent interpretation norms (Nell 2019 canal/SAC, PAM50 cord); height is
+    # captured for the record but no cervical threshold normalizes by it (no cited norm yet).
+    age: float | None = None
+    sex: str | None = None
+    height_cm: float | None = None
     manifest: dict = field(default_factory=dict)
 
 
@@ -188,6 +194,9 @@ def load_context(
     sct_canal_seg_path: Path | str | None = None,
     sct_cord_seg_path: Path | str | None = None,
     spineps_seg_path: Path | str | None = None,
+    age: float | None = None,
+    sex: str | None = None,
+    height_cm: float | None = None,
     source_spacing_mm: Any = None,
 ) -> MeasurementContext:
     """Load a TotalSpineSeg step2_output (and optionally the raw MRI) into a measurement context.
@@ -251,6 +260,9 @@ def load_context(
         seg_vert_data=seg_vert_data,
         seg_vert_axcodes=seg_vert_axcodes,
         seg_vert_zooms=seg_vert_zooms,
+        age=age,
+        sex=sex,
+        height_cm=height_cm,
         manifest={
             "seg_shape": list(seg_data.shape),
             "voxel_spacing_mm": list(spacing),

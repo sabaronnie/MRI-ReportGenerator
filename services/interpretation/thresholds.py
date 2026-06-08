@@ -485,18 +485,50 @@ THRESHOLDS: dict[str, ThresholdSpec] = {
 }
 
 
-def classify(key: str, value: float) -> ThresholdEval:
+# Sex-specific dural-sac stenosis cut (Nell 2019 PMC6764695: M < 10 mm, F < 9 mm). Applied only
+# when a patient sex is supplied; otherwise the sex-neutral 10 mm cut (spec.bands) is used.
+_DURAL_STENOSIS_CUT_BY_SEX = {"M": 10.0, "F": 9.0}
+
+
+def _norm_sex(sex: str | None) -> str | None:
+    if not sex:
+        return None
+    s = str(sex).strip().lower()
+    if s in ("m", "male"):
+        return "M"
+    if s in ("f", "female"):
+        return "F"
+    return None
+
+
+def _bands_for(key: str, spec: "ThresholdSpec", sex: str | None) -> "tuple[Band, ...] | None":
+    """The catalog bands, sex-adjusted where a cited sex-specific cut exists (dural sac)."""
+    s = _norm_sex(sex)
+    if key == "dural_sac_AP_min" and spec.bands and s in _DURAL_STENOSIS_CUT_BY_SEX:
+        cut = _DURAL_STENOSIS_CUT_BY_SEX[s]
+        return (
+            Band("normal", _DURAL_NORMAL_CUT, None, "within"),
+            Band("borderline", cut, _DURAL_NORMAL_CUT, "within"),
+            Band("stenosis", None, cut, "outside"),
+        )
+    return spec.bands
+
+
+def classify(key: str, value: float, sex: str | None = None) -> ThresholdEval:
     """Interpret a measurement value against the catalog.
 
     Returns a ThresholdEval with the standardized `status`, the per-measurement
     `severity` label, the boolean clinical `flag`, and the locked `citation` + caveat.
+    `sex` ('M'/'F'/'male'/'female') applies the cited sex-specific cut where one exists
+    (currently the dural-sac stenosis threshold, Nell 2019 M10/F9); ignored otherwise.
     Raises KeyError for an unknown key (the caller decides how to handle measurements
     not yet in the catalog).
     """
     spec = THRESHOLDS[key]
     value = float(value)
-    if spec.bands:
-        for band in spec.bands:
+    bands = _bands_for(key, spec, sex)
+    if bands:
+        for band in bands:
             if band.contains(value):
                 return ThresholdEval(
                     measurement=key,
