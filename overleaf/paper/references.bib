@@ -1,6 +1,11 @@
 % References. Identifiers (PMID/DOI/PMC) are taken from the project's verified-research notes.
 % Where an exact author list was not independently confirmed, a conservative @misc form is used
 % rather than risk a fabricated author string (automated search is known to hallucinate authors).
+%
+% 2026-06-09 verification pass: spineps, mmcsd, duke2025, zhang2025 confirmed against
+% Crossref / arXiv (authors + titles + venues corrected; zhang2025 title was wrong).
+% Entries marked "% FLAG" below still have an incomplete/unconfirmed author list and
+% should be verified before submission — left conservative, NOT guessed.
 
 @article{genant1993,
   author = {Genant, Harry K. and Wu, Chun Y. and van Kuijk, Cornelis and Nevitt, Michael C.},
@@ -16,6 +21,7 @@
   year = {2008}, volume = {21}, number = {4}, pages = {288--292}, note = {PMID 18525490}
 }
 
+% FLAG: author list + exact title/venue unverified (PMC6764695). Verify before submission.
 @article{nell2019,
   title = {Reference values for the cervical spinal canal and vertebral body dimensions on MRI (SHIP cohort)},
   journal = {(population normative study)}, year = {2019}, note = {PMC6764695}
@@ -27,35 +33,41 @@
   year = {2024}, howpublished = {Spinal Cord Toolbox normative database}
 }
 
+% FLAG: author list unverified (PMC12744292). Verify before submission.
 @article{nassj2025,
   title = {Asymptomatic cervical sagittal alignment: C2--C7 lordosis normative values},
   journal = {North American Spine Society Journal (NASSJ)}, year = {2025}, note = {PMC12744292}
 }
 
+% FLAG: author list incomplete ("and others"); confirm full authors (PMC3476578) before submission.
 @article{tan2004,
   author = {Tan, S. H. and others},
   title = {Quantitative three-dimensional anatomy of cervical vertebrae},
   journal = {European Spine Journal}, year = {2004}, note = {PMC3476578}
 }
 
+% FLAG: author list incomplete ("and others"); confirm full authors (PMC3393857) before submission.
 @article{lee2012,
   author = {Lee, H. M. and others},
   title = {Morphometric study of the cervical vertebral bodies},
   journal = {(anatomical study)}, year = {2012}, note = {PMC3393857}
 }
 
+% FLAG: author list malformed/unverified and no stable identifier. Verify or drop before submission.
 @article{kaur2025,
   author = {Kaur, and others},
   title = {Cervical vertebral body morphometry (cadaveric)},
   journal = {Journal of Human Anatomy}, year = {2025}
 }
 
+% FLAG: author list incomplete ("and others"); confirm full authors (PMC3859485) before submission.
 @article{chen2013,
   author = {Chen, and others},
   title = {Morphology of the cervical vertebral endplates: concavity and slope},
   journal = {PLoS ONE}, year = {2013}, note = {PMC3859485}
 }
 
+% FLAG: author list incomplete ("and others"); confirm full authors (PMC10685593) before submission.
 @article{wang2023,
   author = {Wang, and others},
   title = {Endplate-line fitting versus four-corner extrema for cervical Cobb measurement on CT},
@@ -63,9 +75,11 @@
 }
 
 @article{zhang2025,
-  author = {Zhang, and others},
-  title = {Automated cervical sagittal Cobb measurement on T2 MRI with an endplate-line network (PG-nnU-Net)},
-  journal = {arXiv preprint arXiv:2503.06114}, year = {2025}, note = {ICC 0.94 / MAE 2.44 deg}
+  author = {Zhang, Qi and Chen, Xiuyuan and He, Ziyi and Wu, Lianming and Wang, Kun and
+            Sun, Jianqi and Shen, Hongxing},
+  title = {Pathology-Guided {AI} System for Accurate Segmentation and Diagnosis of Cervical Spondylosis},
+  journal = {arXiv preprint arXiv:2503.06114}, year = {2025},
+  note = {automated C2--C7 Cobb on MRI; cervical Cobb MAE 2.44 deg per project verified-research note (cervical_cobb_gt_data)}
 }
 
 @article{nakashima2015,
@@ -74,12 +88,14 @@
   journal = {Spine}, year = {2015}, note = {PMID 25584950}
 }
 
+% FLAG: author list malformed/unverified and no stable identifier. Verify before submission.
 @article{suzuki2018,
   author = {Suzuki, and others},
   title = {Cervical disc height reduction criteria},
   journal = {(degeneration grading study)}, year = {2018}
 }
 
+% FLAG: author list incomplete ("and others"); confirm full authors (PMID 32591548) before submission.
 @article{murakami2020,
   author = {Murakami, and others},
   title = {Degenerative cervical spondylolisthesis on imaging},
@@ -98,10 +114,16 @@
   year = {2024}, howpublished = {\url{https://github.com/neuropoly/totalspineseg}}, note = {LGPLv3}
 }
 
-@misc{spineps,
-  author = {M{\"o}ller, Hendrik and Graf, Robert and others},
-  title = {{SPINEPS}: semantic and instance segmentation of the spine with endplate prediction},
-  year = {2024}, howpublished = {arXiv:2402.16368}
+@article{spineps,
+  author = {M{\"o}ller, Hendrik and Graf, Robert and Schmitt, Joachim and Keinert, Benjamin and
+            Sch{\"o}n, Hanna and Atad, Matan and Sekuboyina, Anjany and Streckenbach, Felix and
+            Kofler, Florian and Kroencke, Thomas and Bette, Stefanie and Willich, Stefan N. and
+            Keil, Thomas and Niendorf, Thoralf and Pischon, Tobias and Endemann, Beate and
+            Menze, Bjoern and Rueckert, Daniel and Kirschke, Jan S.},
+  title = {{SPINEPS}---automatic whole spine segmentation of {T2}-weighted {MR} images using a
+           two-phase approach to multi-class semantic and instance segmentation},
+  journal = {European Radiology}, year = {2025}, volume = {35}, number = {3}, pages = {1178--1189},
+  note = {doi:10.1007/s00330-024-11155-y; arXiv:2402.16368}
 }
 
 @article{sciseg2024,
@@ -117,13 +139,19 @@
 }
 
 @article{mmcsd,
-  author = {Yu, and others},
-  title = {A multimodal dataset of cervical spondylosis (CSM/CSR) with paired imaging and clinical data},
-  journal = {Scientific Data}, year = {2025}, note = {doi:10.1038/s41597-025-05403-z; Synapse syn63903115}
+  author = {Yu, Qi-Shuai and Shan, Jing-Yang and Ma, Jie and Gao, Gan and Tao, Ben-Zhang and
+            Qiao, Guang-Yu and Zhang, Jian-Ning and Wang, Ting and Zhao, Yong-Fei and
+            Qin, Xiao-Lin and Yin, Yi-Heng},
+  title = {Multi-modal and Multi-view Cervical Spondylosis Imaging Dataset},
+  journal = {Scientific Data}, year = {2025}, volume = {12}, pages = {1080},
+  note = {doi:10.1038/s41597-025-05403-z; Synapse syn63903115}
 }
 
 @article{duke2025,
-  author = {Zhou, and others},
-  title = {Duke {CSpineSeg}: an expert-annotated cervical spine {MRI} segmentation dataset},
-  journal = {Scientific Data}, year = {2025}, note = {doi:10.1038/s41597-025-05975-w}
+  author = {Zhou, Longfei and Wiggins, Walter and Zhang, Jikai and Colglazier, Roy and
+            Willhite, Jay and Dixon, Austin and Malinzak, Michael and Gu, Hanxue and
+            Mazurowski, Maciej A. and Calabrese, Evan},
+  title = {The {Duke} University Cervical Spine {MRI} Segmentation Dataset ({CSpineSeg})},
+  journal = {Scientific Data}, year = {2025}, volume = {12}, pages = {1695},
+  note = {doi:10.1038/s41597-025-05975-w}
 }
