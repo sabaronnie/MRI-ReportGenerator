@@ -45,6 +45,10 @@ def _advance(case: dict) -> None:
     start = _sim_start.get(cid)
     if start is None:
         return
+    # Once reviewed/signed, the case has left the processing lifecycle — don't let the
+    # simulated clock revert its status back to "ready".
+    if case["case"].get("status") == "reviewed":
+        return
     frac = min(1.0, (time.monotonic() - start) / max(0.1, config.SIM_TOTAL_S))
     stage = "ready"
     for name, upper in _SIM_STEPS:
