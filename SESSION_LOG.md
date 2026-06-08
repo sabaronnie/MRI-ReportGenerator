@@ -11,6 +11,33 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-08 — Andrew (executor: G1/G2/G4 service fixes + 49-case G2 validation + T1 write-up)
+
+**Branches:** `feat/validation/run1-results` (fixes + validation), `research/andrew/writeups` (T1 doc). All UNPUSHED.
+
+**What was done:**
+- Andrew took over all teammate group code (no more PR-to-Ronnie/Mohammad). Applied 4 service fixes,
+  each tested on real healthy+unhealthy masks (137 tests green), committed separately: G1 tilt cut
+  20→45° (over-flagged 88% healthy→0%), G1 heights via endplate-line fit (Ha/Hp 1.08→0.93, was
+  backwards), G2 bulge reference from endplate corners (healthy over-flag 60→8%), G4 SPINEPS C1 Cobb
+  plumbed into context (prefers C1, falls back to canal-cut).
+- G2 within-MMCSD validation on the new 49-case TSS batch (level-stratified): signal + bulge are
+  NEGATIVES (AUC ~0.50); disc/VB AP ratio discriminates (AUC 0.62, p=0.0018). Combined score gave no
+  gain over the single metric → kept simple. Journal J19–J23.
+- G1 local validations (tilt recal, AP/height precision, 0.8-vs-4mm robustness). Wrote T1 deliverable
+  `docs/ai-depth.md` (AI depth / non-triviality, fully cited).
+
+**Files changed:** services/measurements/geometric/{cervical_body_morphometry,disc_ap_bulge,c3c7_cobb_angle}.py,
+services/measurements/context.py, DEVELOPMENT_JOURNEY.md (J19–J23), docs/validation/group-status-2026-06-08.md,
+docs/ai-depth.md, research/group5/{run_g1_local_validations,run_g2_within_mmcsd,run_g2_combined_score,test_service_g1_g2}.py.
+
+**Pending / next action:** G4 needs RUN 2 — SPINEPS on the same 49 (Colab running now,
+`RUN_B_g2_spineps.ipynb`); when masks land, re-run C1 Cobb (12 healthy vs ~49 unhealthy), expect p<0.05.
+Then write-ups P2 (needs a baseline-numbers research workflow: radiologist time + inter-observer
+variability) and P4. Nothing pushed — confirm-before-push standing rule.
+
+---
+
 ## 2026-06-08 — Andrew (FULL VALIDATION pass on real cohort + paper start; autonomous run)
 
 **Branch:** `feat/validation/run1-results` (off the fixture-fix branch; committed, NOT pushed)
