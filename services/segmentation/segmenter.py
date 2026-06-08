@@ -53,7 +53,10 @@ def run_totalspineseg(
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # input/output are positional in the upstream CLI; --iso enables 1mm-isotropic resampling.
-    cmd = ["totalspineseg", str(nifti_path), str(out_dir)]
+    # --no-stalling uses the 'forkserver' multiprocessing start method to avoid the deadlock that
+    # otherwise hangs export/preview in a container with a small /dev/shm (the pod also mounts a
+    # larger /dev/shm). Without it, CPU runs stall indefinitely at "Generating preview images".
+    cmd = ["totalspineseg", str(nifti_path), str(out_dir), "--no-stalling"]
     if iso:
         cmd.append("--iso")
 

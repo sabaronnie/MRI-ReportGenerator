@@ -1,12 +1,18 @@
 # The 3 segmentation engine services (internal ClusterIP). They land on the tainted segmentation node
 # group (deployment/aws/segmentation-nodegroup.yaml). The EEP fans out to them in parallel.
 #
+# CPU notes (no GPU quota yet):
+# - Each pod mounts a real /dev/shm (emptyDir Memory) — the default 64Mi shm deadlocks torch/nnUNet
+#   multiprocessing (TSS hangs at export/preview; SPINEPS stalls). TSS also runs with --no-stalling.
+# - Memory limits are generous (CPU inference uses far more RAM than GPU — SPINEPS OOMKilled at 12Gi).
+#   Requests stay small so all 3 schedule on one m5.2xlarge (32Gi); for the CPU pre-segmentation the
+#   engines are driven sequentially so only one bursts to its limit at a time.
+#
 # GPU: once the g4dn node group is up, uncomment the `nvidia.com/gpu: 1` limit on each (1 GPU per pod;
 # g4dn.xlarge = 1 GPU, so 3 GPU pods need 3 nodes — set the node group desiredCapacity: 3, which fits
-# the 16-vCPU quota at 3× g4dn.xlarge = 12 vCPU). On CPU, drop the GPU limit (works, ~35 min/case TSS).
+# the 16-vCPU quota at 3× g4dn.xlarge = 12 vCPU). On GPU, memory pressure disappears.
 #
-# Apply (rendered): envsubst over ${ECR_REGISTRY} ${IMAGE_TAG} then kubectl apply (the deploy scripts'
-# apply_template helper does this).
+# Apply (rendered): envsubst over ${ECR_REGISTRY} ${IMAGE_TAG} then kubectl apply.
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -19,16 +25,20 @@ spec:
     spec:
       nodeSelector: { workload: segmentation }
       tolerations: [{ key: workload, value: "segmentation", effect: NoSchedule }]
+      volumes:
+        - name: dshm
+          emptyDir: { medium: Memory, sizeLimit: 6Gi }
       containers:
         - name: seg-tss
           image: ${ECR_REGISTRY}/mri-seg-tss:${IMAGE_TAG}
           # Override the image's baked gunicorn timeout (1800s): CPU TotalSpineSeg can exceed 30 min.
           command: ["gunicorn","-b","0.0.0.0:8083","-w","1","--timeout","5400","services.segmentation.app:app"]
           ports: [{ containerPort: 8083 }]
+          volumeMounts: [{ name: dshm, mountPath: /dev/shm }]
           readinessProbe: { httpGet: { path: /healthz, port: 8083 }, initialDelaySeconds: 20, periodSeconds: 15 }
           resources:
-            requests: { cpu: "1", memory: "6Gi" }
-            limits:   { cpu: "4", memory: "12Gi" }   # , nvidia.com/gpu: 1   # <- uncomment on GPU
+            requests: { cpu: "1", memory: "2Gi" }
+            limits:   { cpu: "7", memory: "28Gi" }   # , nvidia.com/gpu: 1   # <- uncomment on GPU
 ---
 apiVersion: v1
 kind: Service
@@ -46,15 +56,19 @@ spec:
     spec:
       nodeSelector: { workload: segmentation }
       tolerations: [{ key: workload, value: "segmentation", effect: NoSchedule }]
+      volumes:
+        - name: dshm
+          emptyDir: { medium: Memory, sizeLimit: 4Gi }
       containers:
         - name: seg-sct
           image: ${ECR_REGISTRY}/mri-seg-sct:${IMAGE_TAG}
           command: ["gunicorn","-b","0.0.0.0:8084","-w","1","--timeout","5400","services.segmentation.sct_app:app"]
           ports: [{ containerPort: 8084 }]
+          volumeMounts: [{ name: dshm, mountPath: /dev/shm }]
           readinessProbe: { httpGet: { path: /healthz, port: 8084 }, initialDelaySeconds: 20, periodSeconds: 15 }
           resources:
-            requests: { cpu: "1", memory: "4Gi" }
-            limits:   { cpu: "4", memory: "8Gi" }    # , nvidia.com/gpu: 1   # <- uncomment on GPU
+            requests: { cpu: "1", memory: "2Gi" }
+            limits:   { cpu: "6", memory: "12Gi" }   # , nvidia.com/gpu: 1   # <- uncomment on GPU
 ---
 apiVersion: v1
 kind: Service
@@ -72,15 +86,19 @@ spec:
     spec:
       nodeSelector: { workload: segmentation }
       tolerations: [{ key: workload, value: "segmentation", effect: NoSchedule }]
+      volumes:
+        - name: dshm
+          emptyDir: { medium: Memory, sizeLimit: 6Gi }
       containers:
         - name: seg-spineps
           image: ${ECR_REGISTRY}/mri-seg-spineps:${IMAGE_TAG}
           command: ["gunicorn","-b","0.0.0.0:8085","-w","1","--timeout","5400","services.segmentation.spineps_app:app"]
           ports: [{ containerPort: 8085 }]
+          volumeMounts: [{ name: dshm, mountPath: /dev/shm }]
           readinessProbe: { httpGet: { path: /healthz, port: 8085 }, initialDelaySeconds: 20, periodSeconds: 15 }
           resources:
-            requests: { cpu: "1", memory: "6Gi" }
-            limits:   { cpu: "4", memory: "12Gi" }   # , nvidia.com/gpu: 1   # <- uncomment on GPU
+            requests: { cpu: "1", memory: "2Gi" }
+            limits:   { cpu: "7", memory: "28Gi" }   # , nvidia.com/gpu: 1   # <- uncomment on GPU
 ---
 apiVersion: v1
 kind: Service
