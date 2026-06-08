@@ -2,14 +2,16 @@ import { buttonVariants } from "@/components/ui/button";
 import { TriageBadge } from "@/components/worklist/triage-badge";
 import { StatusPill } from "@/components/worklist/status-pill";
 import type { CaseEnvelope } from "@/lib/api/contract";
+import { getReportHtmlUrl } from "@/lib/api/client";
 import { SignOffButton } from "./sign-off-button";
-import { BadgeCheck } from "lucide-react";
+import { BadgeCheck, FileText } from "lucide-react";
 
 export function CaseHeader({ data, canSign }: { data: CaseEnvelope; canSign: boolean }) {
   const { case: c, report } = data;
   const meta = report.metadata;
   const exports = report.exports;
   const signed = meta?.status === "signed";
+  const reportUrl = getReportHtmlUrl(c.case_id);
   return (
     <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-5">
       <div>
@@ -31,6 +33,17 @@ export function CaseHeader({ data, canSign }: { data: CaseEnvelope; canSign: boo
         </div>
       </div>
       <div className="flex items-center gap-2">
+        {reportUrl ? (
+          <a
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+            href={reportUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            View report
+          </a>
+        ) : null}
         {exports?.pdf_url ? (
           <a className={buttonVariants({ variant: "outline", size: "sm" })} href={exports.pdf_url}>
             PDF

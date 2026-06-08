@@ -154,3 +154,10 @@ export function getViewerSources(id: string): { volumeUrl: string; maskUrl?: str
     maskUrl: `${EEP_URL}/cases/${encodeURIComponent(id)}/mask?type=tss`,
   };
 }
+
+/** URL of the rendered clinical report (reporting IEP). Live only — the mock
+ * backend has no HTML report endpoint, so returns null there. */
+export function getReportHtmlUrl(id: string): string | null {
+  if (MODE === "mock" || !EEP_URL) return null;
+  return `${EEP_URL}/cases/${encodeURIComponent(id)}/report.html`;
+}
