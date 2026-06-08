@@ -11,6 +11,34 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-08 (cont.) — Andrew (LIVE ON AWS — EKS deploy end-to-end, GT1+GT2 met)
+
+**Branch:** `feat/eep/scaffold` (+ `feat/frontend/scaffold`) — both pushed.
+
+**What was done:**
+- **Deployed the whole system to AWS EKS** (region eu-north-1/Stockholm). Account `658132201414`, IAM
+  user `mri-deploy`, creds in `~/.aws/` (never in git). `$20/mo` budget alert set.
+- **Public + verified end-to-end** (Playwright on the deployed URLs, 0 console errors): login →
+  worklist (server-rendered from the live EEP) → case report (real findings) → NiiVue viewer fetching
+  `/volume`+`/mask` from the public EEP across CORS → 200. `measurements_ready:true` in-cluster (EEP→IEP
+  orchestration works in the cloud). Screenshot `../aws-deployed-case.png`.
+- **Rubric: GT2 (public AWS API) MET; GT1 (deployed e2e) MET.** Cluster = 2× t3.medium; pods:
+  measurements (ClusterIP), 2× eep (LB), frontend (LB). Sample NIfTI pulled from S3 by an EEP
+  initContainer (no data in images).
+- IaC committed earlier this session: `deployment/aws/` (eksctl + 3-phase scripts + teardown) +
+  `deployment/k8s/` + `docs/deployment.md`. Frontend Dockerfile takes NEXT_PUBLIC_* build args.
+
+**Current LIVE URLs (EPHEMERAL — ELB hostnames change on every redeploy):**
+- Frontend: `http://a359d7957b43847a69ba05ef7b9fad98-1651813190.eu-north-1.elb.amazonaws.com`
+- EEP API: `http://a08443535da2a4ee5856aeb58f0ae7f7-167484581.eu-north-1.elb.amazonaws.com` (`/docs`, `/healthz`, `/metrics`)
+
+**Pending / next action:** decide teardown (`deployment/aws/teardown.sh` to stop the ~$170/mo burn —
+covered by signup credits regardless) vs leave up for demo. Re-deploy any time: `01`→`02`→`03` (~25 min,
+URLs will differ). NEXT rubric items: wire reporting as 2nd IEP (GT3/T3/T4), Prometheus+Grafana on the
+already-exposed `/metrics`, EEP/integration/e2e tests, GitHub Actions CI. Full map in `docs/RUBRIC_TRACKER.md`.
+
+---
+
 ## 2026-06-08 — Andrew (container stack up + REAL EEP↔measurements orchestration + frontend LIVE e2e)
 
 **Branch:** `feat/eep/scaffold` (+ `feat/frontend/scaffold`) — both pushed.
