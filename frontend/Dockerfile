@@ -6,7 +6,14 @@ RUN npm ci
 
 FROM node:22-slim AS build
 WORKDIR /app
-ENV NEXT_TELEMETRY_DISABLED=1
+# NEXT_PUBLIC_* are inlined at build time, so the API mode + EEP URL must be baked here.
+# Default to mock so a plain `docker build` still produces a self-contained image; the AWS
+# deploy passes --build-arg NEXT_PUBLIC_API_MODE=live + the EEP's public URL.
+ARG NEXT_PUBLIC_API_MODE=mock
+ARG NEXT_PUBLIC_EEP_URL=
+ENV NEXT_TELEMETRY_DISABLED=1 \
+    NEXT_PUBLIC_API_MODE=$NEXT_PUBLIC_API_MODE \
+    NEXT_PUBLIC_EEP_URL=$NEXT_PUBLIC_EEP_URL
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
