@@ -1,0 +1,67 @@
+\section{System Architecture}
+\label{sec:arch}
+
+\subsection{Pipeline overview}
+The system is structured as an external entry-point (EEP) orchestrating internal processing services
+(IEPs), each a containerized stage. Figure~\ref{fig:pipeline} shows the flow.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  node distance=8mm and 12mm,
+  stage/.style={rectangle, rounded corners, draw=black, very thick, fill=blue!8,
+                minimum width=30mm, minimum height=11mm, align=center, font=\small},
+  io/.style={rectangle, draw=black, thick, fill=gray!10, minimum height=10mm, align=center, font=\small},
+  arr/.style={-{Stealth[length=2.5mm]}, very thick}]
+  \node[io] (in) {Sagittal T2 MRI\\(DICOM / NIfTI)};
+  \node[stage, right=of in] (seg) {Segmentation\\\scriptsize TSS + SCT + SPINEPS};
+  \node[stage, right=of seg] (meas) {Measurements\\\scriptsize Groups 1--5};
+  \node[stage, below=of meas] (interp) {Interpretation\\\scriptsize cited thresholds};
+  \node[stage, left=of interp] (rep) {Reporting\\\scriptsize per-level findings};
+  \node[io, left=of rep] (out) {Structured report\\(flagged for review)};
+  \draw[arr] (in) -- (seg);
+  \draw[arr] (seg) -- (meas);
+  \draw[arr] (meas) -- (interp);
+  \draw[arr] (interp) -- (rep);
+  \draw[arr] (rep) -- (out);
+\end{tikzpicture}
+\caption{End-to-end pipeline. Segmentation delegates to three engines; measurements are organized into
+five groups; interpretation classifies each measurement against a cited-threshold catalog; reporting
+emits per-level findings flagged for physician review.}
+\label{fig:pipeline}
+\end{figure}
+
+\subsection{Services}
+\begin{itemize}[leftmargin=*]
+  \item \texttt{services/segmentation/} --- TotalSpineSeg wrapper (vertebra/disc, \texttt{--iso}) and a
+  separated Spinal Cord Toolbox path (canal/cord). SPINEPS runs in its own environment due to a
+  numpy pin (\texttt{numpy==2.0.2}) that conflicts with the TSS stack.
+  \item \texttt{services/measurements/} --- the measurement runtime. \texttt{geometric/} holds Groups
+  1, 2, and 4 (vertebral morphometry, disc, alignment) plus vendored validated geometry
+  (\texttt{\_vertebral\_geometry.py}, \texttt{\_endplate\_cobb.py}); \texttt{cord/} holds Group 3
+  (canal/cord/SAC via SCT); \texttt{signal/} holds disc signal grading; \texttt{group5/} holds the
+  signal/shape screens; \texttt{orchestrator.py} runs the registered components in dependency order with
+  Prometheus instrumentation.
+  \item \texttt{services/interpretation/} --- the cited-threshold catalog (\texttt{thresholds.py}) and
+  the interpretation engine (\texttt{interpretation.py}).
+  \item \texttt{services/reporting/} --- report assembly and rendering; \texttt{services/eep/} --- the
+  public API entry point.
+\end{itemize}
+
+\subsection{The MeasurementContext and canonical orientation}
+A per-case \texttt{MeasurementContext} loads the segmentation once, reorients it to canonical RAS (so
+downstream code can rely on axis~0 $=$ left$\rightarrow$right, axis~1 $=$
+posterior$\rightarrow$anterior, axis~2 $=$ inferior$\rightarrow$superior), enforces a
+\SI{1}{\milli\meter} isotropic measurement grid, and records a resolution-quality flag that warns when
+the acquisition slice thickness was coarse (typical cervical T2 is \SIrange{3}{4}{\milli\meter}
+through-plane, so the \SI{1}{\milli\meter} grid is interpolated, not real detail). This canonical
+context is the input contract for every measurement component.
+
+\subsection{Output data contract}
+Each component returns a standard \texttt{ComponentResult} (\texttt{measurements}, \texttt{flags},
+\texttt{intermediate}, \texttt{metadata}). The orchestrator flattens these into
+\texttt{\{components, measurements, flags, interpretations\}}, and the interpretation layer wraps each
+(measurement $\times$ level) into a container carrying \texttt{status} (\texttt{within\_reference} /
+\texttt{outside\_reference} / \texttt{review\_only} / \texttt{not\_interpretable}), a per-measurement
+\texttt{severity}, a boolean clinical \texttt{flag}, the cited \texttt{caveat}, and any quality flags.
+This contract is frozen as v0.1 and is the coupling point to the frontend and deployment layers.

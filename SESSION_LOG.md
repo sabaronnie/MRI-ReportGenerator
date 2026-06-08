@@ -191,6 +191,71 @@ already-exposed `/metrics`, EEP/integration/e2e tests, GitHub Actions CI. Full m
 **Files changed:** `deployment/docker/measurements.Dockerfile`, `services/eep/store.py` (eep branch); `frontend/src/lib/api/client.ts`, `frontend/src/app/upload/actions.ts` (frontend branch). Sample data staged in `deployment/compose/sample_data/` (gitignored, not committed).
 
 **Pending / next action:** GT1 demo spine works locally. **NEXT = AWS deploy (GT2)** — needs Andrew's creds + spend OK: ECR + ECS/Fargate or EKS + ALB (public URL) + replace EEP in-memory store with RDS/Postgres + Secrets Manager. Then monitoring (Prometheus/Grafana on the already-exposed /metrics), CI (GitHub Actions build/test/push), tests, docs/tradeoffs. The 3 images are built locally; `--profile fullstack` for the frontend needs `frontend/` at repo root (after feat/frontend merges). Do not start AWS until Andrew confirms.
+## 2026-06-08→09 — Andrew (executor: finalize validation + deliverables + segmentation wrappers)
+
+**Branch:** `research/andrew/writeups` (CANONICAL — has everything; pushed to origin).
+
+**What was done (big session):**
+- **Validation FINALIZED + reproduced from committed code.** G3 ✅ strong (p=0.0001); G2 ⚠️ partial
+  (disc/VB ratio AUC 0.62, signal/bulge negative); **G4 ❌ NOT a discriminator** (balanced 26 healthy vs
+  41 unhealthy: d=0.28, p=0.32 — the n=11 result was a lordosis-biased small sample, J26); G1 ✅ screen;
+  G5.1 ✅. `docs/validation/results-final-2026-06-08.md` (supersedes run-1). 138 tests green.
+- **4 service fixes + §A threshold corrections** (J22): tilt 20→45°, endplate-line heights (Ha/Hp
+  1.08→0.93), bulge endplate-corner, G4 SPINEPS C1 plumbing; SAC demoted, Torg supporting-only, 1.35mm
+  bulge cut dropped, DHI→relative. **G2 wired into orchestrator + demographics (age/sex/height, sex-adjusted
+  dural-sac)** (J25). Andrew now owns ALL group code (no PR/flag dance).
+- **Paper updated (J17–J26)** + deliverables **T1/P2/P4** (LaTeX, compile via tectonic) — all in
+  `overleaf/` (one Overleaf folder; paper moved there too).
+- **Frontend integration:** handoff written, code pushed, 2 radiologist PDF reports validated ("makes sense").
+- **Segmentation wrappers (for deploy chat):** wrapped **SPINEPS** (new `spineps_app.py`) + added **SCIseg/
+  G5.1** to the SCT wrapper. All 3 engines (TSS/SCT/SPINEPS) on this branch.
+
+**Pending / next action:** mostly DOCUMENTATION — see `handoffs/chat-handoffs/HANDOFF-EXECUTOR-2026-06-09.md`
+for the full list. Top items: C1/P3 deliverable (needs Team 14 scope), fill `positioning.md` [SCIENCE:]
+with P2 numbers, fold disc/VB-ratio norm when the research returns, branch reconciliation to main, TPTBox
+AGPL check. NO more Colab/workflows (Andrew out of budget).
+
+---
+
+## 2026-06-08 — Andrew (executor: G1/G2/G4 service fixes + 49-case G2 validation + T1 write-up)
+
+**Branches:** `feat/validation/run1-results` (fixes + validation), `research/andrew/writeups` (T1 doc). All UNPUSHED.
+
+**What was done:**
+- Andrew took over all teammate group code (no more PR-to-Ronnie/Mohammad). Applied 4 service fixes,
+  each tested on real healthy+unhealthy masks (137 tests green), committed separately: G1 tilt cut
+  20→45° (over-flagged 88% healthy→0%), G1 heights via endplate-line fit (Ha/Hp 1.08→0.93, was
+  backwards), G2 bulge reference from endplate corners (healthy over-flag 60→8%), G4 SPINEPS C1 Cobb
+  plumbed into context (prefers C1, falls back to canal-cut).
+- G2 within-MMCSD validation on the new 49-case TSS batch (level-stratified): signal + bulge are
+  NEGATIVES (AUC ~0.50); disc/VB AP ratio discriminates (AUC 0.62, p=0.0018). Combined score gave no
+  gain over the single metric → kept simple. Journal J19–J23.
+- G1 local validations (tilt recal, AP/height precision, 0.8-vs-4mm robustness). Wrote T1 deliverable
+  `docs/ai-depth.md` (AI depth / non-triviality, fully cited).
+
+**Files changed:** services/measurements/geometric/{cervical_body_morphometry,disc_ap_bulge,c3c7_cobb_angle}.py,
+services/measurements/context.py, DEVELOPMENT_JOURNEY.md (J19–J23), docs/validation/group-status-2026-06-08.md,
+docs/ai-depth.md, research/group5/{run_g1_local_validations,run_g2_within_mmcsd,run_g2_combined_score,test_service_g1_g2}.py.
+
+**Pending / next action:** G4 needs RUN 2 — SPINEPS on the same 49 (Colab running now,
+`RUN_B_g2_spineps.ipynb`); when masks land, re-run C1 Cobb (12 healthy vs ~49 unhealthy), expect p<0.05.
+Then write-ups P2 (needs a baseline-numbers research workflow: radiologist time + inter-observer
+variability) and P4. Nothing pushed — confirm-before-push standing rule.
+
+---
+
+## 2026-06-08 — Andrew (FULL VALIDATION pass on real cohort + paper start; autonomous run)
+
+**Branch:** `feat/validation/run1-results` (off the fixture-fix branch; committed, NOT pushed)
+
+**What was done (autonomous overnight pass):**
+- **Downloaded MMCSD** (Synapse syn63903115): all 250 sag-T2 + the CSM/CSR + per-level lesion labels (local, gitignored). Segmented 12 healthy + 10 unhealthy (5 CSM/5 CSR) via TSS+SCT (Colab A100) + SPINEPS.
+- **Ran the FULL validation, all groups, with Mann-Whitney stats + matplotlib figures** (`docs/validation/results-full-2026-06-08.md`, figures/): **G3 canal/SAC p=0.0001 (VALIDATED)**; G4 Cobb **C1** healthy +15.2° vs unhealthy +8.8° (directional, p=0.13); **G1 Ha/Hp correctly NULL** (spondylosis≠compression, 0 flags both); **G2 disc DHI+bulge read BACKWARDS = real bug** (DHI denominator over-measured at C2/junctions, exactly as Mohammad predicted) → documented + flagged, NOT blind-fixed (teammate code). G5 already validated.
+- Our methods needed **no fixes** (all passed/null) — validates J1–J12. Journaled **J15 + J16**.
+
+**Files changed:** `docs/validation/results-full-2026-06-08.md` + `figures/*`, `DEVELOPMENT_JOURNEY.md` (J15-16), `research/group5/run_validation_master.py` + `run_g2_disc_validation.py`. (Data/scripts in ~/dev/group5-proto.)
+
+**Pending / next action:** (1) **G2 disc fix** = the one open measurement bug — for Mohammad (root cause given). (2) Scale validation to a RANDOM MMCSD draw (current 10 were lesion-selected). (3) Compression-fracture dataset hunt (G1/G5.2 abnormal arm). (4) **Paper DRAFTED + COMMITTED** under `paper/` (branch `feat/paper/draft`): Overleaf-ready LaTeX, 18 sections + 4 appendices (per-case data, full threshold catalog, figures, data contract), matplotlib strip plots + TikZ pipeline diagram, references.bib. Compile on Overleaf with pdfLaTeX (no local LaTeX here to test-compile; structure verified, all 23 \input resolve). (5) Branches committed not pushed (confirm-before-push): feat/contract, feat/measurements/fix-fracture-screen-fixture, feat/docs/validation-rationale, feat/chore/gitignore-medical-data, feat/colab/spineps-unhealthy-batch, feat/validation/run1-results.
 
 ---
 

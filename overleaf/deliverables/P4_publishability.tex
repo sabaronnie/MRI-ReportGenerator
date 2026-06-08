@@ -1,0 +1,136 @@
+% =====================================================================
+% Rubric Deliverable P4 — Value / Publishability
+% MRI-ReportGenerator (EECE503N). Self-contained; compile with pdfLaTeX.
+% =====================================================================
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{textcomp}
+\usepackage[hidelinks]{hyperref}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\setlist{nosep, leftmargin=1.4em}
+\sloppy
+
+\title{\textbf{Value \& Publishability}\\[2pt]
+\large Rubric Deliverable P4 --- MRI-ReportGenerator (Cervical Spine MRI Analysis)}
+\author{EECE503N Final Project}
+\date{2026-06-08}
+
+\begin{document}
+\maketitle
+
+\noindent\textbf{Framing.} The project is positioned as an \textbf{Application} (rubric GT5). Therefore
+the bar this deliverable must clear is \emph{application value}; \emph{publishability} is presented as a
+credible \emph{upside}, not as a claim. We do not assert a guaranteed publication --- the rubric's
+Research track carries a publishability hard-stop, and over-claiming would be dishonest. What we do show
+is (i) concrete, defensible application value, and (ii) specific, benchmarkable research nuggets with
+named candidate venues. Companion: \texttt{deliverables/T1\_ai\_depth.tex} (technical depth),
+\texttt{deliverables/P2\_baseline.tex} (the quantified non-AI baseline), and the full \texttt{paper/}.
+
+% ---------------------------------------------------------------------
+\section{Application value (the bar)}
+The system augments --- never replaces --- the radiologist read of a cervical sagittal-T2 MRI. Its value
+is in four properties the manual baseline lacks:
+
+\begin{table}[h]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l Y Y@{}}
+\toprule
+\textbf{Property} & \textbf{What the system delivers} & \textbf{Why it matters vs.\ the manual baseline} \\
+\midrule
+\textbf{Reproducibility} & Deterministic geometric measurements --- the same study yields the same
+numbers every run & Manual measurement has real inter-reader (and intra-reader) variability; the
+quantified gap is in P2 \\
+\textbf{Speed} & Measurements computed in seconds per case (per-component latency measured; see infra
+\texttt{tradeoffs.md}) & Manual caliper measurement of canal, disc, Cobb and vertebral geometry is slow;
+the per-case time is in P2 \\
+\textbf{Auditability} & Every flag traces to a measurement and a \emph{cited} threshold (the G6 catalog),
+not an opaque verdict & A radiologist can check each number; a black-box score cannot be audited or
+defended \\
+\textbf{Triage / augmentation} & Pre-populates the structured measurement table and flags cases whose
+measurements cross reference thresholds for review & Frees specialist time from repetitive geometry for
+judgement; ``flagged for physician review,'' never a diagnosis \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent\textbf{Who benefits / who pays.} Radiology departments and research-hospital workflows: the
+buyer is the imaging department or research group that wants consistent, fast, auditable cervical
+measurements at volume. The value proposition is \emph{consistency + speed + auditability}, not a
+black-box diagnosis.
+
+\medskip
+\noindent\textbf{The value is quantified by the baseline contrast (P2).} The two numbers that make this
+case concrete --- manual measurement/reading \emph{time} per case, and manual inter-observer
+\emph{variability} --- are the subject of deliverable P2. The argument here is structural: a
+deterministic pipeline removes the variability entirely and collapses the time, with every output cited.
+P2 supplies the magnitudes.
+
+% ---------------------------------------------------------------------
+\section{Publishability (the upside)}
+Independent of the application framing, the project produced research-grade artifacts that are
+genuinely benchmarkable. We list them honestly, separating what is a real contribution from what is a
+heuristic.
+
+\subsection{What is novel / benchmarkable}
+\begin{itemize}
+  \item \textbf{Healthy-anchored, disease-agnostic geometric detectors.} Measurements are validated to
+  read \emph{inside} a healthy range and to be crossed by symptomatic anatomy, rather than trained on a
+  disease label. This is a reusable evaluation pattern for measurement pipelines where per-case ground
+  truth is unavailable.
+  \item \textbf{Threshold-crossing validation under a no-ground-truth constraint.} A reproducible
+  methodology (healthy anchor + distribution separation by Mann--Whitney) that yields a defensible
+  validation \emph{without} per-case radiologist labels --- because no public dataset pairs cervical MRI
+  with per-case expert measurements. The methodology itself is the contribution.
+  \item \textbf{The physical-dimension vs.\ intensity scanner-immunity finding.} We show empirically
+  that millimetre metrics (canal, SAC, cord) separate cross-dataset while intensity/ratio metrics (disc
+  signal, height ratios) are acquisition-confounded and must be validated within a single dataset. This
+  is a non-obvious, transferable insight for anyone validating MRI-derived measurements across scanners.
+  \item \textbf{Honest negative results.} The disc \emph{signal} axis does \emph{not} discriminate
+  (AUC 0.50, level-controlled), and disc AP-width's apparent strong effect collapsed under
+  level-stratification (AUC $0.79 \to 0.61$). Reported negatives and confound corrections are publishable
+  precisely because they are rare in this literature.
+  \item \textbf{A reproducible validation on real healthy + symptomatic cervical MRI} (Spine-Generic
+  healthy anchor; MMCSD symptomatic demonstration set), with a committed harness and a fully-cited
+  threshold catalog.
+\end{itemize}
+
+\subsection{What is \emph{not} claimed}
+The per-disc and per-vertebra cut-points (e.g.\ the disc/VB ratio threshold) have no $\kappa$/AUC ground
+truth, so they are scoped as \emph{research-grade heuristics}, not validated clinical thresholds. The
+ceiling on the disc metrics is data-limited (a coarse binary lesion label, and features the segmentation
+masks cannot see); raising it requires radiologist per-disc grades, which is future work, not a present
+claim.
+
+\subsection{Candidate venues}
+The work fits the medical-imaging-informatics / computational-spine niche rather than a
+new-architecture venue. Honest candidates, in order of fit:
+\begin{itemize}
+  \item \textbf{MICCAI workshops} --- e.g.\ Computational Spine Imaging (CSI) or
+  applications/validation-focused workshops: the methodology + reproducible validation is a natural fit.
+  \item \textbf{SPIE Medical Imaging} (Computer-Aided Diagnosis / Image Processing tracks) --- measurement
+  pipelines with validation are in scope.
+  \item \textbf{Journal of Digital Imaging} / \textbf{Insights into Imaging} --- clinical imaging
+  informatics; a deployed, auditable measurement-and-report system with a validation study is on-topic.
+\end{itemize}
+The \texttt{paper/} draft (18 sections + appendices, Overleaf-ready) is the artifact that would be
+adapted to a chosen venue's format.
+
+% ---------------------------------------------------------------------
+\section{Summary for the grader}
+\begin{itemize}
+  \item \textbf{Application value is real and structural}: reproducibility, speed, auditability, and
+  triage --- with the quantified baseline contrast supplied by P2.
+  \item \textbf{Publishability is a credible upside, not a claim}: the validation methodology, the
+  scanner-immunity finding, and the honest negative results are genuinely benchmarkable, with named
+  candidate venues and an existing paper draft.
+  \item \textbf{We are explicit about the boundary}: heuristic thresholds are labelled as such; the
+  data-limited ceiling is stated; no guaranteed publication is asserted.
+\end{itemize}
+
+\end{document}

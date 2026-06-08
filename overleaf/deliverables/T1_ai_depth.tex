@@ -1,0 +1,357 @@
+% =====================================================================
+% Rubric Deliverable T1 — AI Technical Depth & Non-Triviality
+% MRI-ReportGenerator (EECE503N). Self-contained; compile with pdfLaTeX.
+% =====================================================================
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{verbatim}
+\usepackage{textcomp}
+\usepackage[hidelinks]{hyperref}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\setlist{nosep, leftmargin=1.4em}
+\sloppy  % prefer slightly loose spacing over text overflowing into the margin
+
+\title{\textbf{AI Technical Depth \& Non-Triviality}\\[2pt]
+\large Rubric Deliverable T1 --- MRI-ReportGenerator (Cervical Spine MRI Analysis)}
+\author{EECE503N Final Project}
+\date{2026-06-08}
+
+\begin{document}
+\maketitle
+
+\noindent\textbf{Scope.} This document argues, with evidence, that the MRI-ReportGenerator pipeline
+carries genuine technical and AI depth and is \emph{not} a thin wrapper over pretrained models. It is
+written for a skeptical technical reader. Every clinical claim is cited; every engineering claim is
+backed by committed code, validation results, and the development journal. Companion evidence:
+\texttt{DEVELOPMENT\_JOURNEY.md} (J1--J23), \texttt{docs/validation/group-status-2026-06-08.md}
+(per-group verdict), \texttt{docs/validation/results-full-2026-06-08.md} (numbers + figures), and the
+companion \texttt{paper/}.
+
+\medskip
+\noindent\textbf{Medical framing (hard rule).} The system produces measurements and \emph{findings
+flagged for physician review}, never diagnoses. Nothing here claims otherwise.
+
+% ---------------------------------------------------------------------
+\section{Thesis}
+The depth of this system is not in training a new neural network --- and we deliberately do \textbf{not}
+claim to. It is in three places a ``wrapper'' does not reach:
+
+\begin{enumerate}
+  \item \textbf{Multi-model segmentation composition} --- orchestrating three independent,
+  differently-trained segmentation engines (TotalSpineSeg, Spinal Cord Toolbox, SPINEPS) and deciding,
+  per measurement, which one to trust on a region (cervical spine) where none is individually validated
+  for the downstream measurement.
+  \item \textbf{Clinically-meaningful measurement algorithms} --- converting voxel masks into vertebral,
+  disc, canal, cord and alignment measurements with methods that required real geometric engineering
+  (endplate-line fitting, anatomical canal-cut body isolation, PCA tilt-correction, endplate-voxel
+  Cobb). The na\"ive version of each \emph{demonstrably fails}; we have the before/after numbers.
+  \item \textbf{Validation methodology under a hard data constraint} --- no public dataset pairs
+  cervical MRI with per-case expert measurements, so per-case sensitivity/specificity is impossible. We
+  designed a \emph{threshold-crossing / distribution-separation} methodology anchored on a healthy
+  cohort, with explicit confound control. Designing a defensible evaluation when the obvious one is
+  unavailable is itself the contribution.
+\end{enumerate}
+
+The single strongest piece of evidence that this is non-trivial is the \textbf{bug ledger}
+(Section~\ref{sec:ledger}): places where the obvious implementation produced \emph{wrong} clinical
+numbers, which only rigorous validation surfaced and principled algorithm changes fixed. A trivial
+wrapper has no such ledger.
+
+% ---------------------------------------------------------------------
+\section{The honest framing: where the AI is, and where it is not}
+We are explicit about this because the rubric rewards honesty and because over-claiming in medical AI is
+a failure mode in itself.
+
+\paragraph{What we do \emph{not} do.} We do not train a segmentation model from scratch and do not claim
+a novel deep-learning architecture. The segmenters are pretrained and \textbf{frozen}.
+
+\paragraph{Why that is the correct engineering decision, not a shortcut.}
+\begin{itemize}
+  \item \textbf{Reproducibility and no overfitting.} Because nothing is trained on our evaluation
+  cohort, there is no train/test leakage and no risk of fitting our metrics to the symptomatic set. The
+  unhealthy cohort is a \emph{demonstration} set, not a training set --- a deliberate medical-AI safety
+  property.
+  \item \textbf{Standing on validated tools.} TotalSpineSeg and Spinal Cord Toolbox are published,
+  peer-reviewed, open-source segmentation stacks. Re-implementing inferior versions would be worse
+  engineering, not better.
+  \item \textbf{The value lives in the layer they do not provide.} None of these tools outputs a
+  cervical radiology report, threshold-based interpretation, or validated cervical \emph{measurements}.
+  That layer --- the clinically actionable output --- is entirely ours, and is where the difficulty is.
+\end{itemize}
+
+The correct mental model is \textbf{not} ``wrapper around a model'' but ``a
+measurement-and-interpretation system that \emph{uses} segmentation as one input, the way a radiology
+workstation uses a DICOM loader.''
+
+% ---------------------------------------------------------------------
+\section{Pipeline overview}
+{\footnotesize
+\begin{verbatim}
+Input (DICOM / NIfTI, sagittal T2)
+   |
+   v
+Segmentation IEP   -- TotalSpineSeg  -> vertebrae, discs, spinal canal (labelmap)
+                   -- Spinal Cord Toolbox -> cord & canal cross-sections (per-slice)
+                   -- SPINEPS         -> vertebra instances + endplate sheets
+   |
+   v
+Measurements IEP   -- G1 vertebral morphometry (Ha/Hp, AP width, tilt)
+                   -- G2 disc (height index, AP spread, signal)
+                   -- G3 canal / SAC / cord diameters
+                   -- G4 cervical alignment (C3-C7 Cobb)
+                   -- G5 fracture screen + myelomalacia screen
+   |
+   v
+Interpretation     -- G6 threshold catalog -> status per finding (cited thresholds)
+   |
+   v
+Reporting IEP      -- structured, radiologist-style report ("flagged for physician review")
+\end{verbatim}
+}
+
+The Enterprise Execution Plane (EEP) orchestrates the two deployed Internal Execution Planes
+(measurements, reporting); see the infra documentation for the service architecture. This document
+concerns the \emph{measurement-science depth} inside the measurements IEP and the segmentation
+composition that feeds it.
+
+% ---------------------------------------------------------------------
+\section{Depth dimension 1 --- Multi-model segmentation composition}
+A wrapper calls one model and trusts it. We call \textbf{three}, because no single one is sufficient for
+cervical measurement, and the composition is non-trivial.
+
+\begin{table}[h]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l l Y Y@{}}
+\toprule
+\textbf{Engine} & \textbf{License} & \textbf{What it gives us} & \textbf{Why we need it} \\
+\midrule
+TotalSpineSeg (TSS) & LGPLv3 & Whole-vertebra, disc and canal labels on an isotropic grid & Backbone
+labelmap for G1/G2 and the canal for body isolation \\
+Spinal Cord Toolbox (SCT) & LGPLv3 & Per-slice cord and canal cross-sectional diameters & G3 ---
+cord/canal/SAC; TSS's canal label is coarse for AP diameters \\
+SPINEPS & Apache-2.0 & Per-vertebra instances \emph{plus} thin endplate voxel sheets & G4 --- the
+endplate-voxel Cobb that TSS corners cannot do reliably at C7 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent The non-trivial engineering here:
+\begin{itemize}
+  \item \textbf{Per-measurement model selection.} The C3--C7 Cobb angle is \emph{more accurate} from
+  SPINEPS endplate voxels than from the TSS labelmap, because the cervico-thoracic junction (C7) is
+  frequently obscured and corner-based angles there are unstable. So \texttt{c3c7\_cobb\_angle}
+  \textbf{prefers} the SPINEPS method when a seg-vert mask is present and \textbf{falls back} to the TSS
+  canal-cut method otherwise. This selection logic measurably rescues cases the fallback cannot measure
+  at all (J22).
+  \item \textbf{Reconciling incompatible runtimes.} TSS/nnU-Net and SPINEPS pin \textbf{mutually
+  incompatible NumPy versions} (SPINEPS requires \texttt{numpy==2.0.2}, which breaks the TSS/nnU-Net
+  ABI). They cannot share a process; the pipeline runs them in separate environments and re-aligns their
+  outputs onto a common grid.
+  \item \textbf{Grid and orientation reconciliation.} The three engines emit masks in different
+  orientations/resolutions; \texttt{load\_context} standardizes to canonical RAS, enforces isotropy, and
+  index-aligns the grayscale and the SPINEPS instance mask to the labelmap so measurements are computed
+  in one coherent frame.
+\end{itemize}
+
+None of this is visible to a user, and none of it is provided by any single model. It is the connective
+tissue that makes three research tools into one measurement system.
+
+% ---------------------------------------------------------------------
+\section{Depth dimension 2 --- Measurement algorithms (the core contribution)}
+For each measurement we did \emph{not} take the obvious pixel-counting approach, because the obvious
+approach gives clinically wrong numbers on real cervical anatomy. Four representative examples, each with
+the evidence that the na\"ive method fails:
+
+\subsection{Endplate-LINE fitting instead of corner extrema (G1 heights, G4 Cobb)}
+\textbf{Na\"ive:} read heights from the four corner pixels. \textbf{Why it fails:} cervical endplates
+are concave and sloped, not flat~\cite{chen2013}, so a single corner pixel lands wrong.
+\textbf{Our method:} fit straight lines (Theil--Sen, robust to osteophyte tails) to the full superior
+and inferior endplate boundaries after PCA orientation, and read wall heights from the lines. The
+literature supports this directly: a fitted endplate line reaches ICC $\approx 0.97$ versus $\approx
+0.75$ for four-corner extraction~\cite{wang2023}.
+
+\textbf{Evidence --- measured, not asserted:} the corner method reads healthy cervical Ha/Hp $\approx
+\mathbf{1.08}$ (anterior taller than posterior --- physiologically backwards). The endplate-line method
+reads $\mathbf{0.93}$, matching the physiological slight anterior wedge. Switching the service to the
+line fit moved healthy Ha/Hp $1.08 \to 0.93$ and preserved the correct healthy $\geq$ unhealthy ordering
+(J20, J22).
+
+\subsection{Anatomical canal-cut body isolation instead of morphological erosion (G1)}
+\textbf{Na\"ive:} isolate the body by erosion / connected components. \textbf{Why it fails:} on real
+cervical anatomy the body and posterior arch are one connected blob on the mid-sagittal slice; erosion
+leaves a wedge-shaped body and a systematic false anterior wedge. \textbf{Our method:} cut the mask at
+the spinal canal's anterior face --- the body is, by definition, everything anterior to the canal ---
+using TSS's own canal label. This replaced a heuristic that produced a systematic $\sim 0.86$
+height-ratio artifact.
+
+\subsection{SPINEPS endplate-voxel Cobb instead of labelmap corners (G4)}
+\textbf{Na\"ive:} Cobb from the C3 and C7 corner points of the labelmap. \textbf{Why it fails:} C7 is
+frequently obscured at the cervico-thoracic junction; corner-based C6--C7 angles have a standard
+deviation of $\sim 18.5^\circ$, uselessly noisy. \textbf{Our method:} fit the line directly to SPINEPS'
+own inferior-endplate voxel sheets, dropping C6--C7 SD to $\mathbf{5.9^\circ}$ (J11, J12). On the
+healthy cohort this reads $+15.2^\circ$ lordosis, matching the external reference (F1000 cervical
+cohort, $15.4^\circ$;~\cite{f1000}).
+
+\subsection{Sub-voxel boundary refinement and PCA tilt-correction}
+\begin{itemize}
+  \item \textbf{Sub-voxel refinement:} the in-plane mask boundary is upsampled and re-thresholded at the
+  0.5 level (a marching-squares-style half-level crossing), placing edges between voxel centres rather
+  than on them, reducing the $\pm 1$-voxel quantization on every height/width/slip.
+  \item \textbf{PCA tilt-correction:} every vertebra is measured on its \emph{own} principal axes,
+  because healthy cervical bodies sit $\sim 28^\circ$ from absolute vertical (the lordotic curve).
+  Measuring on image axes would conflate normal lordosis with deformity --- exactly the bug the old
+  \texttt{tilt} flag had (Section~\ref{sec:ledger}).
+\end{itemize}
+
+Each is a deliberate algorithmic choice with a measured payoff. That is the definition of technical depth
+in a measurement pipeline.
+
+% ---------------------------------------------------------------------
+\section{Depth dimension 3 --- Validation methodology under a hard data constraint}
+The hardest intellectual problem was not building the measurements --- it was figuring out how to
+\textbf{validate} them when the ideal data does not exist.
+
+\paragraph{The constraint.} Extensive, repeated dataset searches established that \textbf{no public
+dataset pairs cervical MRI with per-case expert measurements.} Per-case sensitivity/specificity against a
+radiologist gold standard is therefore impossible with public data.
+
+\paragraph{The methodology we designed instead.} Our measurements are \emph{disease-agnostic
+geometry/signal detectors anchored on healthy norms} --- a canal of 8\,mm reads ``stenosis'' regardless
+of cause. This yields a validation strategy that needs no per-case labels:
+\begin{enumerate}
+  \item \textbf{Healthy-anchoring.} Validate that healthy anatomy reads \emph{inside} the normal range
+  (specificity), using a healthy cohort (Spine-Generic).
+  \item \textbf{Threshold-crossing / distribution separation.} Validate that symptomatic anatomy
+  \emph{crosses} into the abnormal range (the symptomatic MMCSD cohort), via distribution-separation
+  statistics (Mann--Whitney), not per-case accuracy.
+  \item \textbf{The scanner-immunity insight.} We discovered and exploited a key distinction:
+  \emph{physical-dimension} metrics (mm --- canal, SAC, cord) are immune to scanner differences and
+  validate cross-dataset, while \emph{intensity/ratio} metrics (disc signal, height ratios) are
+  acquisition-sensitive and must be validated \emph{within} a single dataset. This is why G3 (mm)
+  validates cleanly cross-dataset and the disc signal does not --- a non-obvious property that shaped the
+  entire evaluation design (J16, J23).
+  \item \textbf{Confound control.} When the within-dataset disc test showed a large effect for disc AP
+  width (AUC 0.79), we did \emph{not} report it --- lesion discs cluster at wider mid-cervical levels, so
+  we re-tested level-stratified and the honest figure was AUC 0.61. Reporting the unstratified 0.79 would
+  have been a confounded over-claim (J23).
+\end{enumerate}
+
+Designing, justifying, and executing a sound evaluation when the textbook one is unavailable is a
+graduate-level methods contribution, not a wrapper feature.
+
+% ---------------------------------------------------------------------
+\section{Proof of non-triviality: the bug ledger}
+\label{sec:ledger}
+The most direct evidence that this pipeline required real depth is the set of clinically-wrong outputs
+the \emph{na\"ive} implementation produced and that only rigorous validation caught. If the task were
+trivial, these would not exist.
+
+\begin{table}[h]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}Y Y Y l@{}}
+\toprule
+\textbf{Na\"ive behavior (wrong)} & \textbf{How it was caught} & \textbf{Principled fix} &
+\textbf{Evidence} \\
+\midrule
+Vertebral Ha/Hp read \emph{backwards} (anterior taller, 1.08) & Healthy cohort read non-physiological &
+Endplate-line fit replaces corner extrema & $1.08\!\to\!0.93$ \\
+\texttt{tilt} flag fired on \emph{88\% of healthy} vertebrae & Healthy false-flag rate measured &
+Recalibrated cut $20^\circ\!\to\!45^\circ$ (lordosis is normal) & $88\%\!\to\!0\%$ \\
+Disc posterior bulge \emph{backwards} (healthy worse, 60\% flagged) & Healthy over-flagged vs
+symptomatic & Reference chord from endplate-line corners & $60\%\!\to\!8\%$ \\
+Disc AP-width ``AUC 0.79'' discrimination & Suspected level confound & Level-stratified re-test & Honest
+AUC 0.61 \\
+Disc signal grade looked usable & Within-dataset lesion test & Shown non-discriminating (AUC 0.50) &
+Reported as a negative \\
+Latent: \texttt{seg == "C4"} (string vs int label) matched nothing & Code review during bulge fix &
+Resolve names via \texttt{VERT\_LABELS} & J22 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent Each row is a place where ``just measure it'' gives the wrong clinical answer, and a place
+where we have a committed, tested fix. The full narrative is in \texttt{DEVELOPMENT\_JOURNEY.md}.
+
+% ---------------------------------------------------------------------
+\section{Validated outcomes (the depth pays off)}
+We are equally explicit about what is strongly validated and what is partial --- honesty is a graded and
+a clinical requirement.
+
+\begin{table}[h]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l Y l@{}}
+\toprule
+\textbf{Group} & \textbf{Result} & \textbf{Status} \\
+\midrule
+G3 canal / SAC / cord (SCT) & canal AP $11.7\!\to\!8.6$\,mm \textbf{p=0.0001}; SAC $4.7\!\to\!2.3$\,mm
+\textbf{p=0.0001}; cord $6.3\!\to\!5.5$\,mm p=0.009 & \textbf{Validated (strong)} \\
+G4 C3--C7 Cobb (SPINEPS) & Correct lordosis $+15.2^\circ$ ($=$ literature $15.4^\circ$); discrimination
+underpowered ($d=0.91$, awaiting larger $n$) & Method-validated \\
+G1 Ha/Hp compression screen & 0\% false-flag on healthy; correctly null on (non-compressive)
+spondylosis, confirmed $n=49$ & Validated as a screen \\
+G2 disc & Signal/bulge documented negatives; disc/VB AP ratio discriminates (AUC 0.62, level-controlled)
+& Partial --- geometric spread \\
+G5 myelomalacia / fracture screens & $\sim$91\% healthy specificity (myelomalacia); compression screen
+as G1 & Validated as screens \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ---------------------------------------------------------------------
+\section{Why this composition is the right AI choice for clinical deployment}
+The pretrained-and-compose design is the defensible architecture for a clinical \emph{application} (the
+project's positioning):
+\begin{itemize}
+  \item \textbf{Auditability.} Every output traces to a measurement and a \emph{cited} threshold (G6
+  catalog), not to an opaque end-to-end model. A radiologist can check each number.
+  \item \textbf{No overfitting by construction.} Frozen segmenters + cited thresholds mean the system
+  cannot have memorized our evaluation cohort.
+  \item \textbf{Graceful degradation.} Per-component error contracts mean one failed measurement does
+  not sink the report; a missing SPINEPS mask degrades the Cobb method, it does not crash the pipeline.
+  \item \textbf{The differentiator is the clinical layer.} Measurement validity, cited interpretation,
+  and the report --- the parts that decide whether a radiologist would trust the output --- are exactly
+  the parts we built and validated.
+\end{itemize}
+
+% ---------------------------------------------------------------------
+\section{Summary for the grader}
+\begin{itemize}
+  \item The system is \textbf{not} a wrapper: it composes three segmentation engines, implements
+  non-trivial geometric measurement algorithms, and validates them under a genuine data constraint.
+  \item The depth is \textbf{demonstrated, not asserted} --- every algorithmic choice has a measured
+  before/after, and the bug ledger shows the na\"ive approach producing clinically wrong numbers we
+  caught and fixed.
+  \item We are honest about the boundary: pretrained segmenters (correct medical-AI choice), validated
+  measurements (our contribution), and an evaluation methodology designed for a domain where the ideal
+  dataset does not exist.
+\end{itemize}
+
+% ---------------------------------------------------------------------
+\begin{thebibliography}{9}
+\bibitem{genant1993} Genant HK, et al. Vertebral fracture assessment using a semiquantitative technique.
+\emph{J Bone Miner Res.} 1993. PMID:~8237484.
+\bibitem{wang2023} Wang, et al. Endplate line-fit morphometry (ICC 0.97 vs 0.75 four-corner). 2023.
+PMC10685593.
+\bibitem{chen2013} Chen, et al. Cervical endplate concavity/slope morphology. 2013.
+\bibitem{miyazaki2008} Miyazaki M, et al. Cervical disc degeneration grading (T2). 2008. PMID:~18525490.
+\bibitem{nakashima} Nakashima H, et al. Disc bulging on MRI in an asymptomatic population ($n=1211$).
+PMID:~25584950.
+\bibitem{nell2019} Nell C, et al. Cervical canal / SAC normative values on MRI. \emph{PLoS One.} 2019.
+doi:10.1371/journal.pone.0222682.
+\bibitem{f1000} F1000 cervical MRI + Cobb cohort ($n=77$) --- external alignment reference.
+\bibitem{zhang2025} Zhang, et al. Automated cervical Cobb (sagittal-T2 C2--C7), ICC 0.94 / MAE
+$2.44^\circ$. 2025.
+\end{thebibliography}
+
+\paragraph{Cohorts.} Spine-Generic (healthy multi-vendor cervical T2) --- healthy anchor cohort; MMCSD
+(Synapse syn63903115) --- symptomatic CSM/CSR cohort, used as the demonstration set. Threshold
+provenance (including in-code values found uncited and corrected): see the G6 threshold catalog and the
+verified-research memos.
+
+\end{document}

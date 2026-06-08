@@ -1,0 +1,40 @@
+\section{Methods: Group 1 --- Vertebral Body}
+\label{sec:g1}
+
+Group 1 measures, per vertebra C3--C7, the anterior/middle/posterior heights ($H_a$, $H_m$, $H_p$), the
+compression ratio \hahp{}, AP width, tilt, and inter-vertebral slip (spondylolisthesis). The accuracy of
+all height- and angle-derived outputs rests on correctly isolating the vertebral \emph{body} and locating
+its endplates. Our method evolved through three corrections (detailed in Section~\ref{sec:journey}).
+
+\paragraph{Body isolation by canal-cut.} On a mid-sagittal cervical slice the vertebral body and the
+posterior arch are a single fused blob, so connected-component and erosion heuristics leave a wedge-shaped
+body and a falsely low \hahp{}. We instead use a principled anatomical boundary: the body is everything
+\emph{anterior to the spinal canal} (TSS canal label $=2$). This canal-cut (\texttt{extract\_body\_via\_canal})
+removes the arch cleanly and is robust across subjects.
+
+\paragraph{Heights by PCA + endplate-line fitting.} Measuring height along the image axes fails on tilted,
+posteriorly tapered cervical bodies. We orient each body to its own principal axes (PCA in physical-mm
+space), then fit straight lines to the superior and inferior endplate boundaries and read the gap at the
+anterior/middle/posterior margins, with a thin-bin filter discarding rounded tips. This endplate-line
+formulation is tilt- and taper-invariant and is the same idea the literature finds superior to corner
+extrema~\cite{wang2023,chen2013}.
+
+\paragraph{Compression screen.} The clinical Genant grade~\cite{genant1993} is retained as a standard,
+but the screening decision uses a data-driven cervical flag: \hahp{} is compared to the measured healthy
+cohort norm $0.94 \pm 0.13$ (Spine-Generic, $n=60$ vertebrae across 12 subjects, 3 vendors), flagging
+when \hahp{} $<$ mean $- z\!\cdot\!\text{SD}$ with $z=2$ ($\approx 0.68$). The healthy norm is supported
+by triangulation against cervical anatomy literature~\cite{tan2004,lee2012,kaur2025} (posterior slightly
+$>$ anterior, mean $\approx 0.90$); we explicitly note that no like-for-like healthy cervical MRI \hahp{}
+comparator exists, so this is plausibility, not gold-standard proof. The replaced in-code value
+($0.97 \pm 0.02$) was traced to an osteoporotic cohort and debunked (Section~\ref{sec:journey}).
+
+\paragraph{AP width, tilt, slip.} AP width and tilt are treated as quality/sanity metrics (tilt over-flags
+on healthy at the in-code \SI{20}{\degree} cut, which we recommend recalibrating to $\approx
+\SI{28}{\degree}$). Spondylolisthesis is measured from the posterior vertebral surface; it remains
+\emph{experimental} because no supine-MRI presence threshold exists (the $\geq\!\SI{2}{\milli\meter}$ cut
+is an upright-radiograph borrow~\cite{murakami2020}) and supine MRI under-measures functional slip.
+
+\paragraph{Status.} The endplate-line \hahp{} screen is validated (Section~\ref{sec:results}); AP
+width/tilt are quality metrics; slip is experimental. In the production service tree, porting the
+endplate-line heights into \texttt{cervical\_body\_morphometry} (replacing the legacy corner method) is
+the one remaining Group~1 code task.
