@@ -302,6 +302,31 @@ keep it honest and specific (numbers, dates, evidence, citations). Chronological
 - **Lesson:** the validation harness earned its keep — it caught a real, sign-level measurement bug that a
   unit test on clean shapes would miss, and localized it to a specific denominator at specific levels.
 
+## J17 — The G2 disc bug, diagnosed and partially fixed: a cited relative flag, and an honest non-result
+- **The bug (from J16):** DHI and bulge read backwards (healthy scored worse than the symptomatic cohort).
+- **Diagnosis (decompose numerator vs denominator, mid-cervical C3-C6):** healthy disc-middle height
+  4.00 mm vs unhealthy 4.12 mm (**numerator is flat -- disc height does not separate the cohorts**);
+  healthy VB-denominator 12.70 mm vs unhealthy 11.39 mm (**the backwards DHI is denominator-driven** --
+  healthy bodies measure taller). Against Mohammad's anchor (disc 5.2 mm, denom 9 mm, DHI 0.55), our
+  denominator (~12.7 mm) is in fact closer to the true cervical body height (~12-13 mm); his ~9 mm is an
+  under-measured AP-strip, so his DHI 0.55 is inflated, not a target to match.
+- **Why a denominator swap would have been the WRONG fix:** it would make our numbers resemble his by
+  under-measuring (not move toward truth) and still would not discriminate, because the disc-height
+  numerator is flat. Caught before shipping (per the "revert if it's the wrong fix" rule).
+- **The fix that is correct + cited (additive, safe):** the real defect is the in-code absolute
+  `DHI < 0.30` flag, already debunked as uncited. Replaced/augmented with a CROSS-LEVEL relative rule -- a
+  disc whose middle height is >30% below the patient's own reference disc height (Suzuki 2018) -- which
+  cancels the cross-dataset calibration. Result: healthy false-positive firing **77% -> 3%** (unhealthy
+  56% -> 2%). Additive (Mohammad's DHI value + `reduced_dhi` untouched) so it cannot break his pipeline;
+  committed on `feat/measurements/disc-dhi-relative-flag` for his review.
+- **The honest non-result:** the relative flag fires ~equally on both cohorts (3% vs 2%) -- i.e. disc
+  HEIGHT does not discriminate this CSM/CSR cohort. That is clinically correct: cervical degeneration here
+  is signal loss and bulge/herniation, not mid-cervical height collapse. So G2's real discriminator is the
+  Miyazaki SIGNAL grade, not height; the bulge metric remains separately broken (backwards) and unfixed.
+- **Lesson:** "fixing" a metric is not the same as making it discriminate. We fixed the false-firing
+  (a real defect) honestly, and reported that the metric still does not separate -- rather than tuning the
+  denominator to fabricate a clean-looking number.
+
 ---
 *Open methodology gaps tracked elsewhere:* teammate threshold/citation fixes (disc DHI<0.30, bulge flat-wall,
 Pfirrmann cut-points) — see `group5/AUDIT_groups1-4_measurements.md`; C6/C7 Cobb **precision** is now closed by
