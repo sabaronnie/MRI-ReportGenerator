@@ -1,3 +1,6 @@
+> **⚠️ SUPERSEDED — this is the run-1 snapshot.** G2 ("backwards") and G4 ("directional") were since
+> revised. See **`results-final-2026-06-08.md`** for the current, reproduced-from-code verdicts.
+
 # Full Validation — all groups, 12 healthy vs 10 unhealthy (2026-06-08)
 
 Threshold-crossing + distribution-separation on real cervical MRI. **Healthy** = 12 Spine-Generic
