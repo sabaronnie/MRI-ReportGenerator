@@ -13,8 +13,8 @@ overleaf/
     references.bib           the paper's bibliography
   deliverables/              <- rubric write-ups, each self-contained
     T1_ai_depth.tex          T1 — AI depth / non-triviality  (DONE, compiles)
+    P2_baseline.tex          P2 — non-AI baseline rigor       (DONE, compiles; PMID-verified numbers)
     P4_publishability.tex    P4 — value / publishability      (DONE, compiles)
-    P2_baseline.tex          P2 — non-AI baseline rigor       (TODO: needs research numbers)
 ```
 
 Local test-compile (optional): `tectonic deliverables/T1_ai_depth.tex` (installed via
