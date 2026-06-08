@@ -32,6 +32,7 @@ _FLAG_GROUP = {
     "DHI": "Disc", "posterior_bulge_mm": "Disc",
     "disc_vb_ap_ratio": "Disc", "pfirrmann_grade": "Disc",
     "Cobb_C3_C7": "Alignment", "spondy_slip_mm": "Alignment",
+    "spondy_pct_of_lower_AP": "Alignment",
     "vb_hahp_ratio": "Vertebra",
 }
 
