@@ -458,6 +458,28 @@ the target metric (revert otherwise). All 137 service tests stayed green after e
   ceiling — that ceiling is set by the coarse binary lesion label + features TSS can't see (signal,
   protrusion), so G2's real lift needs radiologist per-disc grades, not more rows.
 
+## J24 — G4 Cobb at scale (41 unhealthy): borderline, not the clean win — and an honest power lesson
+- **Question:** does the larger SPINEPS cohort push the C3-C7 Cobb separation to p<0.05? (J18 predicted yes:
+  d=0.91 at n=10 → need ~19/group.) Ran SPINEPS C1 Cobb on 11 healthy vs **41** unhealthy.
+- **Finding:** healthy +15.2° (lordotic) vs unhealthy +8.3°, **Cohen d=0.76, AUC 0.68** — a real,
+  clinically-sensible effect (CSM/CSR reduces lordosis; one neck frankly kyphotic at −14.9°). But
+  **two-sided p=0.070 (NOT significant)**; one-sided p=0.035 (significant *under the pre-specified
+  directional hypothesis* that healthy > symptomatic lordosis, which is established clinically).
+- **Why it didn't cross cleanly:** (1) the n=10 pilot **over-estimated** the effect (d 0.91 → 0.76 with
+  more data — small-sample effect inflation); (2) the bottleneck is the **healthy** arm (n=11, SD ±10.2°
+  from genuine biological variation in normal cervical lordosis), and we added cases to the *unhealthy*
+  arm (n=41) — enlarging the bigger group does little when the smaller group limits power; (3) cervical
+  alignment is biologically a **weaker/less-specific** CSM marker than canal stenosis (cf. G3 p=0.0001).
+- **Production path verified:** the service `c3c7_cobb_angle` with the plumbed SPINEPS seg-vert used the
+  C1 method on 5/5 spot-checked cases and matched the direct computation exactly (J22 plumbing works
+  end-to-end on the real cohort).
+- **Fix (data, not method):** segment ~10-18 **healthy** Spine-Generic controls with SPINEPS (≈30 are
+  available) to balance the design — that is what should carry two-sided p<0.05. C3-C7 stays the metric.
+- **Lesson:** an underpowered effect size is a *noisy* estimate — d=0.91 (n=10) was optimistic. And power
+  is set by the *smaller* arm: scaling the unhealthy cohort 4× barely moved the p because healthy stayed
+  at 11. Honest verdict: G4 is **directional/borderline**, not validated; it will likely cross with
+  balanced healthy n but remain a modest discriminator (AUC ~0.68), unlike the strong G3 stenosis signal.
+
 ---
 *Open methodology gaps tracked elsewhere:* teammate threshold/citation fixes (disc DHI<0.30, bulge flat-wall,
 Pfirrmann cut-points) — see `group5/AUDIT_groups1-4_measurements.md`; C6/C7 Cobb **precision** is now closed by

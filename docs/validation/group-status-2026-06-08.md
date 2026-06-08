@@ -9,7 +9,7 @@ distribution-separation; no per-case radiologist GT exists). Cohort: 12 healthy 
 | Group | Component | Healthy side | Pathology side | Verdict |
 |---|---|---|---|---|
 | **G3** | canal AP / SAC / cord (SCT) | normal-side, 0% over-flag | crosses: canal **p=0.0001**, SAC **p=0.0001**, cord p=0.009 | ✅ **VALIDATED (strong)** |
-| **G4** | Cobb **C1** (SPINEPS endplate) | +15.2° lordotic = literature | directional now (p=0.13) but **d=0.91 LARGE** -> underpowered | ⚠️ **method-validated; needs ~19/group (SPINEPS on more MMCSD) -> expected p<0.05** |
+| **G4** | Cobb **C1** (SPINEPS endplate) | +15.2° lordotic = literature | 11 healthy vs **41** unhealthy: 15.2° vs 8.3°, d=0.76, AUC 0.68; **two-sided p=0.070 / one-sided p=0.035** | ⚠️ **directional/borderline — NOT validated 2-sided; bottleneck = healthy n=11, needs ~10-18 more healthy controls** |
 | **G1** | Ha/Hp compression screen (our 5.2) | 0% FP on 12 healthy | correctly NULL on spondylosis (true neg) | ✅ **validated as screen**; compression-fracture arm UNTESTED (no dataset) |
 | **G5.1** | myelomalacia (SCIseg) | ~91% healthy specificity | sensitivity from SCIseg paper; MMCSD arm not run | ✅ **healthy-validated**; unhealthy arm pending |
 | **G5.2** | fracture/compression | = G1 (17%→0% FP) | RSNA negative (non-compression); same gap as G1 | ✅ **validated as screen** |
@@ -24,10 +24,15 @@ distribution-separation; no per-case radiologist GT exists). Cohort: 12 healthy 
 Canal AP min 11.7→8.6 mm and SAC min 4.7→2.3 mm both separate at p=0.0001; cord thinner (p=0.009).
 Open: validate on a *random* MMCSD draw (current 10 lesion-selected); older clinical "normal" may sit tighter.
 
-### G4 — method-validated, discrimination directional
-SPINEPS endplate-voxel C1 reads correct lordosis (healthy +15.2°, matches F1000 15.4°) and is far cleaner
-than canal-cut. Healthy vs unhealthy is directional (+15 vs +9) but p=0.13 (alignment is less specific for
-CSM; small n). Open: plumb SPINEPS into the production context so c3c7 prefers C1.
+### G4 — directional/borderline (scaled to 41 unhealthy; J24)
+SPINEPS endplate-voxel C1 reads correct lordosis (healthy +15.2°, matches F1000 15.4°). At scale (11
+healthy vs 41 unhealthy): healthy 15.2° vs unhealthy 8.3°, **d=0.76, AUC 0.68**, **two-sided p=0.070**
+(not significant), one-sided p=0.035 (significant under the pre-specified directional hypothesis). The
+pilot d=0.91 (n=10) was optimistic; the real bottleneck is the **healthy** arm (n=11, SD ±10°) — adding
+to the 41-case unhealthy arm barely moved p. Production path verified: `c3c7_cobb_angle` uses the C1
+method and matches the direct computation (5/5 spot check). **To cross 2-sided p<0.05: segment ~10-18
+more healthy Spine-Generic controls with SPINEPS** (≈30 available); C3-C7 stays the metric. Alignment is
+biologically a weaker/less-specific CSM marker than canal stenosis — expect AUC ~0.68 even fully powered.
 
 ### G1 — compression screen validated; service heights/slip NOT
 Our Ha/Hp screen (canal-cut + endplate-line): 0% healthy FP, correctly silent on the non-compression
@@ -91,7 +96,8 @@ Ha/Hp median **0.91** (physiological), compression screen **0%** — correctly n
 G1 fixes generalize from n=10 to n=49.
 
 ## One-line state
-G3 validated; G4 method-validated/directional; G1+G5 screens healthy-validated (compression arm gap);
+G3 validated; G4 directional/borderline (2-sided p=0.070 at 11 healthy vs 41 unhealthy, healthy n is the
+bottleneck); G1+G5 screens healthy-validated (compression arm gap);
 G2 partial (signal/bulge negative, disc/VB AP ratio + AP width discriminate AUC ~0.62 level-controlled,
 49-case within-MMCSD J23); G6 built, pending. Local: G1 tilt cut
 recalibrate 20°→~45° (over-flagged 83% healthy); AP depth + Ha/Hp precision confirmed; mm metrics
