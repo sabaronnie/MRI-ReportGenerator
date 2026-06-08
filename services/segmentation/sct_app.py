@@ -75,9 +75,11 @@ def _find_optional_nifti(root: Path, filename: str) -> Path | None:
 
 
 def _zip_outputs(extract_dir: Path, result: SCTSegmentationResult, zip_path: Path) -> None:
+    has_lesion = result.lesion_seg is not None and result.lesion_seg.exists()
     manifest_payload = {
         "sct_canal_seg": "sct_canal_seg.nii.gz",
         "sct_spinalcord_seg": "sct_spinalcord_seg.nii.gz",
+        "sct_lesion_seg": "sct_lesion_seg.nii.gz" if has_lesion else None,  # SCIseg, Group 5.1
     }
     with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
         for path in sorted(extract_dir.rglob("*")):
@@ -85,6 +87,8 @@ def _zip_outputs(extract_dir: Path, result: SCTSegmentationResult, zip_path: Pat
                 zf.write(path, arcname=path.relative_to(extract_dir).as_posix())
         zf.write(result.canal_seg, arcname="sct_canal_seg.nii.gz")
         zf.write(result.cord_seg, arcname="sct_spinalcord_seg.nii.gz")
+        if has_lesion:
+            zf.write(result.lesion_seg, arcname="sct_lesion_seg.nii.gz")
         zf.writestr("sct_segmentation_manifest.json", json.dumps(manifest_payload, indent=2))
 
 

@@ -11,6 +11,113 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-09 — Andrew (executor: documentation finalization + 2 unblocked items)
+
+**Branch:** `research/andrew/writeups` (CANONICAL; pushed).
+
+**What was done (doc-finalization hard run):**
+- **disc/VB ratio (UNBLOCKED, reframed not replaced):** the ≥1.10 cut is now documented as **cohort-derived**
+  (no published cervical disc/VB-AP-ratio norm exists — search NEGATIVE) with the **mechanism cited**
+  (Machino 2021 PMID 34098133, disc AP widens with degeneration). Added a `disc_vb_ap_ratio` spec to the
+  G6 catalog. `disc_ap_bulge.py` + `thresholds.py`. 138 tests green.
+- **C1/P3 deliverable written for real** (`overleaf/deliverables/C1_P3_novelty.tex`, compiles w/ tectonic):
+  novelty + AI-justification (healthy-anchored disease-agnostic detectors, no-per-case-GT validation,
+  scanner-immunity insight, honest negatives, cited review-only interpretation). No Team 14 dependency.
+- **Consistency sweep — G4 = NOT a discriminator + G2 = partial now read identically everywhere:** fixed
+  stale "directional/underpowered" verdicts in `pipeline-structure.md` (also G2-wired J25, G6 classify),
+  paper `01/10/13_*`, `T1_ai_depth.tex`, `docs/ai-depth.md`, appendix `B_catalog` (removed deleted 1.35mm
+  bulge band, added disc_vb_ap_ratio). Marked `results-run1` superseded; added verdict pointer to
+  `validation.md`. Narrative docs (journal, results-full) left as dated history.
+- **references.bib:** verified+tightened spineps/mmcsd/duke/zhang (Crossref/arXiv); enriched with verified
+  Machino/Fardon/Forsberg/Grochmal/Urbanschitz/Sevin (NCBI eutils). **Caught a confabulated PMID:** Fardon
+  "11242315" was actually Katz/Medical Care — corrected to DOI 10.1016/j.spinee.2014.04.022. Remaining
+  unverifiable author lists left FLAGged, not guessed.
+- **Limitations completeness:** paper + results-final now state PMC8082364 (no cervical compression-fracture
+  MRI dataset) + the absent-baseline negatives (no Ha/Hp ICC, SAC-mm ICC, disc/VB ratio norm, cervical Cobb GT).
+- **TPTBox/`spinestats` = Apache-2.0** (verified) → NOT an AGPL blocker for the SPINEPS image. Recorded in
+  segmentation README, which now documents all 3 engines (TSS/SCT+SCIseg/SPINEPS). overleaf README adds C1/P3.
+- **All overleaf/*.tex compile with tectonic** (4 deliverables + paper main.tex, 260KB).
+
+**Pending / next action — CROSS-BRANCH items NOT done (need Andrew, infra-owned, push not authorized here):**
+1. `docs/positioning.md` (on `feat/eep/scaffold`) — fill the P2 baseline numbers; has NO clean `[SCIENCE:]`
+   markers so it's a prose edit (the current "κ≈0.26 (lumbar)" is mis-attributed; should be cervical
+   Pfirrmann κ 0.265 Urbanschitz). Paste-ready text handed to Andrew in chat.
+2. `docs/RUBRIC_TRACKER.md` (on `feat/eep/scaffold`) — mark T1/P2/P4/C1-P3 done + final verdicts in `[science]`
+   rows. Infra-owned (flag-before-edit). Paste-ready text in chat.
+3. `docs/validation/validation-design-and-decisions.md` (on `feat/docs/validation-rationale`) — predates the
+   G4 reversal / G2-partial; needs a refresh note. Not on writeups.
+   → Decide: apply on those branches yourself, or authorize this chat to edit+push them.
+
+---
+
+## 2026-06-08→09 — Andrew (executor: finalize validation + deliverables + segmentation wrappers)
+
+**Branch:** `research/andrew/writeups` (CANONICAL — has everything; pushed to origin).
+
+**What was done (big session):**
+- **Validation FINALIZED + reproduced from committed code.** G3 ✅ strong (p=0.0001); G2 ⚠️ partial
+  (disc/VB ratio AUC 0.62, signal/bulge negative); **G4 ❌ NOT a discriminator** (balanced 26 healthy vs
+  41 unhealthy: d=0.28, p=0.32 — the n=11 result was a lordosis-biased small sample, J26); G1 ✅ screen;
+  G5.1 ✅. `docs/validation/results-final-2026-06-08.md` (supersedes run-1). 138 tests green.
+- **4 service fixes + §A threshold corrections** (J22): tilt 20→45°, endplate-line heights (Ha/Hp
+  1.08→0.93), bulge endplate-corner, G4 SPINEPS C1 plumbing; SAC demoted, Torg supporting-only, 1.35mm
+  bulge cut dropped, DHI→relative. **G2 wired into orchestrator + demographics (age/sex/height, sex-adjusted
+  dural-sac)** (J25). Andrew now owns ALL group code (no PR/flag dance).
+- **Paper updated (J17–J26)** + deliverables **T1/P2/P4** (LaTeX, compile via tectonic) — all in
+  `overleaf/` (one Overleaf folder; paper moved there too).
+- **Frontend integration:** handoff written, code pushed, 2 radiologist PDF reports validated ("makes sense").
+- **Segmentation wrappers (for deploy chat):** wrapped **SPINEPS** (new `spineps_app.py`) + added **SCIseg/
+  G5.1** to the SCT wrapper. All 3 engines (TSS/SCT/SPINEPS) on this branch.
+
+**Pending / next action:** mostly DOCUMENTATION — see `handoffs/chat-handoffs/HANDOFF-EXECUTOR-2026-06-09.md`
+for the full list. Top items: C1/P3 deliverable (needs Team 14 scope), fill `positioning.md` [SCIENCE:]
+with P2 numbers, fold disc/VB-ratio norm when the research returns, branch reconciliation to main, TPTBox
+AGPL check. NO more Colab/workflows (Andrew out of budget).
+
+---
+
+## 2026-06-08 — Andrew (executor: G1/G2/G4 service fixes + 49-case G2 validation + T1 write-up)
+
+**Branches:** `feat/validation/run1-results` (fixes + validation), `research/andrew/writeups` (T1 doc). All UNPUSHED.
+
+**What was done:**
+- Andrew took over all teammate group code (no more PR-to-Ronnie/Mohammad). Applied 4 service fixes,
+  each tested on real healthy+unhealthy masks (137 tests green), committed separately: G1 tilt cut
+  20→45° (over-flagged 88% healthy→0%), G1 heights via endplate-line fit (Ha/Hp 1.08→0.93, was
+  backwards), G2 bulge reference from endplate corners (healthy over-flag 60→8%), G4 SPINEPS C1 Cobb
+  plumbed into context (prefers C1, falls back to canal-cut).
+- G2 within-MMCSD validation on the new 49-case TSS batch (level-stratified): signal + bulge are
+  NEGATIVES (AUC ~0.50); disc/VB AP ratio discriminates (AUC 0.62, p=0.0018). Combined score gave no
+  gain over the single metric → kept simple. Journal J19–J23.
+- G1 local validations (tilt recal, AP/height precision, 0.8-vs-4mm robustness). Wrote T1 deliverable
+  `docs/ai-depth.md` (AI depth / non-triviality, fully cited).
+
+**Files changed:** services/measurements/geometric/{cervical_body_morphometry,disc_ap_bulge,c3c7_cobb_angle}.py,
+services/measurements/context.py, DEVELOPMENT_JOURNEY.md (J19–J23), docs/validation/group-status-2026-06-08.md,
+docs/ai-depth.md, research/group5/{run_g1_local_validations,run_g2_within_mmcsd,run_g2_combined_score,test_service_g1_g2}.py.
+
+**Pending / next action:** G4 needs RUN 2 — SPINEPS on the same 49 (Colab running now,
+`RUN_B_g2_spineps.ipynb`); when masks land, re-run C1 Cobb (12 healthy vs ~49 unhealthy), expect p<0.05.
+Then write-ups P2 (needs a baseline-numbers research workflow: radiologist time + inter-observer
+variability) and P4. Nothing pushed — confirm-before-push standing rule.
+
+---
+
+## 2026-06-08 — Andrew (FULL VALIDATION pass on real cohort + paper start; autonomous run)
+
+**Branch:** `feat/validation/run1-results` (off the fixture-fix branch; committed, NOT pushed)
+
+**What was done (autonomous overnight pass):**
+- **Downloaded MMCSD** (Synapse syn63903115): all 250 sag-T2 + the CSM/CSR + per-level lesion labels (local, gitignored). Segmented 12 healthy + 10 unhealthy (5 CSM/5 CSR) via TSS+SCT (Colab A100) + SPINEPS.
+- **Ran the FULL validation, all groups, with Mann-Whitney stats + matplotlib figures** (`docs/validation/results-full-2026-06-08.md`, figures/): **G3 canal/SAC p=0.0001 (VALIDATED)**; G4 Cobb **C1** healthy +15.2° vs unhealthy +8.8° (directional, p=0.13); **G1 Ha/Hp correctly NULL** (spondylosis≠compression, 0 flags both); **G2 disc DHI+bulge read BACKWARDS = real bug** (DHI denominator over-measured at C2/junctions, exactly as Mohammad predicted) → documented + flagged, NOT blind-fixed (teammate code). G5 already validated.
+- Our methods needed **no fixes** (all passed/null) — validates J1–J12. Journaled **J15 + J16**.
+
+**Files changed:** `docs/validation/results-full-2026-06-08.md` + `figures/*`, `DEVELOPMENT_JOURNEY.md` (J15-16), `research/group5/run_validation_master.py` + `run_g2_disc_validation.py`. (Data/scripts in ~/dev/group5-proto.)
+
+**Pending / next action:** (1) **G2 disc fix** = the one open measurement bug — for Mohammad (root cause given). (2) Scale validation to a RANDOM MMCSD draw (current 10 were lesion-selected). (3) Compression-fracture dataset hunt (G1/G5.2 abnormal arm). (4) **Paper DRAFTED + COMMITTED** under `paper/` (branch `feat/paper/draft`): Overleaf-ready LaTeX, 18 sections + 4 appendices (per-case data, full threshold catalog, figures, data contract), matplotlib strip plots + TikZ pipeline diagram, references.bib. Compile on Overleaf with pdfLaTeX (no local LaTeX here to test-compile; structure verified, all 23 \input resolve). (5) Branches committed not pushed (confirm-before-push): feat/contract, feat/measurements/fix-fracture-screen-fixture, feat/docs/validation-rationale, feat/chore/gitignore-medical-data, feat/colab/spineps-unhealthy-batch, feat/validation/run1-results.
+
+---
+
 ## 2026-06-06 (cont.) — Group 5 DONE; corner-fix implemented; MASTER handoff written
 
 **Branch:** `groups-5-6` (all pushed, 0 unpushed, HEAD 46d4bdc)

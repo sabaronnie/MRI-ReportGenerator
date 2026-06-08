@@ -1,0 +1,31 @@
+Cervical spine MRI is read manually by radiologists, a process that is slow and subject to high
+inter-observer variability in the quantitative measurements (vertebral heights, disc dimensions, canal
+and cord diameters, sagittal alignment) that drive clinical decisions in degenerative cervical
+myelopathy and radiculopathy. We present \textbf{MRI-ReportGenerator}, an application-positioned
+pipeline that converts a single sagittal T2 cervical MRI (DICOM or NIfTI) into a structured,
+radiology-style report. The system chains three pre-trained, openly licensed segmentation engines
+(TotalSpineSeg, the Spinal Cord Toolbox, and SPINEPS), a suite of geometric and signal-based
+measurement modules organized into five groups (vertebral body, intervertebral disc, canal/cord,
+sagittal alignment, and signal/shape screens), and an interpretation layer that classifies every
+measurement against a central catalog of literature-grounded thresholds and emits findings ``flagged
+for physician review,'' never a diagnosis. A core engineering principle is that every measurement is a
+disease-agnostic geometric or signal detector anchored on healthy normative values, so that the
+abnormal-detection generalizes across any pathology that produces the same anatomical change, rather
+than being trained on a particular disease. Because no public dataset pairs cervical MRI with per-case
+expert measurements, we validate by \emph{threshold crossing and distribution separation}: healthy
+necks must sit on the normal side of each cited threshold, and a symptomatic cohort must shift into the
+abnormal side. On 12 healthy Spine-Generic controls versus a symptomatic cervical-spondylosis cohort
+from the MMCSD dataset (scaled to 41--49 cases for the disc and alignment groups), the canal/cord
+measurements separate strongly (functional canal AP minimum and space-available-for-cord, both
+Mann--Whitney $p=0.0001$) and the vertebral compression screen is correctly silent on a non-compression
+cohort. Two leads were \emph{revised} by larger, design-appropriate cohorts, which we report as a
+methodological result: the SPINEPS endplate-voxel Cobb method reads correct lordosis (\SI{+15.2}{\degree})
+but on a representative multi-site healthy sample does \emph{not} discriminate myelopathy (a validated
+measurement, not a screen), and the disc group --- after the harness detected and we fixed a sign-level
+height/bulge bug --- separates only modestly, through disc \emph{geometric spread} (disc/vertebral-body AP
+ratio, AUC $0.62$), with disc signal and bulge documented as non-discriminators. Four measurement defects
+were found and fixed, and the interpretation layer was wired and run end-to-end with
+patient-demographic-aware thresholds. We document the full
+mistake-to-fix methodology narrative, the limitations imposed by the absence of ground truth, and the
+deployment architecture. The contribution is less a new algorithm than a disciplined, honest,
+end-to-end \emph{engineering} of clinical measurement automation with explicit provenance and validation.

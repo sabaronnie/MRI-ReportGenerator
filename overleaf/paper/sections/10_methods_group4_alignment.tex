@@ -1,0 +1,50 @@
+\section{Methods: Group 4 --- Sagittal Alignment}
+\label{sec:g4}
+
+Group 4 computes the global cervical Cobb angle (C2--C7 / C3--C7), per-level segmental angles, a
+posterior-tangent cross-check, and a lordosis classification. The Cobb angle is the most technically
+demanding measurement in the system, and its method is the project's main methodological story.
+
+\paragraph{The corner problem.} A Cobb angle is the angle between the top and bottom endplate tangents.
+Deriving those tangents from four/six corner landmarks is unstable on lordotic cervical necks because
+endplates are concave and sloped~\cite{chen2013}: the legacy corner method read healthy necks as
+\SI{-21}{\degree} (kyphotic) when they are in fact lordotic. The literature is unambiguous that fitting a
+line to the full endplate boundary beats corner extrema~\cite{wang2023}.
+
+\paragraph{Three methods, evaluated.} We implemented and compared three Cobb methods on the 12 healthy
+necks (precision/coverage, since no GT exists):
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Canal-cut endplate-line} --- fit the tangent to the canal-cut body's endplate boundary.
+  Fixes the \emph{sign} (now lordotic) but the C6/C7 endpoints remain noisy (the body is mis-shaped at
+  the cervicothoracic junction).
+  \item \textbf{SPINEPS corpus border} --- fit to the SPINEPS corpus (label 49) border. This was a
+  \emph{negative} result: noisier than canal-cut, because differencing two vertebrae amplifies a single
+  bad per-vertebra fit.
+  \item \textbf{SPINEPS endplate voxels (C1)} --- fit the line to SPINEPS' \emph{own predicted endplate
+  voxels} (instance label $100+X$). This is the literature-validated object (the endplate itself, not the
+  corpus border) and it won.
+\end{enumerate}
+
+\paragraph{The C1 method.} For each vertebra, the PCA major axis of the thin endplate sheet on the
+mid-sagittal slice is the endplate tangent; the Cobb angle is the angle between two vertebrae's
+inferior-endplate tangents, sign-calibrated to lordosis-positive. On the 12 healthy necks, C1 beats both
+alternatives on every span: C2--C7 $\SI{+15.4}{\degree}\pm\SI{13.7}{\degree}$ (matching the F1000
+literature mean of \SI{15.4}{\degree}), and the C6--C7 cervicothoracic endpoint --- the failure point of
+the other methods --- drops to SD \SI{5.9}{\degree} (versus \SI{18.5}{\degree} for canal-cut). The
+benchmark ceiling for an automated cervical-T2 Cobb is Zhang~et~al.\ (MAE \SI{2.44}{\degree})~\cite{zhang2025}.
+
+\paragraph{Reporting and a corrected assumption.} Because absolute accuracy needs radiologist GT we lack,
+Group 4 reports alignment as a descriptive class (lordotic/straightened/kyphotic) for review, with the
+endpoint and supine caveats, rather than a hard-flagged magnitude. We also corrected a common false
+assumption: supine MRI does \emph{not} read $\sim$\SI{5}{\degree} less lordotic than standing for C2--C7
+(the difference is not significant in the F1000 cohort), so a flat supine$\rightarrow$standing offset
+should not be applied.
+
+\paragraph{Status.} C1 is the validated \emph{method} (precision $+$ correct lordosis): well-positioned
+controls read \SIrange{+15}{+20}{\degree}, matching the standing-radiograph literature. As a
+\emph{discriminator}, however, it is \textbf{not} validated: on a representative balanced cohort (26
+healthy vs.\ 41 symptomatic) the healthy mean falls to \SI{+10.7}{\degree}, essentially onto the
+symptomatic \SI{+8.0}{\degree} ($d=0.28$, AUC $0.57$, $p=0.32$; Section~\ref{sec:results}). The
+encouraging $n{=}11$ directional result ($d=0.76$) was a lordosis-biased small sample. Cervical alignment
+is biologically too variable (healthy SD $\sim$\SI{10}{\degree}) and supine positioning is a confound, so
+we report G4 as a validated \emph{measurement}, not a screen.

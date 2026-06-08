@@ -183,6 +183,26 @@ _DHI_CAVEAT = (
     "absolute disc height <3 mm instead. Review-only."
 )
 
+# Disc / VB AP-width ratio (disc_vb_ap_ratio). G2's discriminating metric (lesion vs
+# non-lesion AUC 0.62, p=0.0018, level-controlled, within-MMCSD; J23). NO published cervical
+# disc-AP/VB-AP-width ratio norm exists (search NEGATIVE, memory disc_vb_ap_ratio_norm), so the
+# >=1.10 cut is COHORT-DERIVED from the MMCSD/healthy distribution -- the same approach as the
+# Ha/Hp cohort z-screen, NOT a literature cutoff. The mechanism IS literature-grounded: cervical
+# disc AP diameter widens with age/degeneration (Machino 2021, PMID 34098133, n=1211 MRI).
+_DISC_VB_RATIO_CUT = 1.10
+_DISC_VB_RATIO_CITATION = (
+    "Cohort-derived cut (no published cervical disc-AP/VB-AP-width ratio norm exists -- "
+    "search NEGATIVE). Mechanism literature-grounded: disc AP diameter increases with "
+    "degeneration (Machino 2021, PMID 34098133, n=1211 cervical MRI). Bulge-beyond-margin "
+    "concept = Fardon v2.0 2014 (Spine J 14(11):2525-2545, doi:10.1016/j.spinee.2014.04.022; "
+    "lumbar borrow)."
+)
+_DISC_VB_RATIO_CAVEAT = (
+    "Cohort-calibrated (MMCSD), NOT a literature threshold; discriminates only modestly "
+    "(AUC 0.62, level-controlled) and has no per-case ground truth. Finding for physician "
+    "review; clinical correlation required."
+)
+
 
 # Canal / cord / stenosis.
 # dural_sac_AP_min: SOFT-TISSUE dural sac (SCT), not osseous canal. Bands are a provisional
@@ -210,6 +230,8 @@ _CORD_AP_CAVEAT = (
 )
 # SAC <3 mm = high compression risk (radiograph-origin, verify). Torg <0.8 developmental stenosis.
 _SAC_CUT = 3.0
+_SAC_SEVERE_CUT = 1.0   # SAC <3 over-flags 7-15% healthy on MRI (Nell calls it doubtful; A.3) ->
+                        # 1-3 mm is a conservative review heuristic; only <1 mm is a hard high-risk flag.
 _SAC_CITATION = (
     "SAC <3 mm = high compression risk (plan-cited Fehlings 2015 / Nouri 2016) -- radiograph-origin, "
     "verify for MRI (pending Phase-4); Nell 2019 (PMC6764695) healthy percentiles"
@@ -327,12 +349,33 @@ THRESHOLDS: dict[str, ThresholdSpec] = {
         tag="raw",
         bands=(
             Band("no_bulge", None, _BULGE_PRESENT_CUT, "within"),
-            Band("bulge_present", _BULGE_PRESENT_CUT, _BULGE_CORD_RISK_CUT, "outside"),
-            Band("cord_risk", _BULGE_CORD_RISK_CUT, None, "outside"),
+            # >1 mm = bulge (Nakashima) but NON-SPECIFIC (87.6% of asymptomatic) -> REVIEW, not a hard
+            # flag. The 1.35 mm "cord-risk" cut is dropped: research handoff A.6 flags it as unverified /
+            # likely confabulated (do not cite until AUB full-text confirms).
+            Band("bulge_present_nonspecific", _BULGE_PRESENT_CUT, None, "review"),
         ),
         citation=_BULGE_CITATION,
         modality_caveat=_BULGE_CAVEAT,
-        provenance_note="Replaces in-code >=2 mm / ratio>=1.10 flag; also needs the tilted-chord fix.",
+        provenance_note=(
+            "Replaces in-code >=2 mm / ratio>=1.10 flag; >1 mm is non-specific (review, not outside); "
+            "1.35 mm cord-risk band REMOVED (unverified/confabulated, A.6)."
+        ),
+    ),
+    "disc_vb_ap_ratio": ThresholdSpec(
+        key="disc_vb_ap_ratio",
+        clinical_name="disc AP width / adjacent vertebral-body AP width ratio",
+        unit="ratio",
+        tag="derived",
+        bands=(
+            Band("within_cohort", None, _DISC_VB_RATIO_CUT, "within"),
+            Band("disc_spread_review", _DISC_VB_RATIO_CUT, None, "review"),
+        ),
+        citation=_DISC_VB_RATIO_CITATION,
+        modality_caveat=_DISC_VB_RATIO_CAVEAT,
+        provenance_note=(
+            "Cohort-derived >=1.10 cut (no published cervical disc/VB-AP-ratio norm; mechanism "
+            "Machino 2021). G2's discriminating metric (AUC 0.62, J23); review-only, no per-case GT."
+        ),
     ),
     "pfirrmann_grade": ThresholdSpec(
         key="pfirrmann_grade",
@@ -388,11 +431,15 @@ THRESHOLDS: dict[str, ThresholdSpec] = {
         tag="derived",
         bands=(
             Band("normal", _SAC_CUT, None, "within"),
-            Band("high_risk", None, _SAC_CUT, "outside"),
+            Band("reduced_heuristic", _SAC_SEVERE_CUT, _SAC_CUT, "review"),
+            Band("severe", None, _SAC_SEVERE_CUT, "outside"),
         ),
         citation=_SAC_CITATION,
         modality_caveat=_SAC_CAVEAT,
-        provenance_note="SAC<3 mm high-risk; radiograph-origin, verify (pending Phase-4).",
+        provenance_note=(
+            "DEMOTED (A.3): SAC<3 mm radiograph-borrow over-flags 7-15% healthy on MRI -> 1-3 mm is "
+            "review-only, only <1 mm is a hard high-risk flag. Dural-sac AP is the primary stenosis metric."
+        ),
     ),
     "Torg_Pavlov_ratio": ThresholdSpec(
         key="Torg_Pavlov_ratio",
@@ -401,11 +448,13 @@ THRESHOLDS: dict[str, ThresholdSpec] = {
         tag="derived",
         bands=(
             Band("normal", _TORG_CUT, None, "within"),
-            Band("developmental_stenosis_screen", None, _TORG_CUT, "outside"),
+            # NEVER a standalone flag: 93% of normal men fall <0.8 on MRI (Tierney; A.4). Supporting
+            # feature only -> review, never outside.
+            Band("low_torg_supporting", None, _TORG_CUT, "review"),
         ),
         citation=_TORG_CITATION,
         modality_caveat=_TORG_CAVEAT,
-        provenance_note="Planned; radiograph-origin <0.8; MRI adjustment pending Phase-4.",
+        provenance_note="DEMOTED (A.4): Torg<0.8 is a SUPPORTING feature only, never a standalone flag (93% of normal men fall below on MRI).",
     ),
     "Cobb_C3_C7": ThresholdSpec(
         key="Cobb_C3_C7",
@@ -485,18 +534,50 @@ THRESHOLDS: dict[str, ThresholdSpec] = {
 }
 
 
-def classify(key: str, value: float) -> ThresholdEval:
+# Sex-specific dural-sac stenosis cut (Nell 2019 PMC6764695: M < 10 mm, F < 9 mm). Applied only
+# when a patient sex is supplied; otherwise the sex-neutral 10 mm cut (spec.bands) is used.
+_DURAL_STENOSIS_CUT_BY_SEX = {"M": 10.0, "F": 9.0}
+
+
+def _norm_sex(sex: str | None) -> str | None:
+    if not sex:
+        return None
+    s = str(sex).strip().lower()
+    if s in ("m", "male"):
+        return "M"
+    if s in ("f", "female"):
+        return "F"
+    return None
+
+
+def _bands_for(key: str, spec: "ThresholdSpec", sex: str | None) -> "tuple[Band, ...] | None":
+    """The catalog bands, sex-adjusted where a cited sex-specific cut exists (dural sac)."""
+    s = _norm_sex(sex)
+    if key == "dural_sac_AP_min" and spec.bands and s in _DURAL_STENOSIS_CUT_BY_SEX:
+        cut = _DURAL_STENOSIS_CUT_BY_SEX[s]
+        return (
+            Band("normal", _DURAL_NORMAL_CUT, None, "within"),
+            Band("borderline", cut, _DURAL_NORMAL_CUT, "within"),
+            Band("stenosis", None, cut, "outside"),
+        )
+    return spec.bands
+
+
+def classify(key: str, value: float, sex: str | None = None) -> ThresholdEval:
     """Interpret a measurement value against the catalog.
 
     Returns a ThresholdEval with the standardized `status`, the per-measurement
     `severity` label, the boolean clinical `flag`, and the locked `citation` + caveat.
+    `sex` ('M'/'F'/'male'/'female') applies the cited sex-specific cut where one exists
+    (currently the dural-sac stenosis threshold, Nell 2019 M10/F9); ignored otherwise.
     Raises KeyError for an unknown key (the caller decides how to handle measurements
     not yet in the catalog).
     """
     spec = THRESHOLDS[key]
     value = float(value)
-    if spec.bands:
-        for band in spec.bands:
+    bands = _bands_for(key, spec, sex)
+    if bands:
+        for band in bands:
             if band.contains(value):
                 return ThresholdEval(
                     measurement=key,

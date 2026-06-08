@@ -1,0 +1,29 @@
+\section{Methods: Group 3 --- Canal and Cord}
+\label{sec:g3}
+
+Group 3 measures the functional (soft-tissue) canal / dural-sac AP minimum, the spinal cord AP diameter,
+the space available for the cord (SAC), and the Torg--Pavlov ratio. These are computed from the Spinal
+Cord Toolbox segmentations rather than from TSS, because SCT's cord and canal models are purpose-built
+and validated for soft-tissue cord/canal morphometry.
+
+\paragraph{Computation.} \texttt{sct\_deepseg} produces binary canal and cord masks on the isotropic
+volume; \texttt{sct\_process\_segmentation -perslice -vert 2:7 -discfile <levels>} returns, per slice and
+per vertebral level, the AP diameter (and area, eccentricity, etc.). We take the per-level mean AP and
+the across-level minimum for the canal and cord; SAC is the per-level canal$-$cord difference, and we
+report its minimum. Because canal and cord are mapped to the same TSS level index, SAC is computed on
+matched levels.
+
+\paragraph{Thresholds and the modality caveat.} Normal cervical canal/SAC/Torg and vertebral-width
+percentiles come from healthy-population studies~\cite{nell2019}; cord cross-section can be compared to
+the PAM50 normative database~\cite{valosek2024}. A key honesty point: several widely cited canal/SAC/Torg
+cut-points are \emph{osseous canal / radiograph-derived} and over-flag when applied to MRI soft-tissue
+measurements. The Torg--Pavlov ratio ($<0.8$) in particular fires in a large fraction of normal subjects
+on MRI and must never be used alone; the soft-tissue dural-sac floor is better placed near
+\SIrange{9}{10}{\milli\meter}; and SAC$<\SI{3}{\milli\meter}$ is a radiograph-origin risk flag to be
+verified for MRI. The interpretation catalog encodes these caveats explicitly.
+
+\paragraph{Status.} Group 3 is the most strongly validated group: on real MRI, canal-AP minimum and SAC
+minimum separate healthy from symptomatic at $p=0.0001$, and cord AP is significantly thinner in the
+symptomatic cohort (Section~\ref{sec:results}). Notably, on our healthy controls the SAC$<3$ and
+canal$<10$ cuts did \emph{not} over-flag (0\%), tempering --- for this cohort --- the over-flagging
+concern (though young controls have wide canals; see limitations).
