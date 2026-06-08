@@ -11,6 +11,37 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-08 (cont. 6) — Andrew (live 3-engine segmentation: deploy-side built, BLOCKED on science wrappers)
+
+**Branch:** `feat/eep/scaffold` — pushed.
+
+**Decision:** make the website run REAL segmentation (the current demo uses a stand-in). The 3 engines
+are **TotalSpineSeg, SCT, SPINEPS** (corrected from my earlier guess) — separate images (TSS vs SPINEPS
+pin incompatible numpy).
+
+**Built on the deploy side (ready to plug in):**
+- **EEP parallel fan-out** — `services/eep/clients/segmentation.py` (`asyncio.gather` over the 3 engines)
+  + `orchestration.process_upload(input_bytes)` + upload-bytes capture in the router + `segmentation_ready`
+  in `/readyz` + stand-in fallback (current demo keeps working) + 3 tests. `pytest -q` → 30 passed.
+- **Seg node group IaC** `deployment/aws/segmentation-nodegroup.yaml` (CPU `c5.2xlarge` now / GPU `g4dn`
+  commented for when quota lands).
+- **Dockerfiles** `deployment/docker/seg-{tss,sct,spineps}.Dockerfile` (device-agnostic).
+- **Cloud-build workflow** `.github/workflows/build-seg-images.yml` — builds the ~10 GB images on amd64
+  (local Docker Desktop I/O-errored on the ~10 GB TSS image) + pushes to ECR.
+- **Docs** `docs/segmentation-deploy.md`.
+
+**BLOCKERS (not deploy-side):**
+1. **SPINEPS has NO service wrapper** — only `colab/group5/...ipynb` + `research/group5/run_spineps_alignment.py`.
+   Science chat must wrap all 3 engines as services on a canonical branch (seg-services handoff written + given to Andrew).
+2. **GPU quota = 0** on the new account → increase to 16 REQUESTED (PENDING, AWS-timed). CPU works but
+   **~35 min/case** for TSS (not great for a live demo).
+
+**Pending / next:** science delivers finalized wrappers → cloud-build the 3 images → deploy seg node group
++ 3 services → set `SEG_*_URL` on the EEP → e2e on a real MRI. The current deployed demo (real
+measurements + report, stand-in segmentation) is unaffected + is the fallback.
+
+---
+
 ## 2026-06-08 (cont. 5) — Andrew (S3 retries + positioning/demo docs + auth coordination)
 
 **Branch:** `feat/eep/scaffold` — pushed.
