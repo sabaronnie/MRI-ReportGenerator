@@ -15,6 +15,10 @@ pre-flight, and keep the fallback ready.
    + a few clicks, so Grafana panels show data.
 5. **Fallback ready:** if AWS misbehaves, `cd deployment/compose && docker compose up` runs the identical
    stack locally; the frontend in `live` mode points at it. (Mention it's the same images.)
+6. **If deploying the auth-enabled image** (full-stack branch): create the `eep-auth` Secret first
+   (see `docs/deployment.md` → Authentication), and demo login with `radiologist@demo` / `demo12345`.
+   `/cases*` then needs a token — the frontend handles it; raw `curl` needs `POST /auth/login` first.
+   The EEP is single-replica (in-memory store), so uploaded cases stay on the one pod — expected.
 
 ## The flow (≈6–8 min) — call out the rubric box as you go
 1. **Frontend → worklist** (`<frontend>`): log in as the radiologist. "This is the public app on AWS."

@@ -47,6 +47,37 @@ Local equivalents: [`deployment/docker/`](../deployment/docker/) (images) + [`de
 - **S3 access:** scoped IAM policy on the node role (`s3:GetObject`/`ListBucket` on the samples bucket
   ARN only), not broad S3 access.
 
+## Authentication (full-stack branch `feat/app/fullstack-local`)
+The EEP gained JWT auth (HS256 + Argon2id + a SQLite user store; see `services/eep/auth/` +
+`docs/auth-design.md`). `/cases*` then require a Bearer token; `/healthz`, `/readyz`, `/metrics`,
+`/auth/login` stay open (so Prometheus scraping and the deployed e2e's login step are unaffected).
+- **Env (set as a k8s Secret, never committed):** `JWT_SECRET` (≥32 bytes, REQUIRED in prod so tokens
+  verify across pods), `DEMO_PASSWORD`/`ADMIN_PASSWORD`/`ADMIN_EMAIL` (seed creds), optional
+  `JWT_TTL_HOURS`, `USERS_DB_PATH`. The EEP manifest already wires these from an **optional** Secret
+  `eep-auth` (so the pre-auth image still starts). Create it before deploying the auth image:
+  ```bash
+  kubectl -n mri create secret generic eep-auth \
+    --from-literal=JWT_SECRET="$(openssl rand -hex 32)" \
+    --from-literal=DEMO_PASSWORD='demo12345' \
+    --from-literal=ADMIN_PASSWORD='demo12345'
+  ```
+- **User store + replicas:** the SQLite store auto-seeds the 4 demo accounts per pod on boot. Combined
+  with the single-replica EEP (below) this is consistent for the demo. For multi-replica or
+  runtime-created users surviving restarts, point `USERS_DB_PATH` at a PersistentVolume (or move users
+  to RDS alongside the case store).
+- **Merge note (2 shared files):** at integration, take the full-stack branch's `services/eep/app.py`
+  (adds the auth router + `Depends(get_current_user)` guard on `/cases`) and `services/eep/requirements.txt`
+  (`pyjwt`, `argon2-cffi`). All other auth files are new (no conflict). Our test suite is already
+  auth-aware (the `client` fixture + the deployed-e2e log in if `/auth/login` exists), so it stays green
+  after the merge.
+
+## Single-replica EEP (state)
+The EEP runs **1 replica** because the case store is in-process (in-memory): an uploaded case lives on
+the pod that received it, so a second replica would 404 that case on a different pod (fixtures are
+seeded everywhere; uploads are not). Horizontal scale is gated on moving the store to **RDS/Postgres**
+(the documented next step; `store.py` is written as the seam). This is a deliberate
+reliability-vs-complexity tradeoff for the demo.
+
 ## Cost estimate (eu-north-1 / Stockholm — closest region to the deploying team)
 | Item | If left running 24/7 | Demo-only (spin up/tear down) |
 |------|---------------------:|------------------------------:|
