@@ -49,6 +49,15 @@ class MeasurementContext:
     sct_canal_seg_path: Path | None = None
     sct_cord_seg_path: Path | None = None
     raw_data: np.ndarray | None = None
+    # SPINEPS vertebra-instance mask (its OWN grid, not resampled): carries the thin
+    # inferior-endplate sheets (instance label offset + N) the C1 Cobb fits to. Kept in
+    # native orientation because the Cobb is an angle in that frame; resampling would
+    # destroy the 1-voxel sheets. Absent (None) when no SPINEPS pass was run -> Cobb
+    # falls back to the canal-cut endplate-line method.
+    spineps_seg_path: Path | None = None
+    seg_vert_data: np.ndarray | None = None
+    seg_vert_axcodes: tuple | None = None
+    seg_vert_zooms: tuple | None = None
     manifest: dict = field(default_factory=dict)
 
 
@@ -178,6 +187,7 @@ def load_context(
     levels_path: Path | str | None = None,
     sct_canal_seg_path: Path | str | None = None,
     sct_cord_seg_path: Path | str | None = None,
+    spineps_seg_path: Path | str | None = None,
     source_spacing_mm: Any = None,
 ) -> MeasurementContext:
     """Load a TotalSpineSeg step2_output (and optionally the raw MRI) into a measurement context.
@@ -216,6 +226,17 @@ def load_context(
     sct_canal_seg_resolved = None if sct_canal_seg_path is None else Path(sct_canal_seg_path).resolve()
     sct_cord_seg_resolved = None if sct_cord_seg_path is None else Path(sct_cord_seg_path).resolve()
 
+    # SPINEPS vertebra-instance mask (optional). Loaded in its NATIVE grid/orientation so the
+    # thin endplate sheets survive; the C1 Cobb works in that frame from its own axcodes/zooms.
+    spineps_seg_resolved = None
+    seg_vert_data = seg_vert_axcodes = seg_vert_zooms = None
+    if spineps_seg_path is not None:
+        spineps_seg_resolved = Path(spineps_seg_path).resolve()
+        sv_img = nib.load(str(spineps_seg_resolved))
+        seg_vert_data = np.rint(np.asarray(sv_img.dataobj)).astype(np.int32)
+        seg_vert_axcodes = tuple(nib.aff2axcodes(sv_img.affine))
+        seg_vert_zooms = tuple(float(z) for z in sv_img.header.get_zooms()[:3])
+
     return MeasurementContext(
         seg_path=seg_path,
         seg_data=seg_data,
@@ -226,6 +247,10 @@ def load_context(
         sct_canal_seg_path=sct_canal_seg_resolved,
         sct_cord_seg_path=sct_cord_seg_resolved,
         raw_data=raw_data,
+        spineps_seg_path=spineps_seg_resolved,
+        seg_vert_data=seg_vert_data,
+        seg_vert_axcodes=seg_vert_axcodes,
+        seg_vert_zooms=seg_vert_zooms,
         manifest={
             "seg_shape": list(seg_data.shape),
             "voxel_spacing_mm": list(spacing),
