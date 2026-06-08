@@ -1,0 +1,40 @@
+\section{Methods: Group 6 --- Interpretation}
+\label{sec:g6}
+
+The interpretation layer turns raw measurements into status, severity, and flags by comparing each value
+to a central, fully cited threshold catalog. It is deliberately separated from measurement extraction so
+that the science (the thresholds) lives in one auditable place.
+
+\paragraph{The threshold catalog.} \texttt{thresholds.py} holds one specification per measurement key
+(clinical name, unit, severity bands, flag threshold, citation, modality caveat, and a tag of
+raw/derived/quality). \texttt{classify(key, value)} walks the ordered bands and returns a standardized
+status (\texttt{within\_reference} / \texttt{outside\_reference} / \texttt{review\_only} /
+\texttt{not\_interpretable}), a per-measurement severity label, the boolean clinical flag
+(\texttt{true} iff the value lands in an ``outside'' band), and the locked citation and caveat. Where no
+cited threshold exists, the spec says so (citation \texttt{None}, status \texttt{review\_only}) --- the
+system never invents a number.
+
+\paragraph{Provenance and honesty rules.} Every clinical number carries a primary-source citation
+(PMID/DOI), copied verbatim from verified-research notes because automated literature search can
+hallucinate author names on real identifiers. Modality caveats are attached where a threshold is a
+radiograph/CT/lumbar borrow (e.g.\ Torg, the osseous canal cuts, the lumbar-origin disc rules), so the
+report never silently conflates a bony-canal threshold with a soft-tissue MRI measurement.
+
+\paragraph{Quality versus clinical flags.} A flag is classified as a quality/caution flag (not a patient
+abnormality) if its name matches markers such as \texttt{outlier}, \texttt{unreliable},
+\texttt{approximate}, \texttt{low\_confidence}, \texttt{misaligned}, \texttt{resolution}, or
+\texttt{warning}. This fixes an earlier mis-classification where a vertebral-tilt quality flag could be
+read as pathology.
+
+\paragraph{Syndrome indicators.} Provisional, advisory-only combination rules sketch myelopathy (canal
+narrowing $+$ low SAC $+$ cord signal at a level) and radiculopathy (weak on sagittal-only MRI, since
+foraminal dimensions are not measured) --- each marked provisional and never diagnostic.
+
+\paragraph{Threshold corrections folded in from validation research.} A dedicated research pass produced
+corrections now reflected as caveats/bands: the dural-sac/SAC/Torg cuts are osseous/radiograph borrows
+that over-flag on MRI; the \SI{1.35}{\milli\meter} disc ``cord-risk'' figure is unverified; the Miyazaki
+grade-IV is non-discriminating in isolation; and a prior MRI-vs-CT disc-height offset had been inverted.
+
+\paragraph{Status.} The engine and catalog are built and unit-tested; the end-to-end run is gated on the
+measurement validation that this paper reports, after which the gap-filling thresholds (MSCC/MCC,
+per-level segmental norms, etc.) are the remaining Group~6 work.

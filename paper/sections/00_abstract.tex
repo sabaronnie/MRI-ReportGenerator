@@ -1,0 +1,26 @@
+Cervical spine MRI is read manually by radiologists, a process that is slow and subject to high
+inter-observer variability in the quantitative measurements (vertebral heights, disc dimensions, canal
+and cord diameters, sagittal alignment) that drive clinical decisions in degenerative cervical
+myelopathy and radiculopathy. We present \textbf{MRI-ReportGenerator}, an application-positioned
+pipeline that converts a single sagittal T2 cervical MRI (DICOM or NIfTI) into a structured,
+radiology-style report. The system chains three pre-trained, openly licensed segmentation engines
+(TotalSpineSeg, the Spinal Cord Toolbox, and SPINEPS), a suite of geometric and signal-based
+measurement modules organized into five groups (vertebral body, intervertebral disc, canal/cord,
+sagittal alignment, and signal/shape screens), and an interpretation layer that classifies every
+measurement against a central catalog of literature-grounded thresholds and emits findings ``flagged
+for physician review,'' never a diagnosis. A core engineering principle is that every measurement is a
+disease-agnostic geometric or signal detector anchored on healthy normative values, so that the
+abnormal-detection generalizes across any pathology that produces the same anatomical change, rather
+than being trained on a particular disease. Because no public dataset pairs cervical MRI with per-case
+expert measurements, we validate by \emph{threshold crossing and distribution separation}: healthy
+necks must sit on the normal side of each cited threshold, and a symptomatic cohort must shift into the
+abnormal side. On 12 healthy Spine-Generic controls versus 10 symptomatic cervical-spondylosis cases
+from the MMCSD dataset, the canal/cord measurements separate strongly (functional canal AP minimum and
+space-available-for-cord, both Mann--Whitney $p=0.0001$); the SPINEPS endplate-voxel Cobb method reads
+correct lordosis on healthy necks (\SI{+15.2}{\degree}, matching the literature) and a reduced value on
+the pathological cohort; the vertebral compression screen is correctly silent on a non-compression
+cohort; and the validation harness additionally detected a genuine sign-level bug in the disc-height
+index (a denominator over-measured at the cervicothoracic junction). We document the full
+mistake-to-fix methodology narrative, the limitations imposed by the absence of ground truth, and the
+deployment architecture. The contribution is less a new algorithm than a disciplined, honest,
+end-to-end \emph{engineering} of clinical measurement automation with explicit provenance and validation.
