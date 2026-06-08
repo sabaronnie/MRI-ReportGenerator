@@ -15,6 +15,7 @@
 
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 \setlist{nosep, leftmargin=1.4em}
+\sloppy  % prefer slightly loose spacing over text overflowing into the margin
 
 \title{\textbf{AI Technical Depth \& Non-Triviality}\\[2pt]
 \large Rubric Deliverable T1 --- MRI-ReportGenerator (Cervical Spine MRI Analysis)}
@@ -90,6 +91,7 @@ workstation uses a DICOM loader.''
 
 % ---------------------------------------------------------------------
 \section{Pipeline overview}
+{\footnotesize
 \begin{verbatim}
 Input (DICOM / NIfTI, sagittal T2)
    |
@@ -111,6 +113,7 @@ Interpretation     -- G6 threshold catalog -> status per finding (cited threshol
    v
 Reporting IEP      -- structured, radiologist-style report ("flagged for physician review")
 \end{verbatim}
+}
 
 The Enterprise Execution Plane (EEP) orchestrates the two deployed Internal Execution Planes
 (measurements, reporting); see the infra documentation for the service architecture. This document
