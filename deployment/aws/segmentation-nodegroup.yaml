@@ -1,0 +1,40 @@
+# Compute node group for the segmentation models (TotalSpineSeg + SCT). Separate from the default
+# CPU nodes so the heavy/long model pods don't crowd the EEP/measurements/reporting services.
+#   eksctl create nodegroup -f deployment/aws/segmentation-nodegroup.yaml
+#   eksctl delete nodegroup -f deployment/aws/segmentation-nodegroup.yaml --approve
+#
+# CPU now (no GPU quota needed); flip to the GPU group once the "Running On-Demand G and VT
+# instances" quota is approved (the model images are device-agnostic — same image, faster on GPU).
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: mri-reportgenerator
+  region: eu-north-1
+
+managedNodeGroups:
+  # --- CPU (deployable today; ~8 vCPU / 16 GB fits nnUNet's memory) ---
+  - name: ng-seg-cpu
+    instanceType: c5.2xlarge
+    desiredCapacity: 1
+    minSize: 0
+    maxSize: 2
+    volumeSize: 80           # GB — room for the multi-GB images + model weights
+    labels: { workload: segmentation }
+    taints:
+      - key: workload
+        value: "segmentation"
+        effect: NoSchedule   # only segmentation pods (with the matching toleration) land here
+
+  # --- GPU (uncomment once the G/VT quota is approved; eksctl auto-installs the NVIDIA device plugin) ---
+  # - name: ng-seg-gpu
+  #   instanceType: g4dn.xlarge   # 1 GPU / 4 vCPU / 16 GB
+  #   desiredCapacity: 1
+  #   minSize: 0
+  #   maxSize: 3
+  #   volumeSize: 100
+  #   labels: { workload: segmentation, accelerator: nvidia }
+  #   taints:
+  #     - key: workload
+  #       value: "segmentation"
+  #       effect: NoSchedule
