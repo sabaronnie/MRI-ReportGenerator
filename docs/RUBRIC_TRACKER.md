@@ -81,7 +81,7 @@
 |---|------|--------|------|
 | M1 | Automated lifecycle pipeline | 🔴 | See risk #2 (validation-as-lifecycle framing) + CI. `[infra]+[science]` |
 | M2 | Experiment tracking & thresholds | 🔴 | MLflow (or equivalent) logging validation runs + threshold table. `[infra]+[science]` |
-| M3 | Monitoring & ML signal | 🟡 | `/metrics` **exposed** on both services (eep_requests_total, eep_request_duration_seconds; measurement_duration_seconds, measurement_results_total, measurement_pathology_flags_total). Need Prometheus scrape + **Grafana** dashboards (p50/p95, error rate, throughput) + ≥1 ML signal (pathology-flag rate / component error rate as drift proxy). `[infra]` |
+| M3 | Monitoring & ML signal | ✅ | kube-prometheus-stack deployed on EKS; ServiceMonitors scrape all 3 services; Grafana dashboard "MRI-ReportGenerator — Services" (throughput, error rate by class, p50/p95 latency, IEP durations) + ML signal panel (`measurement_pathology_flags_total` distribution). Verified live with traffic. See `docs/monitoring.md`. |
 | M4 | Documentation completeness | 🟡 | `docs/*` are stubs; `DEVELOPMENT_JOURNEY.md` ✅. Need business + technical + deployment + cost docs. `[infra]+[team]` |
 
 ---

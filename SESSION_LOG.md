@@ -11,6 +11,30 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-08 (cont. 3) — Andrew (monitoring: Prometheus + Grafana on EKS → M3 met)
+
+**Branch:** `feat/eep/scaffold` — pushed.
+
+**What was done:**
+- **Deployed kube-prometheus-stack** (Prometheus Operator + Prometheus + Grafana + node-exporter +
+  kube-state-metrics) via Helm to the EKS cluster (`monitoring` ns). IaC in `deployment/monitoring/`
+  (values.yaml, servicemonitors.yaml, dashboard-configmap.yaml, install.sh) + `docs/monitoring.md`.
+- **ServiceMonitors** scrape all 3 services' `/metrics` (eep, measurements, reporting) — verified all
+  targets `up` in Prometheus. Named the metrics ports on measurements/reporting services.
+- **Custom Grafana dashboard** "MRI-ReportGenerator — Services": EEP throughput, error rate by class
+  (4xx/5xx), latency p50/p95, measurements component p95 + outcomes, reporting render rate/p95, and the
+  **ML signal** panel (`measurement_pathology_flags_total` by flag = output-distribution proxy).
+- **Verified live**: generated traffic (incl. uploads exercising measurements + pathology flags),
+  opened Grafana in-browser, dashboard renders real data. Screenshot `../grafana-dashboard-clean.png`.
+- **Grafana is public** via LB: `http://a7175637bf30040feb6bcdf4719ebd42-937560400.eu-north-1.elb.amazonaws.com`
+  (admin / mri-demo-admin). Rubric M3 (§11) MET.
+
+**Pending / next:** still open (RUBRIC_TRACKER): automated e2e test on deployed system (Q1), finish
+Tradeoffs doc (T5), MLOps framing (M1/M2), open PRs (G2). Cluster + monitoring LEFT RUNNING for the
+demo tomorrow — TEARDOWN after: `deployment/aws/teardown.sh` (+ `helm uninstall kps -n monitoring`).
+
+---
+
 ## 2026-06-08 (cont. 2) — Andrew (reporting wired as 2nd IEP → GT3 met, live on AWS)
 
 **Branch:** `feat/eep/scaffold` — pushed.
