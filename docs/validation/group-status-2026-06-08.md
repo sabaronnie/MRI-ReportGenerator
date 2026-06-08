@@ -69,6 +69,18 @@ All on masks already on disk (12 healthy Spine-Generic, C3-C7, both 0.8 mm and 4
   group-level (**robust for the mean**, ~0.14 per-body scatter); canal-cut Cobb |Δ| 15.6° (**NOT robust** —
   third argument for the SPINEPS C1 method over canal-cut). mm metrics immune as predicted.
 
+## Service-code fixes applied (2026-06-08, journal J22; Andrew now owns all group code)
+Each run through the real 12 healthy + 10 unhealthy service contexts, kept only on evidence; all 137
+service tests green. Harness: `research/group5/test_service_g1_g2.py`.
+
+- **G1 tilt cut 20→45°** (`cervical_body_morphometry.py`) — healthy tilt-flag 88% → 0%. ✅ committed.
+- **G1 heights → endplate-line fit** (`cervical_body_morphometry.py`) — healthy Ha/Hp 1.08 → 0.93
+  (was backwards: anterior read taller); direction preserved (H 0.93 ≥ U 0.89). ✅ committed.
+- **G2 bulge reference → endplate corners** (`disc_ap_bulge.py`) — healthy bulge 2.93 → 0.00 mm,
+  over-flag 60% → 8%; no cross-dataset discrimination yet (within-MMCSD pending). ✅ committed.
+- **G4 SPINEPS C1 Cobb plumbed** (`context.py` + `c3c7_cobb_angle.py`) — context carries seg-vert,
+  c3c7 prefers C1 (healthy 15.2°), falls back to canal-cut; rescues C7-obscured necks. ✅ committed.
+
 ## One-line state
 G3 validated; G4 method-validated/directional; G1+G5 screens healthy-validated (compression arm gap);
 G2 not validated (active remediation, 50-case within-MMCSD run); G6 built, pending. Local: G1 tilt cut

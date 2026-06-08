@@ -389,6 +389,37 @@ keep it honest and specific (numbers, dates, evidence, citations). Chronological
   a fragile body-isolation can amplify coarse-slice noise — robustness is a property of the *method*, not just
   the quantity.
 
+## J22 — Applying the validation findings to the SERVICE code (4 fixes, each kept only on evidence)
+Andrew took over all teammate group code; the four mask-independent fixes below were each run through the
+real 12 healthy + 10 unhealthy service contexts (`test_service_g1_g2.py`) and kept only if they corrected
+the target metric (revert otherwise). All 137 service tests stayed green after each.
+
+- **G1 tilt cut 20→45° (`cervical_body_morphometry.py`)** — the service confirmed the 20° cut flagged
+  **88% of healthy** vertebrae (median 27.9°); at 45° → **0% healthy** (and 0% on the straighter CSM necks,
+  which the flag should leave alone). Quality flag, can't cause clinical false-negatives. Committed.
+
+- **G1 heights via endplate-line, not corner extrema (`cervical_body_morphometry.py`)** — wired the already-
+  vendored `endplate_line_heights` into the service (it was present but only `_endplate_cobb` used it). Fixed
+  healthy Ha/Hp **1.08 → 0.93** (corner extrema read anterior TALLER than posterior — backwards; the line fit
+  gives the physiological posterior>anterior ~0.94). Healthy stays ≥ unhealthy (0.93 vs 0.89). Corner
+  fallback retained for degenerate slices. Committed.
+
+- **G2 posterior-bulge reference from endplate corners (`disc_ap_bulge.py`)** — the chord WAS already tilted
+  (upper-PI→lower-PS), so the memory's "flat vertical line" was already fixed; the residual backwards result
+  came from the *corner-extrema* posterior corners sitting too anterior. Sourcing PI/PS from the endplate-line
+  fit dropped healthy bulge **2.93 mm → 0.00 mm**, over-flag **60% → 8%** (healthy discs read flush, correct),
+  no longer backwards (healthy 8% ≈ unhealthy 7%). **Caught a latent bug:** `DISC_TO_VERTS` yields level-NAME
+  strings, so `seg==name` silently matched nothing and fell back every time — resolved via `VERT_LABELS`. No
+  cross-dataset discrimination (8% vs 7%) — that is the confound, deferred to the within-MMCSD 50-case run.
+  Committed.
+
+- **G4 SPINEPS C1 Cobb plumbed into the context (`context.py` + `c3c7_cobb_angle.py`)** — `load_context` now
+  carries an optional SPINEPS seg-vert (native grid, to preserve the thin endplate sheets); `c3c7_cobb_angle`
+  prefers `spineps_endplate_cobb_angle` when present, falls back to canal-cut otherwise. With seg-vert: 11/12
+  healthy + 10/10 unhealthy use C1, healthy median **15.2°** (= F1000 lit 15.4°). **Bonus:** SPINEPS rescues 3
+  healthy necks canal-cut couldn't measure (C7 obscured) → coverage up. p=0.13 still (n=11v10) — discrimination
+  is the SPINEPS-on-50 batch (RUN 2). Committed.
+
 ---
 *Open methodology gaps tracked elsewhere:* teammate threshold/citation fixes (disc DHI<0.30, bulge flat-wall,
 Pfirrmann cut-points) — see `group5/AUDIT_groups1-4_measurements.md`; C6/C7 Cobb **precision** is now closed by
