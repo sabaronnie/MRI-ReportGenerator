@@ -80,6 +80,7 @@ nnUNet_results/
 
 # --- MLflow / experiment tracking ---
 mlruns/
+mlflow.db
 mlartifacts/
 wandb/
 lightning_logs/
@@ -148,3 +149,18 @@ __pycache__/
 *.nii
 *.nii.gz
 *.dcm
+
+.venv-eep/
+services/eep/sample_data/
+
+# AWS deploy runtime artifact (load balancer host)
+deployment/aws/.eep_host
+
+# Auth user store (SQLite) — never commit
+services/eep/data/
+*.db
+*.db-wal
+*.db-shm
+
+# Demo case fixtures generated from research data (mmcsd research-use — not redistributable)
+services/eep/fixtures/case-demo-*.json

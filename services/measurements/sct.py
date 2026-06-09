@@ -105,7 +105,10 @@ def run_process_segmentation(
         str(output_csv),
         "-vert",
         vert,
-        "-discfile",
+        # SCT 7.0 renamed the vertebral-labeling flag from `-discfile` to `-vertfile`
+        # (old name is rejected: "unrecognized arguments: -discfile"). The TSS step1_levels
+        # labelmap is a valid vertebral labeling for it.
+        "-vertfile",
         str(discfile),
     ]
     if angle_corr:

@@ -347,7 +347,13 @@ def _prettify_key(key: str) -> str:
 def _format_value(value: Any, unit: str) -> str:
     if value is None:
         return "unavailable"
-    return f"{value} {unit}".strip()
+    if isinstance(value, (int, float)):
+        decimals = 2 if abs(value) < 2 else 1
+        num = f"{value:.{decimals}f}"
+    else:
+        num = str(value)
+    unit = "" if unit in (None, "", "unknown") else unit
+    return f"{num} {unit}".strip()
 
 
 def _build_alignment_section(
@@ -364,7 +370,7 @@ def _build_alignment_section(
     if label is not None:
         pieces.append(f"Cervical alignment is {label}.")
     if cobb is not None:
-        pieces.append(f"C3-C7 Cobb angle measures {cobb} deg.")
+        pieces.append(f"C3-C7 Cobb angle measures {cobb:.1f} deg.")
     caveat = metadata.get("classification_caveat")
     if caveat:
         pieces.append(caveat)
@@ -405,7 +411,7 @@ def _build_clinical_impression(
     cobb = (payload.get("measurements", {}).get("Cobb_C3_C7") or {}).get("C3-C7")
     if label is not None:
         if cobb is not None:
-            bullets.append(f"Alignment: {label}; C3-C7 Cobb angle {cobb} deg.")
+            bullets.append(f"Alignment: {label}; C3-C7 Cobb angle {cobb:.1f} deg.")
         else:
             bullets.append(f"Alignment: {label}.")
 

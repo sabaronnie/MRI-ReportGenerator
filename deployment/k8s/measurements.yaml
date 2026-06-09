@@ -1,0 +1,45 @@
+# Measurements IEP — internal only (ClusterIP). Reached by the EEP at http://measurements:8081.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: measurements
+  namespace: mri
+  labels: { app: measurements, tier: iep }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: measurements }
+  template:
+    metadata:
+      labels: { app: measurements, tier: iep }
+    spec:
+      containers:
+        - name: measurements
+          image: ${ECR_REGISTRY}/mri-measurements:${IMAGE_TAG}
+          ports:
+            - containerPort: 8081
+          readinessProbe:
+            httpGet: { path: /readyz, port: 8081 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8081 }
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            requests: { cpu: "250m", memory: "256Mi" }
+            limits:   { cpu: "1000m", memory: "1Gi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: measurements
+  namespace: mri
+  labels: { app: measurements }
+spec:
+  type: ClusterIP
+  selector: { app: measurements }
+  ports:
+    - name: http
+      port: 8081
+      targetPort: 8081

@@ -57,7 +57,7 @@ def compute(ctx: MeasurementContext, prior_results: dict[str, Any] | None = None
             work_dir = Path(tmpdir)
             canal_seg = ctx.sct_canal_seg_path
             if canal_seg is None:
-                canal_seg = run_sct_deepseg("canal", ctx.raw_path, work_dir / "deepseg")
+                canal_seg = run_sct_deepseg("sc_canal_t2", ctx.raw_path, work_dir / "deepseg")
             rows = run_process_segmentation(
                 canal_seg,
                 discfile=ctx.levels_path,

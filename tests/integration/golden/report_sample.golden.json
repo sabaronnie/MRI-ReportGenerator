@@ -1,0 +1,27 @@
+{
+  "impression": [
+    "Alignment: straightened / low lordosis; C3-C7 Cobb angle -2.0 deg.",
+    "C5: cord T2-hyperintensity screen (myelomalacia) 1.00 present (signal_anomaly_present).",
+    "C5: functional canal / dural-sac AP minimum (SCT) 9.8 mm (stenosis_provisional).",
+    "C5: pattern consistent with possible cervical myelopathy; clinical correlation required",
+    "C5: space available for the cord (canal AP - cord AP) 2.7 mm (high_risk)."
+  ],
+  "n_findings": 4,
+  "n_highlighted": 3,
+  "statuses": [
+    "outside_reference",
+    "review_only"
+  ],
+  "summary": {
+    "flagged_measurement_count": 3,
+    "measurement_row_count": 4,
+    "status_counts": {
+      "not_interpretable": 0,
+      "outside_reference": 3,
+      "review_only": 1,
+      "within_reference": 0
+    },
+    "syndrome_count": 1
+  },
+  "title": "Cervical Spine MRI Analysis Report"
+}

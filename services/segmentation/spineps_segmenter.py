@@ -63,6 +63,14 @@ def run_spineps(nifti_path: Path | str, work_dir: Path | str) -> SpinepsSegmenta
         "-model_semantic", "t2w",
         "-model_instance", "instance",
     ]
+    # Device-agnostic: SPINEPS defaults to CUDA and hard-fails (.cuda()) on a CPU-only node, so pass
+    # -cpu when no GPU is present. On a GPU node it runs on the GPU (far faster).
+    try:
+        import torch  # noqa: PLC0415 — optional; absence => assume CPU
+        if not torch.cuda.is_available():
+            cmd.append("-cpu")
+    except Exception:  # noqa: BLE001
+        cmd.append("-cpu")
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
         raise SpinepsSegmentationError(

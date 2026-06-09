@@ -1,0 +1,112 @@
+# Local full-stack for MRI-ReportGenerator.
+#
+#   cd deployment/compose && docker compose up --build
+#
+name: mri-reportgenerator
+
+services:
+  seg-tss:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/seg-tss.Dockerfile
+    ports:
+      - "8083:8083"
+    shm_size: "4gb"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys;sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8083/healthz').status==200 else 1)"]
+      interval: 30s
+      timeout: 3s
+      retries: 5
+
+  seg-sct:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/seg-sct.Dockerfile
+    ports:
+      - "8084:8084"
+    shm_size: "2gb"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys;sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8084/healthz').status==200 else 1)"]
+      interval: 30s
+      timeout: 3s
+      retries: 5
+
+  seg-spineps:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/seg-spineps.Dockerfile
+    ports:
+      - "8085:8085"
+    shm_size: "4gb"
+    mem_limit: "40g"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys;sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8085/healthz').status==200 else 1)"]
+      interval: 30s
+      timeout: 3s
+      retries: 5
+
+  measurements:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/measurements.Dockerfile
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys;sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8081/healthz').status==200 else 1)"]
+      interval: 30s
+      timeout: 3s
+      retries: 5
+
+  reporting:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/reporting.Dockerfile
+    ports:
+      - "8082:8082"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys;sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8082/healthz').status==200 else 1)"]
+      interval: 30s
+      timeout: 3s
+      retries: 5
+
+  eep:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/eep.Dockerfile
+    environment:
+      MEASUREMENTS_URL: "http://measurements:8081"
+      REPORTING_URL: "http://reporting:8082"
+      SEG_TSS_URL: "http://seg-tss:8083"
+      SEG_SCT_URL: "http://seg-sct:8084"
+      SEG_SPINEPS_URL: "http://seg-spineps:8085"
+      EEP_ALLOWED_ORIGINS: "http://localhost:3000"
+      EEP_SAMPLE_DIR: "/data/samples"
+    volumes:
+      # drop sample_volume_T2.nii.gz / sample_mask_tss.nii.gz / segmentation.zip here (gitignored)
+      - ./sample_data:/data/samples:ro
+    ports:
+      - "8080:8080"
+    depends_on:
+      measurements:
+        condition: service_healthy
+      reporting:
+        condition: service_healthy
+      seg-tss:
+        condition: service_healthy
+      seg-sct:
+        condition: service_healthy
+      seg-spineps:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile
+    environment:
+      NEXT_PUBLIC_API_MODE: "live"
+      NEXT_PUBLIC_EEP_URL: "http://localhost:8080"
+    ports:
+      - "3000:3000"
+    depends_on:
+      eep:
+        condition: service_started

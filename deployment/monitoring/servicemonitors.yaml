@@ -1,0 +1,43 @@
+# ServiceMonitors tell the Prometheus Operator to scrape our services' /metrics. They live next to
+# the services in the `mri` namespace; Prometheus discovers them via the scrape-all selector in values.yaml.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: eep
+  namespace: mri
+  labels: { app: eep, release: kps }
+spec:
+  selector:
+    matchLabels: { app: eep }
+  endpoints:
+    - port: http          # eep Service port name (80 -> pod 8080)
+      path: /metrics
+      interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: measurements
+  namespace: mri
+  labels: { app: measurements, release: kps }
+spec:
+  selector:
+    matchLabels: { app: measurements }
+  endpoints:
+    - port: http          # 8081
+      path: /metrics
+      interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: reporting
+  namespace: mri
+  labels: { app: reporting, release: kps }
+spec:
+  selector:
+    matchLabels: { app: reporting }
+  endpoints:
+    - port: http          # 8082
+      path: /metrics
+      interval: 15s

@@ -1,0 +1,42 @@
+# Frontend (Next.js standalone) — public via an AWS load balancer. The EEP URL is baked into the
+# image at build time (NEXT_PUBLIC_*), so this image is rebuilt per-deploy once the EEP URL is known.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: mri
+  labels: { app: frontend, tier: web }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: frontend }
+  template:
+    metadata:
+      labels: { app: frontend, tier: web }
+    spec:
+      containers:
+        - name: frontend
+          image: ${ECR_REGISTRY}/mri-frontend:${IMAGE_TAG}
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            httpGet: { path: /login, port: 3000 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests: { cpu: "100m", memory: "128Mi" }
+            limits:   { cpu: "500m", memory: "512Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: mri
+  labels: { app: frontend }
+spec:
+  type: LoadBalancer
+  selector: { app: frontend }
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000

@@ -1,0 +1,84 @@
+# EEP — public boundary (FastAPI). Exposed via an AWS load balancer (Service type LoadBalancer).
+# An initContainer pulls the viewer NIfTI + stand-in segmentation from S3 into an emptyDir, so no
+# patient-style data is baked into the image (mirrors the "no data in the image" production rule).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eep
+  namespace: mri
+  labels: { app: eep, tier: eep }
+spec:
+  # Single replica: the case store is in-process (in-memory), so uploaded cases live on one pod.
+  # Horizontal scale needs the shared datastore (RDS/Postgres) — the documented next step
+  # (see docs/deployment.md + store.py). Fixtures are seeded per-pod, but uploads are not.
+  replicas: 1
+  selector:
+    matchLabels: { app: eep }
+  template:
+    metadata:
+      labels: { app: eep, tier: eep }
+    spec:
+      initContainers:
+        - name: fetch-samples
+          image: public.ecr.aws/aws-cli/aws-cli:latest
+          command: ["/bin/sh", "-c"]
+          args:
+            - aws s3 sync "s3://${SAMPLES_BUCKET}/" /data/samples/ --only-show-errors
+          volumeMounts:
+            - { name: samples, mountPath: /data/samples }
+      containers:
+        - name: eep
+          image: ${ECR_REGISTRY}/mri-eep:${IMAGE_TAG}
+          ports:
+            - containerPort: 8080
+          env:
+            - { name: MEASUREMENTS_URL,     value: "http://measurements:8081" }
+            - { name: REPORTING_URL,        value: "http://reporting:8082" }
+            - { name: EEP_SAMPLE_DIR,       value: "/data/samples" }
+            - { name: EEP_ALLOWED_ORIGINS,  value: "${FRONTEND_ORIGIN}" }
+            # Real 3-engine segmentation: set these once the seg services are deployed (segmentation.yaml).
+            # Empty by default => EEP uses the stand-in mask (current demo). When ALL THREE are set, the
+            # EEP fans out to them in parallel. REQUIRES the async-upload refactor (see docs/HANDOFF-addendum.md).
+            - { name: SEG_TSS_URL,          value: "${SEG_TSS_URL}" }
+            - { name: SEG_SCT_URL,          value: "${SEG_SCT_URL}" }
+            - { name: SEG_SPINEPS_URL,      value: "${SEG_SPINEPS_URL}" }
+            # Auth (full-stack branch): supplied by the optional `eep-auth` Secret. optional:true so
+            # the pre-auth image still starts when the Secret is absent. Create it before deploying the
+            # auth-enabled image — see docs/deployment.md "Authentication".
+            - { name: JWT_SECRET,     valueFrom: { secretKeyRef: { name: eep-auth, key: JWT_SECRET,     optional: true } } }
+            - { name: DEMO_PASSWORD,  valueFrom: { secretKeyRef: { name: eep-auth, key: DEMO_PASSWORD,  optional: true } } }
+            - { name: ADMIN_PASSWORD, valueFrom: { secretKeyRef: { name: eep-auth, key: ADMIN_PASSWORD, optional: true } } }
+            - { name: ADMIN_EMAIL,    valueFrom: { secretKeyRef: { name: eep-auth, key: ADMIN_EMAIL,    optional: true } } }
+          readinessProbe:
+            httpGet: { path: /readyz, port: 8080 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            requests: { cpu: "100m", memory: "128Mi" }
+            limits:   { cpu: "500m", memory: "512Mi" }
+          volumeMounts:
+            - { name: samples, mountPath: /data/samples, readOnly: true }
+      volumes:
+        - name: samples
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: eep
+  namespace: mri
+  labels: { app: eep }
+  # Plain type: LoadBalancer => the in-tree AWS provider creates a Classic ELB with no extra
+  # controller to install. (A single shared ALB via the AWS Load Balancer Controller is the
+  # documented next optimization — see docs/deployment.md Tradeoffs.)
+spec:
+  type: LoadBalancer
+  selector: { app: eep }
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080

@@ -1,0 +1,5 @@
+# Runtime NIfTI / segmentation data — mounted into the EEP, never committed.
+*.nii
+*.nii.gz
+*.zip
+!README.md

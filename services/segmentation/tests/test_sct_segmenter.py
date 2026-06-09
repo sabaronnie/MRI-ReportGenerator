@@ -34,6 +34,6 @@ def test_run_sct_segmentations_runs_both_tasks(monkeypatch, tmp_path):
 
     result = sct_segmenter.run_sct_segmentations(tmp_path / "input_iso.nii.gz", tmp_path / "out")
 
-    assert calls == ["canal", "spinalcord"]
+    assert calls == ["sc_canal_t2", "spinalcord"]
     assert result.canal_seg.name == "prediction.nii.gz"
     assert result.cord_seg.name == "prediction.nii.gz"

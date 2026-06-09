@@ -1,0 +1,801 @@
+{
+  "schema_version": "0.1",
+  "case": {
+    "case_id": "demo-healthy-0001",
+    "status": "ready",
+    "modality": "T2 sagittal MRI",
+    "series_description": "T2 SAG (Spine-Generic healthy control, de-identified)",
+    "study_date": null,
+    "uploader": "demo",
+    "triage_badge": "none",
+    "patient": {
+      "sex": null,
+      "age": null
+    },
+    "created_at": "2026-06-07T00:00:00Z",
+    "updated_at": "2026-06-07T00:00:00Z",
+    "levels_measured": [
+      "C3",
+      "C4",
+      "C5",
+      "C6",
+      "C7"
+    ],
+    "segmenters_used": {
+      "vertebra_disc": "TotalSpineSeg (step2_output, --iso)",
+      "canal_cord": "Spinal Cord Toolbox (not run in this sample)",
+      "alignment_endplate": "SPINEPS (not run in this sample)"
+    }
+  },
+  "job": {
+    "stage": "ready",
+    "stages": [
+      "queued",
+      "segmenting",
+      "measuring",
+      "interpreting",
+      "ready"
+    ],
+    "progress": 1.0,
+    "error": null
+  },
+  "measurements": {
+    "AP_width": {
+      "C3": 18.406838895680693,
+      "C4": 17.045362666517892,
+      "C5": 18.15289066217278,
+      "C6": 17.815949396591837,
+      "C7": 17.299753235964992
+    },
+    "H_anterior": {
+      "C3": 12.268626309362444,
+      "C4": 11.85246177570582,
+      "C5": 11.733651733510692,
+      "C6": 10.132980280851465,
+      "C7": 14.662608332851839
+    },
+    "H_middle": {
+      "C3": 13.161145064215845,
+      "C4": 13.840516582130293,
+      "C5": 12.49072731352114,
+      "C6": 12.607350245396276,
+      "C7": 18.98275525755542
+    },
+    "H_posterior": {
+      "C3": 10.850210231300819,
+      "C4": 10.479945801752072,
+      "C5": 10.307764064044152,
+      "C6": 9.977801003369663,
+      "C7": 14.518541546571315
+    },
+    "tilt_deg": {
+      "C3": 23.407046625617085,
+      "C4": 28.193917187222947,
+      "C5": 24.454793723640325,
+      "C6": 27.815306384661483,
+      "C7": 40.88051217482757
+    },
+    "spondy_slip_mm": {
+      "C3-C4": -5.0,
+      "C4-C5": -4.0,
+      "C5-C6": -2.5,
+      "C6-C7": 4.0
+    },
+    "spondy_pct_of_lower_AP": {
+      "C3-C4": 29.333491447626812,
+      "C4-C5": 22.035058076646987,
+      "C5-C6": 14.032370346080159,
+      "C6-C7": 23.121717087179462
+    },
+    "segmental_angle": {
+      "C3-C4": -8.262,
+      "C4-C5": -3.105,
+      "C5-C6": -7.586
+    },
+    "vb_hahp_ratio": {
+      "C3": 0.94,
+      "C4": 0.85,
+      "C5": 0.804,
+      "C6": 0.77,
+      "C7": 0.981
+    }
+  },
+  "flags": {
+    "ap_width_outlier": {
+      "C3": false,
+      "C4": false,
+      "C5": false,
+      "C6": false,
+      "C7": false
+    },
+    "tilt_outlier": {
+      "C3": true,
+      "C4": true,
+      "C5": true,
+      "C6": true,
+      "C7": true
+    },
+    "wedge_fracture": {
+      "C3": false,
+      "C4": false,
+      "C5": false,
+      "C6": false,
+      "C7": false
+    },
+    "biconcave_fracture": {
+      "C3": false,
+      "C4": false,
+      "C5": false,
+      "C6": false,
+      "C7": false
+    },
+    "spondylolisthesis_present": {
+      "C3-C4": true,
+      "C4-C5": true,
+      "C5-C6": true,
+      "C6-C7": true
+    },
+    "vb_compression_screen_positive": {
+      "C3": false,
+      "C4": false,
+      "C5": false,
+      "C6": false,
+      "C7": false
+    }
+  },
+  "components": {
+    "cervical_body_morphometry": {
+      "status": "ok",
+      "duration_s": 0.3075486669986276,
+      "metadata": {
+        "levels": [
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "C7"
+        ],
+        "method": "disc-anchored body isolation + canal midline band + Genant heights + SHIP mid-body AP"
+      }
+    },
+    "spondylolisthesis": {
+      "status": "ok",
+      "duration_s": 2.3958011297509074e-05,
+      "metadata": {
+        "spondy_caveat": "Measured on supine MRI \u2014 functional radiographs may show greater slip (Lattig 2012; Segebarth 2015).",
+        "pairs_evaluated": [
+          "C3-C4",
+          "C4-C5",
+          "C5-C6",
+          "C6-C7"
+        ]
+      }
+    },
+    "c3c7_cobb_angle": {
+      "status": "error",
+      "duration_s": 0.018911708000814542,
+      "error": "c3c7_cobb_angle: C3 or C7 inferior endplate is not measurable from the segmentation (missing level, or endplate orientation unreliable -- e.g. C7 obscured at the cervicothoracic junction)."
+    },
+    "lordosis_classification": {
+      "status": "error",
+      "duration_s": 2.415996277704835e-06,
+      "error": "lordosis_classification depends on c3c7_cobb_angle"
+    },
+    "segmental_angles": {
+      "status": "ok",
+      "duration_s": 0.04972812499909196,
+      "metadata": {
+        "pairs": [
+          "C3-C4",
+          "C4-C5",
+          "C5-C6"
+        ],
+        "method": "endplate-LINE fit (Theil-Sen): angle between the upper vertebra's inferior endplate and the lower vertebra's superior endplate. Replaces the corner AI->PI / AS->PS method.",
+        "sign_convention": "lordosis_positive_kyphosis_negative"
+      }
+    },
+    "posterior_tangent_angle": {
+      "status": "error",
+      "duration_s": 2.8340000426396728e-06,
+      "error": "posterior_tangent_angle depends on c3c7_cobb_angle"
+    },
+    "group5_fracture_screen": {
+      "status": "ok",
+      "duration_s": 0.03241074999095872,
+      "metadata": {
+        "levels": [
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "C7"
+        ],
+        "group5_scope_note": "Vertebral-body compression/deformity screen integrated into the measurements service; myelomalacia remains contract-only until lesion-mask ingestion is wired."
+      }
+    },
+    "functional_canal_ap": {
+      "status": "error",
+      "duration_s": 3.4580007195472717e-06,
+      "error": "functional_canal_ap requires either a precomputed SCT canal mask or input_iso.nii.gz"
+    },
+    "cord_ap": {
+      "status": "error",
+      "duration_s": 2.749991836026311e-06,
+      "error": "cord_ap requires either a precomputed SCT cord mask or input_iso.nii.gz"
+    },
+    "sac": {
+      "status": "error",
+      "duration_s": 1.4999968698248267e-06,
+      "error": "sac depends on functional_canal_ap and cord_ap"
+    }
+  },
+  "interpretations": {
+    "measurements": [
+      {
+        "measurement": "AP_width",
+        "level": "C3",
+        "value": 18.406838895680693,
+        "unit": "mm",
+        "status": "within_reference",
+        "severity": "within_sanity",
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [
+          "tilt_outlier"
+        ],
+        "caveat": null
+      },
+      {
+        "measurement": "AP_width",
+        "level": "C4",
+        "value": 17.045362666517892,
+        "unit": "mm",
+        "status": "within_reference",
+        "severity": "within_sanity",
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [
+          "tilt_outlier"
+        ],
+        "caveat": null
+      },
+      {
+        "measurement": "AP_width",
+        "level": "C5",
+        "value": 18.15289066217278,
+        "unit": "mm",
+        "status": "within_reference",
+        "severity": "within_sanity",
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [
+          "tilt_outlier"
+        ],
+        "caveat": null
+      },
+      {
+        "measurement": "AP_width",
+        "level": "C6",
+        "value": 17.815949396591837,
+        "unit": "mm",
+        "status": "within_reference",
+        "severity": "within_sanity",
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [
+          "tilt_outlier"
+        ],
+        "caveat": null
+      },
+      {
+        "measurement": "AP_width",
+        "level": "C7",
+        "value": 17.299753235964992,
+        "unit": "mm",
+        "status": "within_reference",
+        "severity": "within_sanity",
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [
+          "tilt_outlier"
+        ],
+        "caveat": null
+      },
+      {
+        "measurement": "H_anterior",
+        "level": "C3",
+        "value": 12.268626309362444,
+        "unit": "mm",
+        "status": "review_only",
+        "severity": null,
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [
+          "tilt_outlier"
+        ],
+        "caveat": null
+      },
+      {
+        "measurement": "H_anterior",
+        "level": "C4",
+        "value": 11.85246177570582,
+        "unit": "mm",
+        "status": "review_only",
+        "severity": null,
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [
+          "tilt_outlier"
+        ],
+        "caveat": null
+      },
+      {
+        "measurement": "H_anterior",
+        "level": "C5",
+        "value": 11.733651733510692,
+        "unit": "mm",
+        "status": "review_only",
+        "severity": null,
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [
+          "tilt_outlier"
+        ],
+        "caveat": null
+      },
+      {
+        "measurement": "H_anterior",
+        "level": "C6",
+        "value": 10.132980280851465,
+        "unit": "mm",
+        "status": "review_only",
+        "severity": null,
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [
+          "tilt_outlier"
+        ],
+        "caveat": null
+      },
+      {
+        "measurement": "H_anterior",
+        "level": "C7",
+        "value": 14.662608332851839,
+        "unit": "mm",
+        "status": "review_only",
+        "severity": null,
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [
+          "tilt_outlier"
+        ],
+        "caveat": null
+      },
+      {
+        "measurement": "H_middle",
+        "level": "C3",
+        "value": 13.161145064215845,
+        "unit": "mm",
+        "status": "review_only",
+        "severity": null,
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [
+          "tilt_outlier"
+        ],
+        "caveat": null
+      },
+      {
+        "measurement": "H_middle",
+        "level": "C4",
+        "value": 13.840516582130293,
+        "unit": "mm",
+        "status": "review_only",
+        "severity": null,
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [
+          "tilt_outlier"
+        ],
+        "caveat": null
+      },
+      {
+        "measurement": "H_middle",
+        "level": "C5",
+        "value": 12.49072731352114,
+        "unit": "mm",
+        "status": "review_only",
+        "severity": null,
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [
+          "tilt_outlier"
+        ],
+        "caveat": null
+      },
+      {
+        "measurement": "H_middle",
+        "level": "C6",
+        "value": 12.607350245396276,
+        "unit": "mm",
+        "status": "review_only",
+        "severity": null,
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [
+          "tilt_outlier"
+        ],
+        "caveat": null
+      },
+      {
+        "measurement": "H_middle",
+        "level": "C7",
+        "value": 18.98275525755542,
+        "unit": "mm",
+        "status": "review_only",
+        "severity": null,
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [
+          "tilt_outlier"
+        ],
+        "caveat": null
+      },
+      {
+        "measurement": "H_posterior",
+        "level": "C3",
+        "value": 10.850210231300819,
+        "unit": "mm",
+        "status": "review_only",
+        "severity": null,
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [
+          "tilt_outlier"
+        ],
+        "caveat": null
+      },
+      {
+        "measurement": "H_posterior",
+        "level": "C4",
+        "value": 10.479945801752072,
+        "unit": "mm",
+        "status": "review_only",
+        "severity": null,
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [
+          "tilt_outlier"
+        ],
+        "caveat": null
+      },
+      {
+        "measurement": "H_posterior",
+        "level": "C5",
+        "value": 10.307764064044152,
+        "unit": "mm",
+        "status": "review_only",
+        "severity": null,
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [
+          "tilt_outlier"
+        ],
+        "caveat": null
+      },
+      {
+        "measurement": "H_posterior",
+        "level": "C6",
+        "value": 9.977801003369663,
+        "unit": "mm",
+        "status": "review_only",
+        "severity": null,
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [
+          "tilt_outlier"
+        ],
+        "caveat": null
+      },
+      {
+        "measurement": "H_posterior",
+        "level": "C7",
+        "value": 14.518541546571315,
+        "unit": "mm",
+        "status": "review_only",
+        "severity": null,
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [
+          "tilt_outlier"
+        ],
+        "caveat": null
+      },
+      {
+        "measurement": "segmental_angle",
+        "level": "C3-C4",
+        "value": -8.262,
+        "unit": "deg",
+        "status": "review_only",
+        "severity": null,
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [],
+        "caveat": null
+      },
+      {
+        "measurement": "segmental_angle",
+        "level": "C4-C5",
+        "value": -3.105,
+        "unit": "deg",
+        "status": "review_only",
+        "severity": null,
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [],
+        "caveat": null
+      },
+      {
+        "measurement": "segmental_angle",
+        "level": "C5-C6",
+        "value": -7.586,
+        "unit": "deg",
+        "status": "review_only",
+        "severity": null,
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [],
+        "caveat": null
+      },
+      {
+        "measurement": "spondy_pct_of_lower_AP",
+        "level": "C3-C4",
+        "value": 29.333491447626812,
+        "unit": "%",
+        "status": "outside_reference",
+        "severity": null,
+        "flag": true,
+        "demographics_used": {},
+        "quality_flags": [],
+        "caveat": "Measured on supine MRI \u2014 functional radiographs may show greater slip (Lattig 2012; Segebarth 2015)."
+      },
+      {
+        "measurement": "spondy_pct_of_lower_AP",
+        "level": "C4-C5",
+        "value": 22.035058076646987,
+        "unit": "%",
+        "status": "outside_reference",
+        "severity": null,
+        "flag": true,
+        "demographics_used": {},
+        "quality_flags": [],
+        "caveat": "Measured on supine MRI \u2014 functional radiographs may show greater slip (Lattig 2012; Segebarth 2015)."
+      },
+      {
+        "measurement": "spondy_pct_of_lower_AP",
+        "level": "C5-C6",
+        "value": 14.032370346080159,
+        "unit": "%",
+        "status": "outside_reference",
+        "severity": null,
+        "flag": true,
+        "demographics_used": {},
+        "quality_flags": [],
+        "caveat": "Measured on supine MRI \u2014 functional radiographs may show greater slip (Lattig 2012; Segebarth 2015)."
+      },
+      {
+        "measurement": "spondy_pct_of_lower_AP",
+        "level": "C6-C7",
+        "value": 23.121717087179462,
+        "unit": "%",
+        "status": "outside_reference",
+        "severity": null,
+        "flag": true,
+        "demographics_used": {},
+        "quality_flags": [],
+        "caveat": "Measured on supine MRI \u2014 functional radiographs may show greater slip (Lattig 2012; Segebarth 2015)."
+      },
+      {
+        "measurement": "spondy_slip_mm",
+        "level": "C3-C4",
+        "value": -5.0,
+        "unit": "mm",
+        "status": "within_reference",
+        "severity": "neutral",
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [],
+        "caveat": "Measured on supine MRI \u2014 functional radiographs may show greater slip (Lattig 2012; Segebarth 2015)."
+      },
+      {
+        "measurement": "spondy_slip_mm",
+        "level": "C4-C5",
+        "value": -4.0,
+        "unit": "mm",
+        "status": "within_reference",
+        "severity": "neutral",
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [],
+        "caveat": "Measured on supine MRI \u2014 functional radiographs may show greater slip (Lattig 2012; Segebarth 2015)."
+      },
+      {
+        "measurement": "spondy_slip_mm",
+        "level": "C5-C6",
+        "value": -2.5,
+        "unit": "mm",
+        "status": "within_reference",
+        "severity": "neutral",
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [],
+        "caveat": "Measured on supine MRI \u2014 functional radiographs may show greater slip (Lattig 2012; Segebarth 2015)."
+      },
+      {
+        "measurement": "spondy_slip_mm",
+        "level": "C6-C7",
+        "value": 4.0,
+        "unit": "mm",
+        "status": "outside_reference",
+        "severity": "slip_present_screen",
+        "flag": true,
+        "demographics_used": {},
+        "quality_flags": [],
+        "caveat": "Measured on supine MRI \u2014 functional radiographs may show greater slip (Lattig 2012; Segebarth 2015)."
+      },
+      {
+        "measurement": "tilt_deg",
+        "level": "C3",
+        "value": 23.407046625617085,
+        "unit": "deg",
+        "status": "not_interpretable",
+        "severity": null,
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [
+          "tilt_outlier"
+        ],
+        "caveat": null
+      },
+      {
+        "measurement": "tilt_deg",
+        "level": "C4",
+        "value": 28.193917187222947,
+        "unit": "deg",
+        "status": "not_interpretable",
+        "severity": null,
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [
+          "tilt_outlier"
+        ],
+        "caveat": null
+      },
+      {
+        "measurement": "tilt_deg",
+        "level": "C5",
+        "value": 24.454793723640325,
+        "unit": "deg",
+        "status": "not_interpretable",
+        "severity": null,
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [
+          "tilt_outlier"
+        ],
+        "caveat": null
+      },
+      {
+        "measurement": "tilt_deg",
+        "level": "C6",
+        "value": 27.815306384661483,
+        "unit": "deg",
+        "status": "not_interpretable",
+        "severity": null,
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [
+          "tilt_outlier"
+        ],
+        "caveat": null
+      },
+      {
+        "measurement": "tilt_deg",
+        "level": "C7",
+        "value": 40.88051217482757,
+        "unit": "deg",
+        "status": "not_interpretable",
+        "severity": null,
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [
+          "tilt_outlier"
+        ],
+        "caveat": null
+      },
+      {
+        "measurement": "vb_hahp_ratio",
+        "level": "C3",
+        "value": 0.94,
+        "unit": "ratio",
+        "status": "within_reference",
+        "severity": "normal",
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [],
+        "caveat": null
+      },
+      {
+        "measurement": "vb_hahp_ratio",
+        "level": "C4",
+        "value": 0.85,
+        "unit": "ratio",
+        "status": "within_reference",
+        "severity": "normal",
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [],
+        "caveat": null
+      },
+      {
+        "measurement": "vb_hahp_ratio",
+        "level": "C5",
+        "value": 0.804,
+        "unit": "ratio",
+        "status": "within_reference",
+        "severity": "borderline",
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [],
+        "caveat": null
+      },
+      {
+        "measurement": "vb_hahp_ratio",
+        "level": "C6",
+        "value": 0.77,
+        "unit": "ratio",
+        "status": "within_reference",
+        "severity": "borderline",
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [],
+        "caveat": null
+      },
+      {
+        "measurement": "vb_hahp_ratio",
+        "level": "C7",
+        "value": 0.981,
+        "unit": "ratio",
+        "status": "within_reference",
+        "severity": "normal",
+        "flag": false,
+        "demographics_used": {},
+        "quality_flags": [],
+        "caveat": null
+      }
+    ]
+  },
+  "report": {
+    "impression": [
+      {
+        "text": "Vertebral-body heights within the cohort reference range (no compression screen positive C3-C7).",
+        "traceable_to": [
+          "vb_hahp_ratio"
+        ],
+        "status": "within_reference"
+      },
+      {
+        "text": "Cervical alignment not reported for this sample (C3/C7 endplate not measurable on this mask; SPINEPS not run).",
+        "traceable_to": [
+          "Cobb_C3_C7"
+        ],
+        "status": "not_interpretable"
+      }
+    ],
+    "findings_by_level": "see interpretations.measurements (one row per measurement x level)",
+    "disclaimers": [
+      "All outputs are screens flagged for physician review, never a diagnosis.",
+      "Numbers in this sample are real pipeline output on a healthy control but pre-validation; shape is frozen, values are illustrative."
+    ]
+  }
+}
