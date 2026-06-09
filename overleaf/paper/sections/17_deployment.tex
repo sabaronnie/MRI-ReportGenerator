@@ -3,11 +3,11 @@
 
 \subsection{Service decomposition}
 The system is built as an external entry point (EEP) over internal processing services (IEPs):
-segmentation, measurements, interpretation, and reporting, each independently containerizable. The
+segmentation, measurements, assessement, and reporting, each independently containerizable. The
 measurement service registers components in a dependency-ordered registry and instruments each with
 Prometheus metrics (\texttt{measurement\_duration\_seconds}, \texttt{measurement\_results\_total},
 \texttt{measurement\_pathology\_flags\_total}). The segmentation engines run on GPU; the measurement and
-interpretation layers are CPU-only, so the heavy GPU stage is isolated from the light, frequently changing
+assessement layers are CPU-only, so the heavy GPU stage is isolated from the light, frequently changing
 measurement logic.
 
 \subsection{The data contract}
@@ -19,15 +19,14 @@ these shapes, and the real measurement code drops in behind them unchanged. A co
 the NIfTI volume$+$mask delivery and label map for an interactive WebGL viewer.
 
 \subsection{Reproducibility and governance}
-Segmentation is reproducible from versioned Colab notebooks (TSS$+$SCT in one session, SPINEPS in a
-separate session because of the numpy pin). The measurement and validation steps are CPU-only and
+Segmentation is reproducible from versioned notebook workflows (TSS$+$SCT in one environment, SPINEPS in a
+separate environment because of the numpy pin). The measurement and validation steps are CPU-only and
 reproducible from committed scripts. Patient data (NIfTI/DICOM) and derived masks are never committed;
 licensed datasets (MMCSD, Duke; CC~BY-NC-ND) are used for non-commercial validation only and not
 redistributed, while the openly licensed Spine-Generic sample may be shared (e.g.\ as a viewer fixture).
 
 \subsection{Development discipline}
-The project follows a strict session-handoff protocol (a living \texttt{SESSION\_LOG} and a curated
-\texttt{DEVELOPMENT\_JOURNEY}), granular commits, branch-per-feature with teammate-code changes routed
-through pull requests, and a hard no-secrets/no-patient-data-in-git rule. Every clinical claim carries a
+The project follows a strict session-handoff protocol, granular commits, peer-reviewed integration of
+teammate changes, and a hard no-secrets/no-patient-data-in-git rule. Every clinical claim carries a
 citation, and uncertain numbers are marked rather than invented --- the same honesty discipline that the
 validation embodies.

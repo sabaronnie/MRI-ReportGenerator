@@ -16,7 +16,7 @@ The system is structured as an external entry-point (EEP) orchestrating internal
   \node[io] (in) {Sagittal T2 MRI\\(DICOM / NIfTI)};
   \node[stage, right=of in] (seg) {Segmentation\\\scriptsize TSS + SCT + SPINEPS};
   \node[stage, right=of seg] (meas) {Measurements\\\scriptsize Groups 1--5};
-  \node[stage, below=of meas] (interp) {Interpretation\\\scriptsize cited thresholds};
+  \node[stage, below=of meas] (interp) {Assessement\\\scriptsize cited thresholds};
   \node[stage, left=of interp] (rep) {Reporting\\\scriptsize per-level findings};
   \node[io, left=of rep] (out) {Structured report\\(flagged for review)};
   \draw[arr] (in) -- (seg);
@@ -26,26 +26,21 @@ The system is structured as an external entry-point (EEP) orchestrating internal
   \draw[arr] (rep) -- (out);
 \end{tikzpicture}
 \caption{End-to-end pipeline. Segmentation delegates to three engines; measurements are organized into
-five groups; interpretation classifies each measurement against a cited-threshold catalog; reporting
+five groups; assessement classifies each measurement against a cited-threshold catalog; reporting
 emits per-level findings flagged for physician review.}
 \label{fig:pipeline}
 \end{figure}
 
 \subsection{Services}
 \begin{itemize}[leftmargin=*]
-  \item \texttt{services/segmentation/} --- TotalSpineSeg wrapper (vertebra/disc, \texttt{--iso}) and a
-  separated Spinal Cord Toolbox path (canal/cord). SPINEPS runs in its own environment due to a
-  numpy pin (\texttt{numpy==2.0.2}) that conflicts with the TSS stack.
-  \item \texttt{services/measurements/} --- the measurement runtime. \texttt{geometric/} holds Groups
-  1, 2, and 4 (vertebral morphometry, disc, alignment) plus vendored validated geometry
-  (\texttt{\_vertebral\_geometry.py}, \texttt{\_endplate\_cobb.py}); \texttt{cord/} holds Group 3
-  (canal/cord/SAC via SCT); \texttt{signal/} holds disc signal grading; \texttt{group5/} holds the
-  signal/shape screens; \texttt{orchestrator.py} runs the registered components in dependency order with
-  Prometheus instrumentation.
-  \item \texttt{services/interpretation/} --- the cited-threshold catalog (\texttt{thresholds.py}) and
-  the interpretation engine (\texttt{interpretation.py}).
-  \item \texttt{services/reporting/} --- report assembly and rendering; \texttt{services/eep/} --- the
-  public API entry point.
+  \item \textbf{Segmentation service} --- wraps TotalSpineSeg for vertebra/disc segmentation and a
+  separate Spinal Cord Toolbox path for canal/cord analysis. SPINEPS runs in its own environment due to
+  an incompatible NumPy pin.
+  \item \textbf{Measurement service} --- the runtime for Groups 1, 2, 3, 4, and 5, combining geometric,
+  canal/cord, and signal/shape screening components under one orchestrator with Prometheus instrumentation.
+  \item \textbf{Assessement service} --- the cited-threshold catalog and the engine that converts
+  measurements into status, severity, and review flags.
+  \item \textbf{Reporting service} --- report assembly and rendering; the EEP is the public API entry point.
 \end{itemize}
 
 \subsection{The MeasurementContext and canonical orientation}
@@ -60,7 +55,7 @@ context is the input contract for every measurement component.
 \subsection{Output data contract}
 Each component returns a standard \texttt{ComponentResult} (\texttt{measurements}, \texttt{flags},
 \texttt{intermediate}, \texttt{metadata}). The orchestrator flattens these into
-\texttt{\{components, measurements, flags, interpretations\}}, and the interpretation layer wraps each
+\texttt{\{components, measurements, flags, interpretations\}}, and the assessement layer wraps each
 (measurement $\times$ level) into a container carrying \texttt{status} (\texttt{within\_reference} /
 \texttt{outside\_reference} / \texttt{review\_only} / \texttt{not\_interpretable}), a per-measurement
 \texttt{severity}, a boolean clinical \texttt{flag}, the cited \texttt{caveat}, and any quality flags.

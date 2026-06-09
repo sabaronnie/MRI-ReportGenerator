@@ -6,7 +6,7 @@ pipeline that converts a single sagittal T2 cervical MRI (DICOM or NIfTI) into a
 radiology-style report. The system chains three pre-trained, openly licensed segmentation engines
 (TotalSpineSeg, the Spinal Cord Toolbox, and SPINEPS), a suite of geometric and signal-based
 measurement modules organized into five groups (vertebral body, intervertebral disc, canal/cord,
-sagittal alignment, and signal/shape screens), and an interpretation layer that classifies every
+sagittal alignment, and signal/shape screens), and an assessement layer that classifies every
 measurement against a central catalog of literature-grounded thresholds and emits findings ``flagged
 for physician review,'' never a diagnosis. A core engineering principle is that every measurement is a
 disease-agnostic geometric or signal detector anchored on healthy normative values, so that the
@@ -24,7 +24,7 @@ but on a representative multi-site healthy sample does \emph{not} discriminate m
 measurement, not a screen), and the disc group --- after the harness detected and we fixed a sign-level
 height/bulge bug --- separates only modestly, through disc \emph{geometric spread} (disc/vertebral-body AP
 ratio, AUC $0.62$), with disc signal and bulge documented as non-discriminators. Four measurement defects
-were found and fixed, and the interpretation layer was wired and run end-to-end with
+were found and fixed, and the assessement layer was wired and run end-to-end with
 patient-demographic-aware thresholds. We document the full
 mistake-to-fix methodology narrative, the limitations imposed by the absence of ground truth, and the
 deployment architecture. The contribution is less a new algorithm than a disciplined, honest,

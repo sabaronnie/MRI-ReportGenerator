@@ -20,11 +20,11 @@ manual workflow that is both labour-intensive and noisy.
 \subsection{What this system does}
 MRI-ReportGenerator takes one sagittal T2 cervical MRI and produces a structured report. The pipeline is:
 \begin{center}
-\texttt{Input $\rightarrow$ Segmentation $\rightarrow$ Measurements $\rightarrow$ Interpretation $\rightarrow$ Report}
+\texttt{Input $\rightarrow$ Segmentation $\rightarrow$ Measurements $\rightarrow$ Assessement $\rightarrow$ Report}
 \end{center}
 Segmentation is delegated to three established, openly licensed deep-learning tools, each chosen for the
 anatomical structure it segments best. The measurement layer is organized into five groups that mirror
-the structures a radiologist reports on. The interpretation layer compares each measurement to a central
+the structures a radiologist reports on. The assessement layer compares each measurement to a central
 catalog of thresholds, each carrying an explicit literature citation and a modality caveat. Every output
 is phrased as a finding ``flagged for physician review''; the system never asserts a diagnosis.
 
@@ -57,7 +57,7 @@ measurement ``reads the right range'' without claiming per-case diagnostic accur
 \subsection{Contributions}
 \begin{itemize}[leftmargin=*]
   \item An end-to-end, deployable cervical-MRI measurement and reporting pipeline composing three
-  segmentation engines, five measurement groups, and a cited-threshold interpretation layer.
+  segmentation engines, five measurement groups, and a cited-threshold assessement layer.
   \item A central, fully cited threshold catalog with explicit modality caveats and a no-diagnosis
   output ontology.
   \item A literature-grounded methodology for the two hardest measurements (the vertebral
@@ -77,7 +77,7 @@ Section~\ref{sec:clinical} reviews the clinical background and the measurements.
 Section~\ref{sec:related} surveys the segmentation tools, prior measurement methods, and datasets.
 Section~\ref{sec:arch} describes the system architecture. Section~\ref{sec:data} details the datasets.
 Sections~\ref{sec:seg}--\ref{sec:g6} present the segmentation and the five measurement groups plus the
-interpretation layer. Section~\ref{sec:valmethod} formalizes the validation methodology and
+assessement layer. Section~\ref{sec:valmethod} formalizes the validation methodology and
 Section~\ref{sec:results} reports the results. Section~\ref{sec:journey} narrates the development
 journey, Section~\ref{sec:limits} the limitations, Section~\ref{sec:deploy} the deployment, and
 Section~\ref{sec:conclusion} concludes.
