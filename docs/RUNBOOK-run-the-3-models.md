@@ -116,6 +116,28 @@ mkdir merged && cd merged && unzip -o ../sct.zip && unzip -o ../spineps.zip && z
 
 That `segmentation.zip` is the segmentation stage's output. (Cleanup: `docker rm -f seg-tss seg-sct seg-spineps`.)
 
+### Sample outputs (a verified clean run)
+
+Reference run on the public `sample_volume_T2.nii.gz` (sagittal cervical T2, 0.8 mm iso, 7,437,117 bytes)
+on the EKS deployment, 2026-06-09 — all three engines `http=200`:
+
+```
+tss.zip (17.7 MB)      step2_output.nii.gz   (vertebra+disc labelmap)
+                       step1_levels.nii.gz   (vertebral levels; cervical labels 11–17, 63–67, 71 incl. C7‑T1)
+                       input_iso.nii.gz      (1 mm‑iso volume handed to SCT)
+spineps.zip (165 KB)   spineps_seg-vert_msk.nii.gz   (instance/endplate labels 102–107 = C2–C7)
+                       spineps_seg-spine_msk.nii.gz  (semantic)
+sct.zip (17.8 MB)      = the TSS files  +
+                       sct_canal_seg.nii.gz       (44,794 voxels)   ← SCT task sc_canal_t2
+                       sct_spinalcord_seg.nii.gz  (13,107 voxels)   ← SCT task spinalcord
+                       sct_lesion_seg.nii.gz      (SCIseg / lesion_sci_t2, Group 5.1)
+```
+
+Wall‑clock on CPU (r5.2xlarge, 8 vCPU / 64 GB): TSS ~6.5 min, SPINEPS ~9.4 min (parallel with TSS),
+SCT ~4 min after TSS → ~13.5 min end‑to‑end. The full DAG, driven through the EEP (`POST /cases`,
+async `202` → poll `GET /cases/{id}/job` through `queued → segmenting → measuring → interpreting → ready`),
+produces the structured report for physician review.
+
 ---
 
 ## PART B — Deploy the whole app on AWS (EKS)
