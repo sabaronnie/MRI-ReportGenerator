@@ -3,6 +3,7 @@
 Cervical spine MRI analysis pipeline — sagittal T2 MRI (DICOM/NIfTI) in, structured radiologist-style report out. The report carries vertebral/disc/canal/cord measurements, threshold-based assessment against cited norms, and anomaly flags **for physician review**.
 
 **Course:** EECE503N / EECE798N — AI Engineering, AUB — Final Project (Spring 2026)
+Andrew Khoury, Ronnie Saba, Mohammad Sharafeddine
 
 ---
 
