@@ -586,6 +586,32 @@ first *clean* end-to-end run of the real DAG (TSS ∥ SPINEPS → SCT) on a real
   model auto-downloaded): both exit 0, **canal mask 44,794 voxels, cord mask 13,107 voxels** (canal >
   cord, anatomically sensible). Only then did we do one confident from-scratch Dockerfile rebuild.
 
+## J29 — G3 in the live e2e: two more SCT 7.0 CLI renames, surfaced only by the full upload→report run
+
+**Context:** after the canned demo was removed and the clean EEP wired to the real DAG, the first live
+end-to-end upload (`POST /cases` → seg DAG → measurements → report) succeeded (`ready`) and produced a
+real report — but `segmenters_used` reported SCT/SPINEPS "not run." Pulling the per-component errors from
+the case showed the report was honest: TSS-based measurements (AP_width, DHI, body morphometry) and
+SPINEPS `segmental_angles` populated; **G3 canal/cord/SAC errored**.
+
+- **Two stacked SCT 7.0 CLI changes (same class as J28's canal rename):**
+  1. `functional_canal_ap`: *"sct_process_segmentation not found on PATH"* — the measurements image was
+     `python:3.12-slim` + pip only; G3 morphometry shells out to the SCT CLI on the pre-computed masks.
+     Fix: install the SCT 7.0 CLI in `measurements.Dockerfile` (no model weights — segmentation already
+     ran upstream in `seg-sct`).
+  2. After that, `sct_process_segmentation` exited 2: *"unrecognized arguments: -discfile"* — SCT 7.0
+     renamed the vertebral-labeling flag `-discfile` → `-vertfile`. Fix: one line in `measurements/sct.py`.
+- **`cord_ap` and `sac` errored only by dependency** (they consume `functional_canal_ap`'s focal slices) —
+  a reminder that one upstream component failure cascades; fix the root, not each symptom.
+- **Validated in-cluster (not via another rebuild):** ran the corrected `sct_process_segmentation
+  -vertfile` on the real canal mask + TSS `step1_levels` inside the pod → exit 0, per-level canal AP
+  diameters (C7 15.3 mm, C6 14.5 mm), TSS labels mapped correctly to vertebral levels (no
+  label-convention mismatch). The C3–C7 *global* Cobb still no-ops on this sample (C7 endplate obscured at
+  the cervicothoracic junction — a data property, not a bug; per-level `segmental_angles` works).
+- **Meta-lesson (reinforces J28):** the seg engines being green (healthz + masks) said nothing about the
+  *downstream measurement* stage; only the full upload→report path exercised G3, and it took the real
+  artifacts to surface a packaging gap (missing CLI) and an API drift (flag rename) at once.
+
 ---
 *Open methodology gaps tracked elsewhere:* teammate threshold/citation fixes (disc DHI<0.30, bulge flat-wall,
 Pfirrmann cut-points) — see `group5/AUDIT_groups1-4_measurements.md`; C6/C7 Cobb **precision** is now closed by

@@ -229,6 +229,12 @@ These were debugged during bring‑up and are already baked into the Dockerfiles
 8. **SCT canal task is `sc_canal_t2`, not `canal`** — SCT 7.0 renamed the spinal‑canal deepseg task;
    the old `sct_deepseg canal` is rejected by argparse (exit 2). Both the wrapper invocation and the
    Dockerfile model pre‑install must use `sc_canal_t2` (otherwise the model is silently never baked).
+9. **G3 morphometry (the measurements image) needs the SCT CLI + the `-vertfile` flag** — the cervical
+   canal/cord/SAC measurements shell out to `sct_process_segmentation` on the *pre‑computed* SCT masks, so
+   `measurements.Dockerfile` installs the SCT 7.0 CLI (no model weights — segmentation already ran in
+   `seg-sct`). SCT 7.0 also renamed that command's vertebral‑labeling flag `-discfile` → `-vertfile`
+   (old name → `unrecognized arguments`). Both are already fixed in the repo; verified in‑cluster
+   producing per‑level canal AP diameters from the TSS `step1_levels` labeling.
 
 ---
 
