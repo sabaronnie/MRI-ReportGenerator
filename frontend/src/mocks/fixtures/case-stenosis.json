@@ -28,7 +28,7 @@
       "queued",
       "segmenting",
       "measuring",
-      "interpreting",
+      "assessing",
       "ready"
     ],
     "progress": 1.0,
@@ -55,7 +55,7 @@
     }
   },
   "flags": {},
-  "interpretations": {
+  "assessements": {
     "measurements": [
       {
         "measurement": "SAC",
@@ -127,7 +127,7 @@
         "flag": false,
         "demographics_used": {},
         "quality_flags": [],
-        "caveat": "Cord AP normative comparison is delegated to SCT -normalize-hc (Valosek 2024); a reduced-vs-adjacent (>2 SD) rule for the myelopathy indicator is cross-level and handled in interpretation."
+        "caveat": "Cord AP normative comparison is delegated to SCT -normalize-hc (Valosek 2024); a reduced-vs-adjacent (>2 SD) rule for the myelopathy indicator is cross-level and handled in assessement."
       },
       {
         "measurement": "cord_AP",
@@ -139,7 +139,7 @@
         "flag": false,
         "demographics_used": {},
         "quality_flags": [],
-        "caveat": "Cord AP normative comparison is delegated to SCT -normalize-hc (Valosek 2024); a reduced-vs-adjacent (>2 SD) rule for the myelopathy indicator is cross-level and handled in interpretation."
+        "caveat": "Cord AP normative comparison is delegated to SCT -normalize-hc (Valosek 2024); a reduced-vs-adjacent (>2 SD) rule for the myelopathy indicator is cross-level and handled in assessement."
       },
       {
         "measurement": "dural_sac_AP_min",
@@ -214,7 +214,7 @@
         "status": "outside_reference"
       }
     ],
-    "findings_by_level": "see interpretations.measurements",
+    "findings_by_level": "see assessements.measurements",
     "disclaimers": [
       "Screens flag findings for physician review, never a diagnosis.",
       "Synthetic abnormal demo: shapes + classify() are real; values illustrative."

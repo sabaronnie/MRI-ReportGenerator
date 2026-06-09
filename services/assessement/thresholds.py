@@ -1,13 +1,13 @@
-"""Central cited-threshold catalog (Phase 4 / Group 6 interpretation).
+"""Central cited-threshold catalog (Phase 4 / Group 6 assessement).
 
 This is the single home for every measurement's normative range, severity bands,
-flag threshold(s), citation, and modality caveat. Interpretation (interpretation.py)
+flag threshold(s), citation, and modality caveat. Assessement (assessement.py)
 calls `classify(key, value)` and attaches the result; provenance lives HERE, not
-scattered per row (plans/phase-4-interpretation.md §4.1).
+scattered per row (plans/phase-4-assessement.md §4.1).
 
 Policy (plans/phase-4-threshold-research-list.txt §7.3 — team decision):
   - `status` is standardized: within_reference / outside_reference / review_only /
-    not_interpretable.
+    not_assessable.
   - `severity` is per-measurement (different measurements need different vocabularies:
     binary, mild/moderate/severe, grade-based, or review-only). So each ThresholdSpec
     carries its own severity-band labels.
@@ -31,7 +31,7 @@ from dataclasses import dataclass
 STATUS_WITHIN = "within_reference"
 STATUS_OUTSIDE = "outside_reference"
 STATUS_REVIEW = "review_only"
-STATUS_NOT_INTERPRETABLE = "not_interpretable"
+STATUS_NOT_INTERPRETABLE = "not_assessable"
 
 # A band's `reference` says how the value compares to the normative reference; it maps
 # to a status and drives the boolean clinical flag.
@@ -59,7 +59,7 @@ class Band:
 
 @dataclass(frozen=True)
 class ThresholdSpec:
-    """Everything Group 6 needs to interpret one measurement output key."""
+    """Everything Group 6 needs to assess one measurement output key."""
 
     key: str
     clinical_name: str
@@ -75,7 +75,7 @@ class ThresholdSpec:
 
 @dataclass(frozen=True)
 class ThresholdEval:
-    """Result of interpreting one measurement value against the catalog."""
+    """Result of assessing one measurement value against the catalog."""
 
     measurement: str
     value: float
@@ -170,7 +170,7 @@ _PFIRRMANN_GRADE_LABELS = {1: "grade_I", 2: "grade_II", 3: "grade_III", 4: "grad
 # Disc height index (DHI). The in-code DHI<0.30 is DEBUNKED (uncited, animal-lumbar
 # borrow). No validated absolute cervical DHI cut-point exists; use a >30% inter-level
 # drop (Suzuki 2018) or absolute disc height <3 mm (van Santbrink) instead -- both need
-# cross-level context, handled in interpretation, not this single-value catalog.
+# cross-level context, handled in assessement, not this single-value catalog.
 # memory disc_height_dhi_norms.
 _DHI_CITATION = (
     "DHI<0.30 DEBUNKED (uncited, animal-lumbar borrow). Reduced disc height = >30% drop "
@@ -179,7 +179,7 @@ _DHI_CITATION = (
     "DHI cut-point -- pending Phase-4."
 )
 _DHI_CAVEAT = (
-    "No validated absolute cervical DHI threshold; interpret via >30% inter-level drop or "
+    "No validated absolute cervical DHI threshold; assess via >30% inter-level drop or "
     "absolute disc height <3 mm instead. Review-only."
 )
 
@@ -226,7 +226,7 @@ _CORD_AP_CITATION = (
 )
 _CORD_AP_CAVEAT = (
     "Cord AP normative comparison is delegated to SCT -normalize-hc (Valosek 2024); a reduced-vs-"
-    "adjacent (>2 SD) rule for the myelopathy indicator is cross-level and handled in interpretation."
+    "adjacent (>2 SD) rule for the myelopathy indicator is cross-level and handled in assessement."
 )
 # SAC <3 mm = high compression risk (radiograph-origin, verify). Torg <0.8 developmental stenosis.
 _SAC_CUT = 3.0
@@ -564,7 +564,7 @@ def _bands_for(key: str, spec: "ThresholdSpec", sex: str | None) -> "tuple[Band,
 
 
 def classify(key: str, value: float, sex: str | None = None) -> ThresholdEval:
-    """Interpret a measurement value against the catalog.
+    """Assess a measurement value against the catalog.
 
     Returns a ThresholdEval with the standardized `status`, the per-measurement
     `severity` label, the boolean clinical `flag`, and the locked `citation` + caveat.

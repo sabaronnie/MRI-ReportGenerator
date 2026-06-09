@@ -27,7 +27,7 @@ from .geometric import (
 )
 from .signal import pfirrmann_grade
 from .group5 import fracture_screen
-from services.interpretation import build_interpreted_measurements, detect_syndromes
+from services.assessement import build_assessed_measurements, detect_syndromes
 
 
 MEASUREMENT_DURATION = Histogram(
@@ -113,15 +113,15 @@ def run_all(ctx: MeasurementContext, enabled: list[str] | None = None) -> dict[s
                 "error": str(e),
             }
     report["patient"] = {"age": ctx.age, "sex": ctx.sex, "height_cm": ctx.height_cm}
-    interpreted_rows = build_interpreted_measurements(
+    assessed_rows = build_assessed_measurements(
         report,
         measurement_sources=measurement_sources,
         flag_sources=flag_sources,
         demographics={"age": ctx.age, "sex": ctx.sex, "height_cm": ctx.height_cm},
     )
-    report["interpretations"] = {
-        "measurements": interpreted_rows,
-        "syndromes": detect_syndromes(interpreted_rows),
+    report["assessements"] = {
+        "measurements": assessed_rows,
+        "syndromes": detect_syndromes(assessed_rows),
     }
     return report
 

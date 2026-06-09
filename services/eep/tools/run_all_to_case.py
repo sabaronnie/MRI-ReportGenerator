@@ -1,7 +1,7 @@
 """Map a measurement-pipeline ``run_all()`` output to the frontend case-envelope contract.
 
 Implements the §3 mapping from the measurement-link handoff: the pipeline already emits
-``measurements`` / ``flags`` / ``interpretations`` in the contract shape, so this is mostly a
+``measurements`` / ``flags`` / ``assessements`` in the contract shape, so this is mostly a
 passthrough plus deriving the case envelope, the report impression, and the triage badge.
 
 CLI:  python -m services.eep.tools.run_all_to_case <run_all.json> <case_id> [source_filename]
@@ -14,7 +14,7 @@ import sys
 from datetime import datetime, timezone
 
 BASE_DISCLAIMERS = [
-    "Research-use structured interpretation - not a diagnosis. Clinical correlation required.",
+    "Research-use structured assessement - not a diagnosis. Clinical correlation required.",
 ]
 # §4 wording, shown when patient sex is absent (sex-neutral thresholds in effect).
 DEMOGRAPHIC_CAVEAT_NOSEX = (
@@ -34,7 +34,7 @@ def to_case_envelope(
     patient = run.get("patient") or {}
     sex, age, height = patient.get("sex"), patient.get("age"), patient.get("height_cm")
 
-    interp = dict(run.get("interpretations") or {})
+    interp = dict(run.get("assessements") or {})
     interp.setdefault("measurements", [])
     interp.setdefault("syndromes", [])
     rows = interp["measurements"]
@@ -95,14 +95,14 @@ def to_case_envelope(
         },
         "job": {
             "stage": "ready",
-            "stages": ["queued", "segmenting", "measuring", "interpreting", "ready"],
+            "stages": ["queued", "segmenting", "measuring", "assessing", "ready"],
             "progress": 1.0,
             "error": None,
         },
         "measurements": run.get("measurements") or {},
         "flags": run.get("flags") or {},
         "components": run.get("components") or {},
-        "interpretations": interp,
+        "assessements": interp,
         "report_context": {
             "modality": "cervical_sagittal_mri",
             "report_language": "en",

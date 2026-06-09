@@ -1,8 +1,8 @@
 """Golden-dataset regression (rubric Q2).
 
-A fixed input (the sample post-interpretation contract) must keep producing the same stable report
-output: summary counts, impression bullets, and the set of interpreted statuses. A diff here flags an
-unintended behavior change in the interpretation->reporting chain. Regenerate the golden deliberately
+A fixed input (the sample post-assessement contract) must keep producing the same stable report
+output: summary counts, impression bullets, and the set of assessed statuses. A diff here flags an
+unintended behavior change in the assessement->reporting chain. Regenerate the golden deliberately
 (and review the diff) when the change is intended.
 """
 

@@ -1,6 +1,6 @@
-"""Phase 4 interpretation scaffolding.
+"""Phase 4 assessement scaffolding.
 
-This module defines the standard per-measurement interpretation container used
+This module defines the standard per-measurement assessement container used
 by the measurement service. The first pass intentionally keeps the logic light:
 it wraps existing numeric measurement outputs in a stable schema so threshold
 rules can be added later without changing the API shape again.
@@ -54,7 +54,7 @@ UNIT_BY_MEASUREMENT = {
 
 
 @dataclass(frozen=True)
-class InterpretedMeasurement:
+class AssessedMeasurement:
     measurement: str
     level: str
     value: float
@@ -82,13 +82,13 @@ _DEMOGRAPHIC_MEASUREMENTS = {
 }
 
 
-def build_interpreted_measurements(
+def build_assessed_measurements(
     report: dict[str, Any],
     measurement_sources: dict[str, str],
     flag_sources: dict[str, str],
     demographics: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
-    """Wrap numeric measurement outputs in the standard interpretation container.
+    """Wrap numeric measurement outputs in the standard assessement container.
 
     Catalogued measurements (in `thresholds.THRESHOLDS`) get status/severity/flag from the cited
     threshold catalog via `classify`, sex-adjusted where a cited sex-specific cut exists; others
@@ -99,7 +99,7 @@ def build_interpreted_measurements(
     sex = demographics.get("sex")
     components = report.get("components", {})
     flags = report.get("flags", {})
-    interpreted: list[dict[str, Any]] = []
+    assessed: list[dict[str, Any]] = []
 
     for measurement_name, per_level in report.get("measurements", {}).items():
         component_name = measurement_sources.get(measurement_name)
@@ -144,8 +144,8 @@ def build_interpreted_measurements(
 
             demographics_used = _demographics_used(measurement_name, demographics)
 
-            interpreted.append(
-                InterpretedMeasurement(
+            assessed.append(
+                AssessedMeasurement(
                     measurement=measurement_name,
                     level=str(level),
                     value=float(raw_value),
@@ -159,15 +159,15 @@ def build_interpreted_measurements(
                 ).to_dict()
             )
 
-    interpreted.sort(key=lambda row: (row["measurement"], row["level"]))
-    return interpreted
+    assessed.sort(key=lambda row: (row["measurement"], row["level"]))
+    return assessed
 
 
-def interpret_group5_contract(contract: dict[str, Any]) -> list[dict[str, Any]]:
-    """Interpret the Group 5 -> Group 6 findings contract (services/measurements/group5/flags_contract.py JSON).
+def assess_group5_contract(contract: dict[str, Any]) -> list[dict[str, Any]]:
+    """Assess the Group 5 -> Group 6 findings contract (services/measurements/group5/flags_contract.py JSON).
 
     Maps each level's vertebral-body compression screen (Ha/Hp ratio) and, when assessed, its
-    myelomalacia screen into the same InterpretedMeasurement container, driven by the catalog.
+    myelomalacia screen into the same AssessedMeasurement container, driven by the catalog.
     Group 6 consumes the contract's JSON shape, not Group 5's code (they live on different
     branches). A not-assessed myelomalacia screen emits no row -- it is surfaced via the
     contract's `not_assessed` list in the report.
@@ -190,8 +190,8 @@ def interpret_group5_contract(contract: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _catalog_row(measurement: str, level: str, value: float, ev: Any) -> dict[str, Any]:
-    """Build an InterpretedMeasurement row directly from a catalog ThresholdEval."""
-    return InterpretedMeasurement(
+    """Build an AssessedMeasurement row directly from a catalog ThresholdEval."""
+    return AssessedMeasurement(
         measurement=measurement,
         level=str(level),
         value=float(value),
@@ -218,7 +218,7 @@ _RADICULOPATHY_ADVISORY = (
 
 
 def detect_syndromes(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Provisional syndrome-pattern indicators from interpreted rows (plan §4.3).
+    """Provisional syndrome-pattern indicators from assessed rows (plan §4.3).
 
     PLACEHOLDER: advisory only, never diagnostic. The exact combination rules (and the
     radiculopathy evidence base on sagittal-only MRI) are pending the Phase-4 research, so each
@@ -281,22 +281,22 @@ def build_reporting_handoff_contract(
     report_context: dict[str, Any] | None = None,
     contract_version: str = "1.0",
 ) -> dict[str, Any]:
-    """Build the stable post-interpretation payload handed to reporting.
+    """Build the stable post-assessement payload handed to reporting.
 
-    `report` is the measurement/interpretation payload produced by the current
+    `report` is the measurement/assessement payload produced by the current
     measurement orchestrator. This helper reshapes it into the reporting contract
     documented in REPORTING_HANDOFF_CONTRACT.md and backfills default sections
-    that reporting expects (notably `interpretations.syndromes`, `case`, and
+    that reporting expects (notably `assessements.syndromes`, `case`, and
     `report_context`).
     """
     case_payload = _normalize_case(case)
     report_context_payload = _normalize_report_context(report_context)
 
-    interpretations = dict(report.get("interpretations", {}))
-    interpreted_rows = list(interpretations.get("measurements", []))
-    syndromes = interpretations.get("syndromes")
+    assessements = dict(report.get("assessements", {}))
+    assessed_rows = list(assessements.get("measurements", []))
+    syndromes = assessements.get("syndromes")
     if syndromes is None:
-        syndromes = detect_syndromes(interpreted_rows)
+        syndromes = detect_syndromes(assessed_rows)
 
     return {
         "contract_version": contract_version,
@@ -305,8 +305,8 @@ def build_reporting_handoff_contract(
         "components": dict(report.get("components", {})),
         "measurements": dict(report.get("measurements", {})),
         "flags": dict(report.get("flags", {})),
-        "interpretations": {
-            "measurements": interpreted_rows,
+        "assessements": {
+            "measurements": assessed_rows,
             "syndromes": list(syndromes),
         },
         "report_context": report_context_payload,

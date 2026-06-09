@@ -2,7 +2,7 @@
 
 Flask service running Phase 3 measurement components on a TotalSpineSeg `step2_output`. Each measurement is its own component module; the orchestrator runs them in dependency order, instruments every call with Prometheus, and returns a flat report.
 
-Phase 4 / Group 6 interpretation now lives in the sibling package [`services/interpretation/`](../interpretation/), which this service imports to attach interpreted rows to the raw measurement output. Group 5 runtime code now lives under [`services/measurements/group5/`](./group5/) and is integrated into the measurements service rather than only existing as standalone sidecar code.
+Phase 4 / Group 6 assessement now lives in the sibling package [`services/assessement/`](../assessement/), which this service imports to attach assessed rows to the raw measurement output. Group 5 runtime code now lives under [`services/measurements/group5/`](./group5/) and is integrated into the measurements service rather than only existing as standalone sidecar code.
 
 ## Components currently registered
 
@@ -51,7 +51,7 @@ The `POST /measure` body is the same zip the segmentation IEP returns: at minimu
 Optional repeated form field `measurement=<name>` picks a subset of components.
 Optional case/reporting fields such as `job_id`, `case_id`, `sex`, `age_years`,
 `height_cm`, `report_language`, `include_appendix`, and repeated `disclaimer`
-can be supplied so the response is immediately usable as the interpretation-to-
+can be supplied so the response is immediately usable as the assessement-to-
 reporting handoff contract.
 
 ```bash
@@ -82,7 +82,7 @@ Response:
     "ap_width_outlier": {"C3": false},
     "sac_high_risk": {"C5": true}
   },
-  "interpretations": {
+  "assessements": {
     "measurements": [
       {
         "measurement": "SAC",
@@ -111,7 +111,7 @@ Response:
 }
 ```
 
-`interpretations.measurements` is the first Phase 4 scaffold: a standard per-measurement container that keeps the API stable while the full threshold engine is still being built. `interpretations.syndromes` carries provisional advisory patterns such as the myelopathy combination rule. The current behavior is intentionally conservative:
+`assessements.measurements` is the first Phase 4 scaffold: a standard per-measurement container that keeps the API stable while the full threshold engine is still being built. `assessements.syndromes` carries provisional advisory patterns such as the myelopathy combination rule. The current behavior is intentionally conservative:
 
 - values with a non-quality pathology flag from their source component are marked `outside_reference`
 - values without threshold logic yet are marked `review_only`

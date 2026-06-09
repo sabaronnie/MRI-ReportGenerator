@@ -2,7 +2,7 @@
 
 The catalog (`thresholds.py`) is the single home for every measurement's normative
 range, severity bands, flag thresholds, citation, and modality caveat — provenance
-lives here, not scattered per interpretation row (plans/phase-4-interpretation.md §4.1).
+lives here, not scattered per assessement row (plans/phase-4-assessement.md §4.1).
 
 These first tests cover the vertebral-body Ha/Hp compression screen, the one threshold
 we validated ourselves (Spine-Generic healthy cohort Ha/Hp 0.94 ± 0.13, n=60 C3-C7;
@@ -13,7 +13,7 @@ strings carried by services/measurements/group5/flags_contract.py (Tan 2004 / Le
 
 from __future__ import annotations
 
-from services.interpretation import classify
+from services.assessement import classify
 
 
 def test_vb_hahp_normal_is_within_reference():
@@ -251,9 +251,9 @@ def test_ap_width_outlier_is_caution_not_a_clinical_flag():
     assert r.tag == "quality"
 
 
-def test_tilt_deg_is_quality_caution_not_interpretable_clinically():
+def test_tilt_deg_is_quality_caution_not_assessable_clinically():
     r = classify("tilt_deg", 28.0)
-    assert r.status == "not_interpretable"
+    assert r.status == "not_assessable"
     assert r.flag is False
     assert r.tag == "quality"
     assert "caution" in r.caveat.lower()

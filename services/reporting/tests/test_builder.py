@@ -33,7 +33,7 @@ def test_build_report_document_consumes_reporting_contract():
             "sac_high_risk": {"C5": True},
             "sac_slice_misaligned": {"C5": True},
         },
-        "interpretations": {
+        "assessements": {
             "measurements": [
                 {
                     "measurement": "SAC",

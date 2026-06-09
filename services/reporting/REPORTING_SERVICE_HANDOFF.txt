@@ -3,12 +3,12 @@ REPORTING SERVICE HANDOFF
 
 Purpose
 -------
-The reporting package is the final presentation layer after measurement and interpretation.
-Its job is to take the post-interpretation handoff contract, normalize it into a stable
+The reporting package is the final presentation layer after measurement and assessement.
+Its job is to take the post-assessement handoff contract, normalize it into a stable
 report document, and render human-readable report artifacts.
 
 This package does not compute medical measurements, run segmentation, or decide threshold
-logic itself. It depends on upstream services to produce interpreted findings first.
+logic itself. It depends on upstream services to produce assessed findings first.
 
 
 Current Role In The Pipeline
@@ -18,7 +18,7 @@ Pipeline position:
   Input MRI
   -> segmentation
   -> measurements
-  -> interpretation
+  -> assessement
   -> reporting
 
 Reporting is therefore a formatter and document builder, not an inference engine.
@@ -26,9 +26,9 @@ Reporting is therefore a formatter and document builder, not an inference engine
 
 What It Consumes
 ----------------
-The reporting package consumes the post-interpretation JSON contract documented in:
+The reporting package consumes the post-assessement JSON contract documented in:
 
-  services/interpretation/REPORTING_HANDOFF_CONTRACT.md
+  services/assessement/REPORTING_HANDOFF_CONTRACT.md
 
 The top-level keys it currently requires are:
 
@@ -38,7 +38,7 @@ The top-level keys it currently requires are:
   - components
   - measurements
   - flags
-  - interpretations
+  - assessements
   - report_context
 
 Validation for these keys is enforced in builder.py before document construction begins.
@@ -51,7 +51,7 @@ The main internal product is a normalized report document built by:
   build_report_document(payload)
 
 That normalized document is the reporting layer's core data model. Renderers consume this
-document instead of depending directly on the raw interpretation payload.
+document instead of depending directly on the raw assessement payload.
 
 The current normalized document includes:
 
@@ -74,7 +74,7 @@ The current normalized document includes:
 Main Source Files
 -----------------
 1. builder.py
-   The central normalization layer. Converts the interpretation handoff contract into
+   The central normalization layer. Converts the assessement handoff contract into
    a structured report document suitable for rendering.
 
 2. render_html.py
@@ -111,10 +111,10 @@ The reporting package currently works in three conceptual stages.
 
 Stage 1: Validate payload
   builder.py checks that the expected top-level contract keys exist and that
-  interpretations is a structured object containing both measurements and syndromes.
+  assessements is a structured object containing both measurements and syndromes.
 
 Stage 2: Normalize into a report document
-  The builder converts upstream interpreted rows into reporting-specific structures:
+  The builder converts upstream assessed rows into reporting-specific structures:
 
   - findings table rows
   - highlighted abnormal rows
@@ -139,9 +139,9 @@ Stage 3: Render report variants
 How Clinical Meaning Enters The Report
 --------------------------------------
 The reporting layer does not define clinical thresholds itself, but it does enrich display
-content using the interpretation threshold catalog:
+content using the assessement threshold catalog:
 
-  services.interpretation.THRESHOLDS
+  services.assessement.THRESHOLDS
 
 builder.py imports THRESHOLDS to attach reporting-friendly metadata such as:
 
@@ -192,7 +192,7 @@ explanation rather than only end-user readability.
 
 How Findings Are Built
 ----------------------
-The builder transforms each interpreted measurement row into a reporting table row with:
+The builder transforms each assessed measurement row into a reporting table row with:
 
   - measurement key
   - clinical display name
@@ -236,14 +236,14 @@ Quality And Caveat Handling
 Reporting preserves non-diagnostic caution information in two ways.
 
 1. Measurement-level quality notes
-   These come from interpreted rows that carry quality_flags.
+   These come from assessed rows that carry quality_flags.
 
 2. Component-level error notes
    These are created when an upstream component in payload["components"] has status == "error".
 
 General caveats are deduplicated from:
 
-  - interpreted measurement caveats
+  - assessed measurement caveats
   - syndrome caveats
 
 This allows reporting to surface uncertainty, modality limits, QC warnings, and advisory-only
@@ -272,16 +272,16 @@ The patient summary is derived from available demographic context such as:
 
 Summary Block
 -------------
-The summary section is a compact aggregate over interpreted rows and syndromes. It tracks:
+The summary section is a compact aggregate over assessed rows and syndromes. It tracks:
 
-  - total interpreted measurement rows
+  - total assessed measurement rows
   - number of flagged measurements
   - number of syndromes
   - counts by status:
     - within_reference
     - outside_reference
     - review_only
-    - not_interpretable
+    - not_assessable
 
 
 Appendix Content
@@ -372,13 +372,13 @@ Relevant test files:
 
 Dependencies And Coupling
 -------------------------
-The reporting layer is intentionally coupled to interpretation at the contract boundary and
+The reporting layer is intentionally coupled to assessement at the contract boundary and
 the threshold catalog boundary.
 
 It depends on:
 
-  - services.interpretation.REPORTING_HANDOFF_CONTRACT.md for payload shape
-  - services.interpretation.THRESHOLDS for naming and provenance metadata
+  - services.assessement.REPORTING_HANDOFF_CONTRACT.md for payload shape
+  - services.assessement.THRESHOLDS for naming and provenance metadata
 
 It should not depend directly on measurement-component internals beyond what is already
 represented in the handoff contract.
@@ -388,7 +388,7 @@ Current Design Intent
 ---------------------
 The package is designed around a stable intermediate document model so that:
 
-  - interpretation can evolve without forcing renderers to know raw internals
+  - assessement can evolve without forcing renderers to know raw internals
   - new output formats can be added later
   - clinical and technical variants can diverge in presentation while sharing the same
     normalized source document
@@ -405,7 +405,7 @@ Current Limitations
 
 3. Rendering is code-built rather than using a more formal templating system at runtime.
 
-4. Reporting inherits the quality of upstream interpretation.
+4. Reporting inherits the quality of upstream assessement.
    If upstream components omit, misclassify, or mark measurements as error, reporting will
    faithfully surface that state rather than correcting it.
 
@@ -419,7 +419,7 @@ Current Limitations
 Bottom Line
 -----------
 The reporting package is the structured presentation layer for the cervical spine MRI
-pipeline. It takes the interpreted handoff contract, builds a stable report document,
+pipeline. It takes the assessed handoff contract, builds a stable report document,
 and renders two output views:
 
   - a clinician-facing radiology-style report

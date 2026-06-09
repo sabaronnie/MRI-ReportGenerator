@@ -21,7 +21,7 @@ def _payload() -> dict:
         "components": {},
         "measurements": {"SAC": {"C5": 2.7}},
         "flags": {"sac_high_risk": {"C5": True}},
-        "interpretations": {
+        "assessements": {
             "measurements": [
                 {
                     "measurement": "SAC",

@@ -32,7 +32,7 @@ def _map_core(handoff: dict) -> dict | None:
     """Project the measurements handoff JSON onto the frozen-core keys the frontend renders."""
     if not handoff:
         return None
-    core = {k: handoff[k] for k in ("measurements", "flags", "components", "interpretations") if k in handoff}
+    core = {k: handoff[k] for k in ("measurements", "flags", "components", "assessements") if k in handoff}
     return core or None
 
 
@@ -113,12 +113,12 @@ def reporting_ready() -> bool:
 
 
 def _case_to_handoff(case: dict) -> dict:
-    """Project a stored case onto the post-interpretation handoff contract the reporting IEP expects.
+    """Project a stored case onto the post-assessement handoff contract the reporting IEP expects.
 
     Uploaded cases carry the real measurements handoff; bundled fixtures predate some envelope
     fields, so we fill them with safe defaults rather than fail to render.
     """
-    interp = dict(case.get("interpretations") or {})
+    interp = dict(case.get("assessements") or {})
     interp.setdefault("measurements", [])
     interp.setdefault("syndromes", [])
     return {
@@ -128,7 +128,7 @@ def _case_to_handoff(case: dict) -> dict:
         "components": case.get("components", {}),
         "measurements": case.get("measurements", {}),
         "flags": case.get("flags", {}),
-        "interpretations": interp,
+        "assessements": interp,
         "report_context": case.get("report_context")
         or {
             "modality": "cervical_sagittal_mri",

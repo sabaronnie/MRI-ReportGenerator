@@ -63,7 +63,7 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
                   Findings
                 </h2>
                 <div className="overflow-hidden rounded-lg border">
-                  <FindingsTable interpretations={data.interpretations} />
+                  <FindingsTable assessements={data.assessements} />
                 </div>
               </div>
             </section>

@@ -96,7 +96,7 @@ export default function LandingPage() {
       </section>
 
       <footer className="mx-auto mt-auto w-full max-w-4xl border-t border-border pt-6 text-center text-xs text-muted-foreground">
-        Cervical MRI Reporting · EECE503N · research-use structured interpretation, not a medical device.
+        Cervical MRI Reporting · EECE503N · research-use structured assessement, not a medical device.
       </footer>
     </div>
   );

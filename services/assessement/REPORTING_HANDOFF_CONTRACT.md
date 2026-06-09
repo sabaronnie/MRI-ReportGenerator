@@ -1,20 +1,20 @@
-# Post-Interpretation Handoff Contract
+# Post-Assessement Handoff Contract
 
-This document defines the JSON payload passed from the end of the interpretation
+This document defines the JSON payload passed from the end of the assessement
 stage into the reporting stage.
 
 Purpose:
 
-- keep the interpretation-to-reporting boundary stable
+- keep the assessement-to-reporting boundary stable
 - ensure reporting has the full structured evidence it needs
 - avoid coupling reporting to measurement-component internals
 
 This is the contract the EEP should assemble once segmentation, measurements, and
-interpretation have completed for one case.
+assessement have completed for one case.
 
 ## Design rules
 
-- Reporting must receive both interpreted rows and the underlying structured data.
+- Reporting must receive both assessed rows and the underlying structured data.
 - Reporting must not depend on ad hoc prose generated upstream.
 - Citations remain centralized in `thresholds.py`; the handoff carries measurement
   keys so reporting can resolve provenance by key.
@@ -31,7 +31,7 @@ interpretation have completed for one case.
   "components": {},
   "measurements": {},
   "flags": {},
-  "interpretations": {
+  "assessements": {
     "measurements": [],
     "syndromes": []
   },
@@ -43,7 +43,7 @@ interpretation have completed for one case.
 
 ### `contract_version`
 
-String version for the interpretation-to-reporting contract.
+String version for the assessement-to-reporting contract.
 
 Current value:
 
@@ -77,7 +77,7 @@ Required fields:
 Notes:
 
 - `job_id` and `case_id` may be the same in v1.
-- `patient_context` should be preserved even if some interpretation rules do not
+- `patient_context` should be preserved even if some assessement rules do not
   yet use demographics.
 
 ### `manifest`
@@ -123,7 +123,7 @@ Why reporting needs it:
 Important current example:
 
 - `lordosis_classification` is currently emitted via component metadata, not as a
-  standalone interpretation row.
+  standalone assessement row.
 
 ### `measurements`
 
@@ -165,11 +165,11 @@ Why reporting needs it:
 
 - QC callouts
 - caution sections
-- preserving non-interpreted but still important technical warnings
+- preserving non-assessed but still important technical warnings
 
-### `interpretations`
+### `assessements`
 
-Normalized interpretation-stage output.
+Normalized assessement-stage output.
 
 Required shape:
 
@@ -180,9 +180,9 @@ Required shape:
 }
 ```
 
-#### `interpretations.measurements`
+#### `assessements.measurements`
 
-This is the main evidence layer from `InterpretedMeasurement`.
+This is the main evidence layer from `AssessedMeasurement`.
 
 Row shape:
 
@@ -206,11 +206,11 @@ Reporting uses these rows to:
 - decide what should surface in findings
 - build severity tags
 - attach method caveats
-- decide which values are normal, borderline, review-only, or not interpretable
+- decide which values are normal, borderline, review-only, or not assessable
 
-#### `interpretations.syndromes`
+#### `assessements.syndromes`
 
-Advisory higher-level patterns derived from interpreted rows.
+Advisory higher-level patterns derived from assessed rows.
 
 Shape:
 
@@ -323,7 +323,7 @@ Why this belongs here:
       "C5": true
     }
   },
-  "interpretations": {
+  "assessements": {
     "measurements": [
       {
         "measurement": "dural_sac_AP_min",
@@ -377,7 +377,7 @@ Why this belongs here:
 ## Minimum implementation changes implied by this contract
 
 - Keep returning `components`, `measurements`, `flags`, and `manifest`.
-- Ensure `interpretations.syndromes` is present, even when empty.
+- Ensure `assessements.syndromes` is present, even when empty.
 - Add `case` and `report_context` in the EEP before calling reporting.
 - Keep report generation downstream of this contract rather than re-deriving from raw
   component internals.
@@ -393,5 +393,5 @@ Reporting should derive, not require as input:
 
 That keeps the boundary clean:
 
-- interpretation decides what the values mean
+- assessement decides what the values mean
 - reporting decides how to present that meaning

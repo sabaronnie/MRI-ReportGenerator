@@ -11,7 +11,7 @@ minimum step2_output.nii.gz). If the zip also contains `sct_canal_seg.nii.gz` an
 `sct_spinalcord_seg.nii.gz`, the SCT-backed measurements will reuse those masks instead of
 rerunning deepseg locally. Optional repeated form field `measurement=<name>` selects a
 subset of registered components; default runs all. The JSON response is the stable
-post-interpretation handoff contract consumed by reporting.
+post-assessement handoff contract consumed by reporting.
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ from pathlib import Path
 from flask import Flask, Response, jsonify, request
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
-from services.interpretation import build_reporting_handoff_contract
+from services.assessement import build_reporting_handoff_contract
 
 from .context import MeasurementError, load_context
 from .orchestrator import COMPONENTS, run_all

@@ -1,10 +1,10 @@
 """Group 5 -> Group 6 output contract: emit the per-case findings JSON Group 6 consumes.
 
 Group 5 produces signal/shape-based abnormal-finding SCREENS (not diagnoses). Group 6
-(interpretation + report) needs those as a structured, self-describing document: per cervical
+(assessement + report) needs those as a structured, self-describing document: per cervical
 level a fracture/compression screen and an (optional) myelomalacia screen, each with a value,
 a screen status, and a citable provenance, plus an explicit not-assessed list and honest
-caveats. See plans/phase-4-interpretation.md (§4.2 per-level findings, §4.3 myelopathy
+caveats. See plans/phase-4-assessement.md (§4.2 per-level findings, §4.3 myelopathy
 indicator consumes the per-level cord-signal flag).
 
 This emitter is PURE (data in, dict out -> JSON-serialisable) and REUSES the validated

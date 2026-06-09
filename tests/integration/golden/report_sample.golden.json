@@ -16,7 +16,7 @@
     "flagged_measurement_count": 3,
     "measurement_row_count": 4,
     "status_counts": {
-      "not_interpretable": 0,
+      "not_assessable": 0,
       "outside_reference": 3,
       "review_only": 1,
       "within_reference": 0

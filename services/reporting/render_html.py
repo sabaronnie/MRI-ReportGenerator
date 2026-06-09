@@ -417,7 +417,7 @@ def _status_pill(status: Any, severity: Any) -> str:
     cls = "pill"
     if status_text == "outside_reference":
         cls += " pill-flag"
-    elif status_text in {"review_only", "not_interpretable"}:
+    elif status_text in {"review_only", "not_assessable"}:
         cls += " pill-review"
     elif status_text == "within_reference":
         cls += " pill-within"

@@ -30,20 +30,20 @@ export interface ComponentResult {
 }
 export type Components = Record<string, ComponentResult>;
 
-// ── frozen interpretation layer (the most useful object for the UI) ──────────
+// ── frozen assessement layer (the most useful object for the UI) ──────────
 /** Standardized 4-value vocabulary (FROZEN). */
-export type InterpretationStatus =
+export type AssessementStatus =
   | "within_reference"
   | "outside_reference"
   | "review_only"
-  | "not_interpretable";
+  | "not_assessable";
 
-export interface InterpretedMeasurement {
+export interface AssessedMeasurement {
   measurement: string;
   level: LevelKey;
   value: number | null;
   unit: string;
-  status: InterpretationStatus;
+  status: AssessementStatus;
   /** per-measurement label (vocabulary differs by measurement) or null. */
   severity: string | null;
   /** true ⇔ status === "outside_reference". */
@@ -52,8 +52,8 @@ export interface InterpretedMeasurement {
   quality_flags: string[];
   caveat: string | null;
 }
-export interface Interpretations {
-  measurements: InterpretedMeasurement[];
+export interface Assessements {
+  measurements: AssessedMeasurement[];
 }
 
 /** A flag/quality_flag is "quality/caution" (not a patient abnormality) if its name contains any marker. */
@@ -92,7 +92,7 @@ export type JobStage =
   | "queued"
   | "segmenting"
   | "measuring"
-  | "interpreting"
+  | "assessing"
   | "ready"
   | "error";
 export interface Job {
@@ -106,7 +106,7 @@ export interface Job {
 export interface Impression {
   text: string;
   traceable_to: string[];
-  status: InterpretationStatus;
+  status: AssessementStatus;
   severity?: string | null;
 }
 export type ReportFigure = {
@@ -148,7 +148,7 @@ export interface CaseEnvelope {
   measurements: MeasurementMap;
   flags: FlagMap;
   components: Components;
-  interpretations: Interpretations;
+  assessements: Assessements;
   report: Report;
 }
 
@@ -168,7 +168,7 @@ export type FailedStage =
   | "upload"
   | "segmenting"
   | "measuring"
-  | "interpreting"
+  | "assessing"
   | "reporting";
 export interface ApiError {
   code: string;

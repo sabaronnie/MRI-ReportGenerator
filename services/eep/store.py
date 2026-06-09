@@ -17,9 +17,9 @@ from threading import Lock
 
 from . import config
 
-_STAGE_ORDER = ["queued", "segmenting", "measuring", "interpreting", "ready"]
+_STAGE_ORDER = ["queued", "segmenting", "measuring", "assessing", "ready"]
 # (stage, progress-fraction upper bound) — drives both the stage label and the progress bar.
-_SIM_STEPS = [("queued", 0.18), ("segmenting", 0.5), ("measuring", 0.82), ("interpreting", 1.0)]
+_SIM_STEPS = [("queued", 0.18), ("segmenting", 0.5), ("measuring", 0.82), ("assessing", 1.0)]
 
 _lock = Lock()
 _store: dict[str, dict] = {}
@@ -87,10 +87,10 @@ def get_job(case_id: str) -> dict | None:
 
 
 def _apply_core(base: dict, core: dict | None) -> None:
-    """Overlay a real measurements/interpretation core onto a (cloned) case envelope."""
+    """Overlay a real measurements/assessement core onto a (cloned) case envelope."""
     if not core:
         return
-    for key in ("measurements", "flags", "components", "interpretations", "report"):
+    for key in ("measurements", "flags", "components", "assessements", "report"):
         if key in core:
             base[key] = core[key]
 
@@ -148,7 +148,7 @@ def set_stage(case_id: str, stage: str, *, progress: float | None = None, error:
 
 
 def update_case_core(case_id: str, core: dict | None) -> dict | None:
-    """Write the real measurements/interpretation core onto an existing case (background worker)."""
+    """Write the real measurements/assessement core onto an existing case (background worker)."""
     with _lock:
         c = _store.get(case_id)
         if c is None:

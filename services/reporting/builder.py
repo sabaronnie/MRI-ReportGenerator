@@ -1,10 +1,10 @@
-"""Helpers for converting the interpretation handoff contract into a report document."""
+"""Helpers for converting the assessement handoff contract into a report document."""
 
 from __future__ import annotations
 
 from typing import Any
 
-from services.interpretation import THRESHOLDS
+from services.assessement import THRESHOLDS
 
 REQUIRED_TOP_LEVEL_KEYS = (
     "contract_version",
@@ -13,28 +13,28 @@ REQUIRED_TOP_LEVEL_KEYS = (
     "components",
     "measurements",
     "flags",
-    "interpretations",
+    "assessements",
     "report_context",
 )
 
 
 def build_report_document(payload: dict[str, Any]) -> dict[str, Any]:
-    """Normalize the post-interpretation handoff contract into a report document.
+    """Normalize the post-assessement handoff contract into a report document.
 
     This is the reporting service's stable input boundary. It consumes the
-    contract documented in `services/interpretation/REPORTING_HANDOFF_CONTRACT.md`
+    contract documented in `services/assessement/REPORTING_HANDOFF_CONTRACT.md`
     and produces a renderer-friendly document with explicit sections for
     findings, quality notes, disclaimers, and appendix data.
     """
     _validate_payload(payload)
 
-    interpreted_rows = list(payload["interpretations"].get("measurements", []))
-    syndromes = list(payload["interpretations"].get("syndromes", []))
+    assessed_rows = list(payload["assessements"].get("measurements", []))
+    syndromes = list(payload["assessements"].get("syndromes", []))
     components = dict(payload["components"])
 
-    table_rows = [_build_table_row(row) for row in interpreted_rows]
+    table_rows = [_build_table_row(row) for row in assessed_rows]
     highlighted_rows = [row for row in table_rows if row["flag"]]
-    quality_notes = _build_quality_notes(interpreted_rows, components)
+    quality_notes = _build_quality_notes(assessed_rows, components)
     clinical_report = _build_clinical_report(
         payload=payload,
         table_rows=table_rows,
@@ -42,7 +42,7 @@ def build_report_document(payload: dict[str, Any]) -> dict[str, Any]:
         components=components,
     )
     impression = list(clinical_report["impression"])
-    provenance = _build_provenance(interpreted_rows)
+    provenance = _build_provenance(assessed_rows)
     case_header = _build_case_header(payload["case"])
 
     return {
@@ -51,7 +51,7 @@ def build_report_document(payload: dict[str, Any]) -> dict[str, Any]:
         "title": "Cervical Spine MRI Analysis Report",
         "case_header": case_header,
         "case": _normalize_case(payload["case"]),
-        "summary": _build_summary(interpreted_rows, syndromes),
+        "summary": _build_summary(assessed_rows, syndromes),
         "clinical_report": clinical_report,
         "findings": {
             "table_rows": table_rows,
@@ -62,7 +62,7 @@ def build_report_document(payload: dict[str, Any]) -> dict[str, Any]:
         "quality_caveats": {
             "measurement_notes": [n for n in quality_notes if n["type"] == "measurement_quality"],
             "component_notes": [n for n in quality_notes if n["type"] == "component_error"],
-            "general_caveats": _build_general_caveats(interpreted_rows, syndromes),
+            "general_caveats": _build_general_caveats(assessed_rows, syndromes),
         },
         "quality_notes": quality_notes,
         "disclaimers": list(payload["report_context"].get("disclaimers", [])),
@@ -88,13 +88,13 @@ def _validate_payload(payload: dict[str, Any]) -> None:
     if missing:
         raise ValueError(f"reporting payload missing required top-level keys: {', '.join(sorted(missing))}")
 
-    interpretations = payload["interpretations"]
-    if not isinstance(interpretations, dict):
-        raise ValueError("reporting payload field `interpretations` must be an object")
+    assessements = payload["assessements"]
+    if not isinstance(assessements, dict):
+        raise ValueError("reporting payload field `assessements` must be an object")
 
     for key in ("measurements", "syndromes"):
-        if key not in interpretations:
-            raise ValueError(f"reporting payload field `interpretations.{key}` is required")
+        if key not in assessements:
+            raise ValueError(f"reporting payload field `assessements.{key}` is required")
 
 
 def _normalize_case(case: dict[str, Any]) -> dict[str, Any]:
@@ -131,7 +131,7 @@ def _build_case_header(case: dict[str, Any]) -> dict[str, Any]:
         "exam": "MRI cervical spine",
         "technique": (
             "Automated research-use post-processing of sagittal cervical spine MRI "
-            "including segmentation, measurement, interpretation, and structured reporting."
+            "including segmentation, measurement, assessement, and structured reporting."
         ),
         "case_id": normalized.get("case_id"),
         "job_id": normalized.get("job_id"),
@@ -147,7 +147,7 @@ def _build_summary(rows: list[dict[str, Any]], syndromes: list[dict[str, Any]]) 
         "within_reference": 0,
         "outside_reference": 0,
         "review_only": 0,
-        "not_interpretable": 0,
+        "not_assessable": 0,
     }
     for row in rows:
         status = row.get("status")
@@ -257,7 +257,7 @@ def _build_clinical_report(
         "exam": "MRI cervical spine",
         "technique": (
             "Automated analysis of sagittal cervical spine MRI. Research-use structured "
-            "interpretation only; not a substitute for radiologist review."
+            "assessement only; not a substitute for radiologist review."
         ),
         "findings_sections": findings_sections,
         "findings_text": "\n\n".join(f"{section['heading']}: {section['body']}" for section in findings_sections),
@@ -266,12 +266,12 @@ def _build_clinical_report(
 
 
 def _build_quality_notes(
-    interpreted_rows: list[dict[str, Any]],
+    assessed_rows: list[dict[str, Any]],
     components: dict[str, dict[str, Any]],
 ) -> list[dict[str, Any]]:
     notes: list[dict[str, Any]] = []
 
-    for row in interpreted_rows:
+    for row in assessed_rows:
         quality_flags = list(row.get("quality_flags", []))
         if quality_flags:
             notes.append(
@@ -298,12 +298,12 @@ def _build_quality_notes(
 
 
 def _build_general_caveats(
-    interpreted_rows: list[dict[str, Any]],
+    assessed_rows: list[dict[str, Any]],
     syndromes: list[dict[str, Any]],
 ) -> list[str]:
     caveats: list[str] = []
 
-    for row in interpreted_rows:
+    for row in assessed_rows:
         caveat = row.get("caveat")
         if caveat:
             caveats.append(str(caveat))
@@ -316,11 +316,11 @@ def _build_general_caveats(
     return list(dict.fromkeys(caveats))
 
 
-def _build_provenance(interpreted_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _build_provenance(assessed_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     provenance: list[dict[str, Any]] = []
     seen: set[str] = set()
 
-    for row in interpreted_rows:
+    for row in assessed_rows:
         key = str(row.get("measurement"))
         if key in seen:
             continue

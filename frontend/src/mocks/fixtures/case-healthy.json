@@ -33,7 +33,7 @@
       "queued",
       "segmenting",
       "measuring",
-      "interpreting",
+      "assessing",
       "ready"
     ],
     "progress": 1.0,
@@ -229,7 +229,7 @@
       "error": "sac depends on functional_canal_ap and cord_ap"
     }
   },
-  "interpretations": {
+  "assessements": {
     "measurements": [
       {
         "measurement": "AP_width",
@@ -648,7 +648,7 @@
         "level": "C3",
         "value": 23.407046625617085,
         "unit": "deg",
-        "status": "not_interpretable",
+        "status": "not_assessable",
         "severity": null,
         "flag": false,
         "demographics_used": {},
@@ -662,7 +662,7 @@
         "level": "C4",
         "value": 28.193917187222947,
         "unit": "deg",
-        "status": "not_interpretable",
+        "status": "not_assessable",
         "severity": null,
         "flag": false,
         "demographics_used": {},
@@ -676,7 +676,7 @@
         "level": "C5",
         "value": 24.454793723640325,
         "unit": "deg",
-        "status": "not_interpretable",
+        "status": "not_assessable",
         "severity": null,
         "flag": false,
         "demographics_used": {},
@@ -690,7 +690,7 @@
         "level": "C6",
         "value": 27.815306384661483,
         "unit": "deg",
-        "status": "not_interpretable",
+        "status": "not_assessable",
         "severity": null,
         "flag": false,
         "demographics_used": {},
@@ -704,7 +704,7 @@
         "level": "C7",
         "value": 40.88051217482757,
         "unit": "deg",
-        "status": "not_interpretable",
+        "status": "not_assessable",
         "severity": null,
         "flag": false,
         "demographics_used": {},
@@ -789,10 +789,10 @@
         "traceable_to": [
           "Cobb_C3_C7"
         ],
-        "status": "not_interpretable"
+        "status": "not_assessable"
       }
     ],
-    "findings_by_level": "see interpretations.measurements (one row per measurement x level)",
+    "findings_by_level": "see assessements.measurements (one row per measurement x level)",
     "disclaimers": [
       "All outputs are screens flagged for physician review, never a diagnosis.",
       "Numbers in this sample are real pipeline output on a healthy control but pre-validation; shape is frozen, values are illustrative."

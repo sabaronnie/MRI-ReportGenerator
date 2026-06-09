@@ -1,6 +1,6 @@
 """Generate 2 demo reports (1 healthy + 1 symptomatic) for radiologist review + cross-reference.
 
-Runs the FULL measurement+interpretation pipeline (services.measurements.orchestrator.run_all) on
+Runs the FULL measurement+assessement pipeline (services.measurements.orchestrator.run_all) on
 two cases that have TSS + SCT canal/cord + SPINEPS, and renders a human-readable, honest, cited
 report per case. Also saves the raw run_all JSON (the canonical cross-reference for the frontend).
 """
@@ -9,8 +9,8 @@ import numpy as np
 sys.path.insert(0, "/Users/andrew/Desktop/AUB/Spring 26/EECE 503n/Project/MRI-ReportGenerator")
 from services.measurements.context import load_context
 from services.measurements.orchestrator import run_all
-from services.interpretation.interpretation import detect_syndromes, _infer_unit
-from services.interpretation.thresholds import classify, THRESHOLDS
+from services.assessement.assessement import detect_syndromes, _infer_unit
+from services.assessement.thresholds import classify, THRESHOLDS
 
 # spondylolisthesis is EXPERIMENTAL (no supine-MRI presence threshold; reads unstable corners) ->
 # do not surface as a clinical flag; it false-fires on healthy supine necks.
@@ -44,9 +44,9 @@ def g3_from_csv(case_dir):
 
 
 def inject_g3(rep, case_dir, sex):
-    """Add CSV-derived G3 measurements + their catalog interpretation to the report."""
+    """Add CSV-derived G3 measurements + their catalog assessement to the report."""
     g3 = g3_from_csv(case_dir)
-    rows = rep["interpretations"]["measurements"]
+    rows = rep["assessements"]["measurements"]
     for key, per in g3.items():
         rep["measurements"].setdefault(key, {}).update(per)
         if key not in THRESHOLDS:
@@ -102,7 +102,7 @@ def fmt(v):
 
 
 def render(case, rep):
-    rows = rep["interpretations"]["measurements"]
+    rows = rep["assessements"]["measurements"]
     by_meas = {}
     for r in rows:
         by_meas.setdefault(r["measurement"], []).append(r)
@@ -166,7 +166,7 @@ def render(case, rep):
     L.append("- **G4 C3–C7 Cobb (SPINEPS)**: method-validated (reads literature lordosis); discrimination directional.")
     L.append("- **G2 disc**: partial — disc/VB AP ratio separates (AUC 0.62); disc signal is a documented non-discriminator.")
     L.append("- **G5 screens**: myelomalacia ~91% healthy specificity.")
-    L.append("- Thresholds are cited (catalog `services/interpretation/thresholds.py`); some are conservative "
+    L.append("- Thresholds are cited (catalog `services/assessement/thresholds.py`); some are conservative "
              "borrows pending cervical-MRI confirmation — see each note above.")
     L.append(f"\n_Demographic-adjusted thresholds (e.g. sex-specific canal cut) are correct in logic now; their "
              f"clinical accuracy will be confirmed once cases with complete patient data are available._")
@@ -182,13 +182,13 @@ for case in CASES:
                        spineps_seg_path=case["spineps"], age=case["age"], sex=case["sex"],
                        height_cm=case["height_cm"])
     rep = run_all(ctx)
-    inject_g3(rep, case["step2"].split("/tss/")[0], case["sex"])  # CSV-derived canal/cord/SAC + interpret
+    inject_g3(rep, case["step2"].split("/tss/")[0], case["sex"])  # CSV-derived canal/cord/SAC + assess
     md = render(case, rep)
     base = case["id"]
     open(f"{OUT}/report_{base}.md", "w").write(md)
     json.dump(rep, open(f"{OUT}/report_{base}.json", "w"), indent=2, default=float)
     shutil.copy(case["raw"], f"{OUT}/MRI_{base}.nii.gz")
-    nflag = sum(1 for r in rep["interpretations"]["measurements"] if r["flag"])
+    nflag = sum(1 for r in rep["assessements"]["measurements"] if r["flag"])
     nok = sum(1 for c in rep["components"].values() if c["status"] == "ok")
     manifest.append((base, nok, nflag))
     print(f"{base}: {nok} components ok, {nflag} flagged -> report_{base}.md + .json + MRI")

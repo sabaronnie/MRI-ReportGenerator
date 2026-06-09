@@ -34,12 +34,12 @@ def test_signoff_status_survives_sim_clock():
 
 def test_case_to_handoff_fills_missing_contract_keys():
     # Fixtures predate some envelope fields; the normalizer must backfill them so reporting accepts them.
-    minimal = {"case": {"case_id": "x"}, "measurements": {}, "flags": {}, "interpretations": {}}
+    minimal = {"case": {"case_id": "x"}, "measurements": {}, "flags": {}, "assessements": {}}
     handoff = orchestration._case_to_handoff(minimal)
-    for key in ("contract_version", "case", "manifest", "components", "measurements", "flags", "interpretations", "report_context"):
+    for key in ("contract_version", "case", "manifest", "components", "measurements", "flags", "assessements", "report_context"):
         assert key in handoff
-    assert "measurements" in handoff["interpretations"]
-    assert "syndromes" in handoff["interpretations"]
+    assert "measurements" in handoff["assessements"]
+    assert "syndromes" in handoff["assessements"]
 
 
 def test_readiness_false_without_iep_urls(monkeypatch):

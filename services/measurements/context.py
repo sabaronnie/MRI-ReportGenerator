@@ -59,7 +59,7 @@ class MeasurementContext:
     seg_vert_axcodes: tuple | None = None
     seg_vert_zooms: tuple | None = None
     # Patient demographics captured at input (alongside the MRI). age + sex feed the
-    # age/sex-dependent interpretation norms (Nell 2019 canal/SAC, PAM50 cord); height is
+    # age/sex-dependent assessement norms (Nell 2019 canal/SAC, PAM50 cord); height is
     # captured for the record but no cervical threshold normalizes by it (no cited norm yet).
     age: float | None = None
     sex: str | None = None

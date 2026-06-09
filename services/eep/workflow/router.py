@@ -137,7 +137,7 @@ def stats(_: dict = Depends(get_current_user)):
             signed += 1
         elif t["age_hours"] is not None:
             open_ages.append(t["age_hours"])
-        rows = (c.get("interpretations") or {}).get("measurements") or []
+        rows = (c.get("assessements") or {}).get("measurements") or []
         case_flagged = False
         for r in rows:
             if r.get("status") == "outside_reference" and r.get("flag"):

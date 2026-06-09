@@ -70,7 +70,7 @@ def compute(ctx: MeasurementContext, prior_results: dict[str, Any]) -> Component
             "sign_convention": "lordosis_positive_kyphosis_negative",
             "cobb_reference_deg": {"C3-C7": float(cobb_deg)},
             "cobb_divergence_deg": {"C3-C7": round(divergence_deg, 3)},
-            "interpretation": (
+            "assessement": (
                 "Secondary / cross-check metric. Large divergence from Cobb may reflect "
                 "corner-fit instability, endplate-definition instability, or local vertebral shape irregularity."
             ),

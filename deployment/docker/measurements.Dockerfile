@@ -1,5 +1,5 @@
-# Measurements IEP — Flask geometric/cord/group5 measurements + interpretation.
-# Build context = repo root (imports `services.measurements.*` and `services.interpretation.*`).
+# Measurements IEP — Flask geometric/cord/group5 measurements + assessement.
+# Build context = repo root (imports `services.measurements.*` and `services.assessement.*`).
 FROM python:3.12-slim
 
 WORKDIR /app
@@ -25,7 +25,7 @@ COPY services/measurements/requirements.txt /app/services/measurements/requireme
 RUN pip install --no-cache-dir -r services/measurements/requirements.txt
 
 COPY services/measurements /app/services/measurements
-COPY services/interpretation /app/services/interpretation
+COPY services/assessement /app/services/assessement
 # cord_ap/functional_canal_ap import services.segmentation.sct_segmenter (a light, stdlib-only
 # SCT CLI wrapper — no torch/totalspineseg pulled at import). Needed for the package to load.
 COPY services/segmentation /app/services/segmentation

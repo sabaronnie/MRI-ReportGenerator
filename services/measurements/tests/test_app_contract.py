@@ -28,7 +28,7 @@ def test_measure_endpoint_returns_reporting_handoff_contract(monkeypatch):
         },
         "measurements": {"SAC": {"C5": 2.7}},
         "flags": {"sac_high_risk": {"C5": True}},
-        "interpretations": {
+        "assessements": {
             "measurements": [
                 {
                     "measurement": "SAC",
@@ -77,7 +77,7 @@ def test_measure_endpoint_returns_reporting_handoff_contract(monkeypatch):
     assert payload["manifest"] == dummy_ctx.manifest
     assert payload["measurements"] == dummy_report["measurements"]
     assert payload["flags"] == dummy_report["flags"]
-    assert payload["interpretations"] == dummy_report["interpretations"]
+    assert payload["assessements"] == dummy_report["assessements"]
     assert payload["report_context"]["modality"] == "cervical_sagittal_mri"
     assert payload["report_context"]["report_language"] == "en"
     assert payload["report_context"]["include_appendix"] is False

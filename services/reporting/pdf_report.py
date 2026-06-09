@@ -30,7 +30,7 @@ _STATUS = {
     "outside_reference": ("Flagged", ROSE, ROSE_SOFT),
     "review_only": ("Review", AMBER, (252, 247, 235)),
     "within_reference": ("Normal", (33, 120, 90), (236, 247, 242)),
-    "not_interpretable": ("N/A", MUTED, (242, 244, 246)),
+    "not_assessable": ("N/A", MUTED, (242, 244, 246)),
 }
 
 USABLE_W = 170.0  # A4 (210mm) minus 20mm margins each side
@@ -113,7 +113,7 @@ class _Report(FPDF):
         self.set_y(-12)
         self.set_font("Helvetica", "", 7)
         self.set_text_color(*MUTED)
-        self.cell(140, 4, "Research-use structured interpretation - not a diagnosis. Clinical correlation required.")
+        self.cell(140, 4, "Research-use structured assessement - not a diagnosis. Clinical correlation required.")
         self.cell(30, 4, f"Page {self.page_no()}", align="R")
 
     # -- section helpers --

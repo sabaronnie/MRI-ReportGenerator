@@ -4,7 +4,7 @@ The emitter turns Group 5's per-vertebra measurements into a self-contained, JSO
 serialisable findings document: per-level fracture/compression screen + (optional)
 myelomalacia, plus provenance, citations, not-assessed list, and honest caveats.
 
-Design intent (see plans/phase-4-interpretation.md): Group 6's interpretation layer reads
+Design intent (see plans/phase-4-assessement.md): Group 6's assessement layer reads
 per-level findings with a value + a screen status + a citable reference, and its myelopathy
 indicator (4.3) consumes a per-level cord-signal flag. This contract supplies exactly that.
 It REUSES the validated classify_genant + cervical_deformity_flag (no logic is re-implemented).

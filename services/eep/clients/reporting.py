@@ -1,6 +1,6 @@
 """HTTP client for the reporting IEP (POST /render).
 
-The EEP orchestrates measurements -> reporting: it hands the post-interpretation contract to
+The EEP orchestrates measurements -> reporting: it hands the post-assessement contract to
 this service and gets back the rendered report document + HTML artifacts.
 """
 

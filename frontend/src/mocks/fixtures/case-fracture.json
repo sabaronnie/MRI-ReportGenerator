@@ -28,7 +28,7 @@
       "queued",
       "segmenting",
       "measuring",
-      "interpreting",
+      "assessing",
       "ready"
     ],
     "progress": 1.0,
@@ -58,7 +58,7 @@
       "C7": false
     }
   },
-  "interpretations": {
+  "assessements": {
     "measurements": [
       {
         "measurement": "vb_hahp_ratio",
@@ -132,7 +132,7 @@
         "status": "outside_reference"
       }
     ],
-    "findings_by_level": "see interpretations.measurements",
+    "findings_by_level": "see assessements.measurements",
     "disclaimers": [
       "Screens flag findings for physician review, never a diagnosis.",
       "Synthetic abnormal demo: shapes + classify() are real; values illustrative."

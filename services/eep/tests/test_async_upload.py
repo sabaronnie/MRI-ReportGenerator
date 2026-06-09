@@ -61,7 +61,7 @@ def real_seg(monkeypatch):
         assert seg_zip.exists()
         with zipfile.ZipFile(seg_zip) as z:
             assert set(z.namelist()) == set(_ENGINE_OUTPUT.values())
-        return {"measurements": {"sentinel": 42}, "flags": {"f": True}, "components": {}, "interpretations": {}}
+        return {"measurements": {"sentinel": 42}, "flags": {"f": True}, "components": {}, "assessements": {}}
 
     monkeypatch.setattr(MeasurementsClient, "measure", fake_measure)
 

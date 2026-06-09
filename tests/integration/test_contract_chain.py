@@ -1,6 +1,6 @@
 """Integration across services via the frozen contract.
 
-The measurements IEP emits the post-interpretation handoff contract; the reporting IEP consumes the
+The measurements IEP emits the post-assessement handoff contract; the reporting IEP consumes the
 exact same contract. This test proves the two services integrate at the contract boundary without a
 network: handoff JSON -> reporting builder -> renderers -> a valid report. It also exercises the EEP's
 case->handoff normalizer feeding reporting (the path /cases/{id}/report.html takes in production).
@@ -22,7 +22,7 @@ CONTRACT = os.path.join(
 )
 
 # The status enum frozen in docs/contracts/data-contract-v0.1.md.
-FROZEN_STATUSES = {"within_reference", "outside_reference", "review_only", "not_interpretable"}
+FROZEN_STATUSES = {"within_reference", "outside_reference", "review_only", "not_assessable"}
 
 
 @pytest.mark.integration
@@ -33,8 +33,8 @@ def test_measurements_handoff_renders_through_reporting():
     assert document["title"]
     assert document["source_contract_version"] == handoff["contract_version"]
     assert isinstance(document["impression"], list)
-    # Every interpreted row keeps a frozen status (contract compatibility).
-    for row in handoff["interpretations"]["measurements"]:
+    # Every assessed row keeps a frozen status (contract compatibility).
+    for row in handoff["assessements"]["measurements"]:
         assert row["status"] in FROZEN_STATUSES
     html = render_clinical_report_html(document)
     assert html.startswith("<!doctype html>")

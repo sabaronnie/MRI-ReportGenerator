@@ -1,7 +1,7 @@
 """Group 5.2 vertebral-body compression/deformity screen as a measurement component.
 
 This adapts the validated Group 5 vertebral-body screen to the measurements IEP so the
-output joins the same report/interpretation path as the other measurement groups.
+output joins the same report/assessement path as the other measurement groups.
 """
 
 from __future__ import annotations

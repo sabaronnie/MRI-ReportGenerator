@@ -1,7 +1,7 @@
 # EEP — External Endpoint (FastAPI)
 
 The public system boundary (rubric §4.3). Orchestrates the internal IEPs
-(segmentation → measurements → interpretation → reporting) and exposes the API the frontend consumes
+(segmentation → measurements → assessement → reporting) and exposes the API the frontend consumes
 (see `docs/contracts/report-contract-v0.1.md` §2).
 
 ## Run

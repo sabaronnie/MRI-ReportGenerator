@@ -9,7 +9,7 @@ const STAGE_LABEL: Record<string, string> = {
   queued: "Queued",
   segmenting: "Segmenting",
   measuring: "Measuring",
-  interpreting: "Interpreting",
+  assessing: "Assessing",
   ready: "Ready",
   error: "Error",
 };
@@ -29,7 +29,7 @@ export function ProcessingStatus({ job }: { job: Job }) {
 
   const stages = job.stages?.length
     ? job.stages
-    : ["queued", "segmenting", "measuring", "interpreting", "ready"];
+    : ["queued", "segmenting", "measuring", "assessing", "ready"];
   const currentIdx = stages.indexOf(job.stage);
   const pct = Math.round((job.progress ?? 0) * 100);
 
@@ -44,7 +44,7 @@ export function ProcessingStatus({ job }: { job: Job }) {
         </span>
         <div>
           <h2 className="font-serif text-lg font-semibold tracking-tight">Analyzing scan</h2>
-          <p className="text-sm text-muted-foreground">Segmentation → measurement → interpretation</p>
+          <p className="text-sm text-muted-foreground">Segmentation → measurement → assessement</p>
         </div>
       </div>
 

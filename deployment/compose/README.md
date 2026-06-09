@@ -37,5 +37,5 @@ After the stack is up:
 1. Open `http://localhost:3000`
 2. Log in with `admin@demo` / `demo12345`
 3. Upload `deployment/compose/sample_data/sample_volume_T2.nii.gz`
-4. Wait for `queued -> segmenting -> measuring -> interpreting -> ready`
+4. Wait for `queued -> segmenting -> measuring -> assessing -> ready`
 5. Confirm the report and NiiVue viewer render

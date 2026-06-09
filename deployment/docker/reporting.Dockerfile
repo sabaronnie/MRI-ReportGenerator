@@ -1,5 +1,5 @@
-# Reporting IEP — Flask service that turns the interpretation handoff into a clinical report.
-# Build context = repo root (imports `services.reporting.*` and `services.interpretation.*`).
+# Reporting IEP — Flask service that turns the assessement handoff into a clinical report.
+# Build context = repo root (imports `services.reporting.*` and `services.assessement.*`).
 FROM python:3.12-slim
 
 WORKDIR /app
@@ -12,7 +12,7 @@ COPY services/reporting/requirements.txt /app/services/reporting/requirements.tx
 RUN pip install --no-cache-dir -r services/reporting/requirements.txt
 
 COPY services/reporting /app/services/reporting
-COPY services/interpretation /app/services/interpretation
+COPY services/assessement /app/services/assessement
 
 EXPOSE 8082
 HEALTHCHECK --interval=30s --timeout=3s --retries=3 \

@@ -5,7 +5,7 @@
   "case_header": {
     "title": "Cervical Spine MRI Analysis Report",
     "exam": "MRI cervical spine",
-    "technique": "Automated research-use post-processing of sagittal cervical spine MRI including segmentation, measurement, interpretation, and structured reporting.",
+    "technique": "Automated research-use post-processing of sagittal cervical spine MRI including segmentation, measurement, assessement, and structured reporting.",
     "case_id": "scan_demo_c5",
     "job_id": "scan_demo_c5",
     "submitted_at": "2026-06-07T14:10:00Z",
@@ -38,12 +38,12 @@
       "within_reference": 0,
       "outside_reference": 3,
       "review_only": 1,
-      "not_interpretable": 0
+      "not_assessable": 0
     }
   },
   "clinical_report": {
     "exam": "MRI cervical spine",
-    "technique": "Automated analysis of sagittal cervical spine MRI. Research-use structured interpretation only; not a substitute for radiologist review.",
+    "technique": "Automated analysis of sagittal cervical spine MRI. Research-use structured assessement only; not a substitute for radiologist review.",
     "findings_sections": [
       {
         "heading": "Alignment",

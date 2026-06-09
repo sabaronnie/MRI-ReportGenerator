@@ -4,11 +4,11 @@ Endpoints:
 - GET  /healthz : liveness probe
 - GET  /readyz  : readiness probe (verifies the builder + renderers import)
 - GET  /metrics : Prometheus metrics scrape endpoint
-- POST /render  : consume the post-interpretation handoff contract (the same JSON the
+- POST /render  : consume the post-assessement handoff contract (the same JSON the
                   measurements IEP emits) and return the normalized report document plus
                   rendered HTML artifacts.
 
-This is the second internal endpoint: it has its own responsibility (turn interpreted
+This is the second internal endpoint: it has its own responsibility (turn assessed
 findings into a clinician-facing report) and is architecturally independent from the
 measurements IEP — the EEP orchestrates measurements -> reporting.
 """
@@ -50,7 +50,7 @@ def metrics():
 
 @app.post("/render")
 def render():
-    """Body = the post-interpretation handoff contract. Returns {report, artifacts}."""
+    """Body = the post-assessement handoff contract. Returns {report, artifacts}."""
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         RENDERS.labels("bad_request").inc()

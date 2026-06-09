@@ -6,7 +6,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { Interpretations, InterpretedMeasurement } from "@/lib/api/contract";
+import type { Assessements, AssessedMeasurement } from "@/lib/api/contract";
 import { StatusBadge } from "./status-cell";
 
 function humanize(key: string): string {
@@ -18,7 +18,7 @@ function humanize(key: string): string {
     .replace(/\bdhi\b/gi, "DHI");
 }
 
-function fmtValue(m: InterpretedMeasurement): string {
+function fmtValue(m: AssessedMeasurement): string {
   if (m.value === null || m.value === undefined) return "—";
   const unit = m.unit && m.unit !== "unknown" ? ` ${m.unit}` : "";
   return `${Math.round(m.value * 100) / 100}${unit}`;
@@ -44,8 +44,8 @@ const CLINICAL_KEYS = new Set([
   "vb_hahp_ratio", "Cobb_C3_C7", "spondy_slip_mm",
 ]);
 
-export function FindingsTable({ interpretations }: { interpretations: Interpretations }) {
-  const rows = interpretations.measurements
+export function FindingsTable({ assessements }: { assessements: Assessements }) {
+  const rows = assessements.measurements
     .filter((m) => CLINICAL_KEYS.has(m.measurement) || m.flag)
     .sort((a, b) => {
     const ka = levelKey(a.level);

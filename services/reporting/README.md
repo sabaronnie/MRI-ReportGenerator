@@ -1,16 +1,16 @@
 # Reporting Service
 
-This package is the report-generation layer that sits after interpretation.
+This package is the report-generation layer that sits after assessement.
 
 Planned responsibilities:
 
-- normalize interpreted findings into report sections
+- normalize assessed findings into report sections
 - render HTML
 - render PDF or another submission-friendly artifact
 
 Current v1 implementation:
 
-- `builder.py` consumes the post-interpretation handoff contract and emits a
+- `builder.py` consumes the post-assessement handoff contract and emits a
   normalized report document for renderers
 - `render_html.py` renders two variants:
   - user-facing clinical/radiology-style report
@@ -20,8 +20,8 @@ Current v1 implementation:
 
 Input contract:
 
-- Reporting should consume the post-interpretation JSON contract documented in
-  [`../interpretation/REPORTING_HANDOFF_CONTRACT.md`](../interpretation/REPORTING_HANDOFF_CONTRACT.md).
+- Reporting should consume the post-assessement JSON contract documented in
+  [`../assessement/REPORTING_HANDOFF_CONTRACT.md`](../assessement/REPORTING_HANDOFF_CONTRACT.md).
 - Reporting should derive findings tables, impression bullets, and final renderable
   artifacts from that payload rather than depending directly on measurement-component
   internals.

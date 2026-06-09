@@ -4,5 +4,5 @@ flask>=3.0
 nibabel>=5.0
 numpy==2.0.2          # HARD pin: required by SPINEPS/numba ABI (newer numpy -> _blas_supports_fpe crash)
 scipy>=1.10
-spineps               # pulls torch + TPTBox; install AFTER pinning numpy, restart interpreter
+spineps               # pulls torch + TPTBox; install AFTER pinning numpy, restart Python
 # torch: installed transitively by spineps; pin to the CUDA build matching the deploy node's driver.

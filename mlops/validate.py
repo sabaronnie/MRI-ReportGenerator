@@ -1,7 +1,7 @@
 """Validation / evaluation pipeline with experiment tracking + a promotion decision (rubric §7).
 
 Lifecycle framing: this system does not train a black-box model — its "model" is the cited
-**threshold table** (`services/interpretation/thresholds.py`) plus the measurement methods. So the
+**threshold table** (`services/assessement/thresholds.py`) plus the measurement methods. So the
 ML lifecycle here is *threshold/method versioning*:
 
   1. EVALUATE the current threshold version on a fixed golden cohort.
@@ -27,7 +27,7 @@ from services.reporting.render_html import render_clinical_report_html
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SAMPLE_CONTRACT = os.path.join(ROOT, "services", "reporting", "examples", "sample_reporting_contract.json")
 GOLDEN = os.path.join(ROOT, "tests", "integration", "golden", "report_sample.golden.json")
-THRESHOLDS_FILE = os.path.join(ROOT, "services", "interpretation", "thresholds.py")
+THRESHOLDS_FILE = os.path.join(ROOT, "services", "assessement", "thresholds.py")
 
 # Promotion gate — explicit metrics + thresholds (rubric: "explicit metrics and thresholds").
 GATE = {
@@ -54,7 +54,7 @@ def _stable_subset(doc: dict) -> dict:
 
 
 def evaluate() -> dict:
-    """Run the interpretation->reporting chain over the golden cohort; return metrics."""
+    """Run the assessement->reporting chain over the golden cohort; return metrics."""
     cohort = [("sample_contract", json.load(open(SAMPLE_CONTRACT)))]
     for cid in ("demo-healthy-0001", "demo-stenosis-0003", "demo-fracture-0002"):
         cohort.append((cid, orchestration._case_to_handoff(store.get_case(cid))))

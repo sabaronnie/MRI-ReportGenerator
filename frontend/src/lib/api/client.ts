@@ -34,9 +34,9 @@ const SIM_STEPS: { stage: JobStage; until: number }[] = [
   { stage: "queued", until: 1500 },
   { stage: "segmenting", until: 4000 },
   { stage: "measuring", until: 6500 },
-  { stage: "interpreting", until: 8000 },
+  { stage: "assessing", until: 8000 },
 ];
-const STAGE_ORDER = ["queued", "segmenting", "measuring", "interpreting", "ready"];
+const STAGE_ORDER = ["queued", "segmenting", "measuring", "assessing", "ready"];
 
 /** Advance a simulated (uploaded) case's job/status from elapsed time. No-op for the fixtures. */
 function advance(c: CaseEnvelope): void {
