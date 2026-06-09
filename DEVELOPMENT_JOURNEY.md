@@ -265,11 +265,11 @@ keep it honest and specific (numbers, dates, evidence, citations). Chronological
   lesions* so part of the G3 separation is by construction — a random draw from the 250 MMCSD is the next
   test; healthy = young controls (wide canals). Notably the earlier worry that SAC<3 / canal<10 *over-flag*
   healthy on MRI did NOT materialize (0% healthy). Full numbers + reproduction:
-  `docs/validation/results-run1-2026-06-07.md`.
+  `docs/validation/results-final-2026-06-08.md`.
 
 ## J15 — Full-cohort validation with statistics: G3 separates at p=0.0001; G4-C1 directional; G1 correctly null
 - **What we did:** ran every group on the full cohort (12 healthy Spine-Generic + 10 MMCSD unhealthy) and
-  added Mann-Whitney U tests + per-measure figures (`docs/validation/results-full-2026-06-08.md`).
+  added Mann-Whitney U tests + per-measure figures (`docs/validation/results-final-2026-06-08.md`).
 - **G3 (canal/cord/SAC) — VALIDATED:** canal-AP min healthy 11.7 vs unhealthy 8.6 mm (**p=0.0001**); SAC
   min 4.7 vs 2.3 mm (**p=0.0001**); cord AP 6.3 vs 5.5 mm (p=0.009). Distributions barely touch. Strong
   threshold-crossing on real MRI.

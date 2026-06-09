@@ -3,7 +3,7 @@
 Single source of truth for where each measurement group stands. Bar for "validated":
 healthy reads the normal range **and** pathology crosses into abnormal (threshold-crossing /
 distribution-separation; no per-case radiologist GT exists). Cohort: 12 healthy Spine-Generic vs
-10 (now scaling to 50) MMCSD symptomatic spondylosis. Detail: `results-full-2026-06-08.md`, journal J1–J17.
+10 (now scaling to 50) MMCSD symptomatic spondylosis. Detail: `results-final-2026-06-08.md`, journal J1–J17.
 
 ## Summary table
 | Group | Component | Healthy side | Pathology side | Verdict |

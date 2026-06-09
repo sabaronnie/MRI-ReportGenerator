@@ -11,8 +11,7 @@ This keeps product runtime validation separate from exploratory method validatio
 
 ## Results & per-group verdicts (single source of truth)
 
-- **`docs/validation/results-final-2026-06-08.md`** — FINAL consolidated results (supersedes
-  `results-full-2026-06-08.md`, the run-1 snapshot).
+- **`docs/validation/results-final-2026-06-08.md`** — FINAL consolidated results.
 - **`docs/validation/group-status-2026-06-08.md`** — per-group verdict table.
 - Narrative: `DEVELOPMENT_JOURNEY.md` (J1–J26).
 
@@ -20,4 +19,4 @@ Current verdicts (2026-06-08, reproduced from committed code): **G3** canal/SAC/
 (p=0.0001); **G2** disc ⚠️ partial (disc/VB AP ratio AUC 0.62; signal & bulge are negatives, AUC 0.50);
 **G4** alignment/Cobb ❌ NOT a discriminator (balanced 26 H vs 41 U: d=0.28, AUC 0.57, p=0.32 — a
 validated *measurement*, not a screen); **G1**/**G5.1** ✅ healthy-validated screens; **G6** 🟢 wired
-end-to-end. Older `results-full` / `results-run1` docs are explicitly marked superseded.
+end-to-end.

@@ -6,7 +6,7 @@
 > by committed code, validation results, and the development journal. Companion evidence:
 > [DEVELOPMENT_JOURNEY.md](../DEVELOPMENT_JOURNEY.md) (J1–J23, the method narrative),
 > [docs/validation/group-status-2026-06-08.md](validation/group-status-2026-06-08.md) (per-group
-> verdict), [docs/validation/results-full-2026-06-08.md](validation/results-full-2026-06-08.md)
+> verdict), [docs/validation/results-final-2026-06-08.md](validation/results-final-2026-06-08.md)
 > (numbers + figures), and the `paper/` draft.
 >
 > **Medical framing (hard rule).** The system produces measurements and *findings flagged for
@@ -266,7 +266,7 @@ clinical requirement.
 | **G5** myelomalacia / fracture screens | ~91% healthy specificity (myelomalacia); compression screen as G1 | ✅ Validated as screens |
 
 Full numbers and figures:
-[results-full-2026-06-08.md](validation/results-full-2026-06-08.md).
+[results-final-2026-06-08.md](validation/results-final-2026-06-08.md).
 
 ---
 

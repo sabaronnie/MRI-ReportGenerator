@@ -1,7 +1,6 @@
 # Validation Results — FINAL (consolidated) — 2026-06-08
 
-> **This supersedes `results-full-2026-06-08.md`** (the run-1 doc, which still shows G2 "backwards" and
-> G4 "directional" — both since revised). Every number below was **reproduced from the current committed
+> Every number below was **reproduced from the current committed
 > service/measurement code** (re-ran 2026-06-08 after all J19–J26 fixes). Single source of truth for the
 > per-group verdict: `group-status-2026-06-08.md`; the full narrative is `DEVELOPMENT_JOURNEY.md` (J1–J26).
 
