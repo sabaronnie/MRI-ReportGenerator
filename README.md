@@ -35,8 +35,7 @@ Input (DICOM/NIfTI, sagittal T2)
 2. **[`docs/validation/results-final-2026-06-08.md`](docs/validation/results-final-2026-06-08.md)** —
    final per-group verdicts (single source of truth) · **[`group-status`](docs/validation/group-status-2026-06-08.md)**.
 3. **[`DEVELOPMENT_JOURNEY.md`](DEVELOPMENT_JOURNEY.md)** — the mistake→fix→validation narrative (J1–J26).
-4. **[`docs/positioning.md`](docs/positioning.md)** — Application positioning (P1–P4).
-5. **[`overleaf/`](overleaf/)** — the paper + rubric deliverables (T1 AI-depth, P2 baseline, P4
+4. **[`overleaf/`](overleaf/)** — the paper + rubric deliverables (T1 AI-depth, P2 baseline, P4
    publishability, C1/P3 novelty); compile with `tectonic`.
 
 ## Validation status (final, reproduced from committed code)

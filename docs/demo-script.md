@@ -41,19 +41,19 @@ pre-flight, and keep the fallback ready.
 ## Evidence to have open in tabs
 - Frontend app · a case report · `<eep>/docs` · `<eep>/metrics` · Grafana dashboard
 - A terminal showing `pytest -q` (27 passed) + `python -m mlops.validate` (PROMOTE)
-- GitHub: the commit history + PRs #2/#3 · `docs/tradeoffs.md` · `docs/RUBRIC_TRACKER.md`
+- GitHub: the commit history + PRs #2/#3
 
 ## Likely Q&A (have answers ready)
-- **"Why EKS not Fargate?"** → satisfies k8s+public-API in one; cost mitigated by teardown (tradeoffs §1).
+- **"Why EKS not Fargate?"** → satisfies k8s+public-API in one; cost mitigated by teardown.
 - **"Where's the ML signal / how do you monitor a non-classifier?"** → pathology-flag distribution +
-  component error rate as drift proxies (monitoring.md; tradeoffs §3).
+  component error rate as drift proxies (monitoring.md).
 - **"How do you test a medical pipeline?"** → unit + cross-service + deployed e2e + golden regression +
   the MLOps gate that blocks threshold regressions.
-- **"No LLM?"** → deliberate: deterministic, golden-testable, no confabulation (architecture.md §No-LLM).
+- **"No LLM?"** → deliberate: deterministic, golden-testable, no confabulation.
 - **"Failure modes?"** → IEP unreachable → fixture fallback + retries; per-component graceful errors;
   `/readyz` surfaces IEP health.
-- **"Positioning / who pays?"** → see `docs/positioning.md` (radiology departments; manual measurement
-  baseline; augment-not-replace, physician-review wording).
+- **"Positioning / who pays?"** → radiology departments; manual measurement baseline;
+  augment-not-replace, physician-review wording.
 
 ## After the demo
 - `./deployment/aws/teardown.sh` (+ `helm uninstall kps -n monitoring`) to stop the cost.

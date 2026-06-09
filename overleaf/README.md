@@ -32,8 +32,5 @@ compile clean locally.
 - The deliverables are kept separate from the paper on purpose: the paper is the master science
   narrative, the deliverables are focused, rubric-facing extracts that reference it (no duplication of
   the underlying claims/numbers — single source of truth in the validation docs + journal).
-- `docs/ai-depth.md` in the repo is the **markdown mirror** of T1 (repo-readable, with clickable file
-  links). `deliverables/T1_ai_depth.tex` is the **submission version**. Keep them in sync, or retire the
-  markdown if the LaTeX becomes canonical.
 - Every clinical claim is cited; outputs are "flagged for physician review," never diagnoses
   (project medical hard rule).

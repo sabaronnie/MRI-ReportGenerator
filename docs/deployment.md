@@ -90,7 +90,7 @@ reliability-vs-complexity tradeoff for the demo.
 **Cost driver = wall-clock uptime.** We provision for a demo and run `teardown.sh` after, so the real
 bill is single-digit dollars. `01-provision.sh` rebuilds the whole stack in ~20 min from IaC.
 
-## Tradeoffs (deployment-specific — see also docs/tradeoffs.md)
+## Tradeoffs (deployment-specific)
 - **EKS vs ECS Fargate vs k3s.** Chose EKS: satisfies the k8s requirement *and* public-API in one,
   and the k8s manifests are genuinely exercised. Rejected Fargate (not Kubernetes → would need a
   separate throwaway cluster just for §9, splitting the story) and k3s-on-EC2 (cheaper but single-node,
