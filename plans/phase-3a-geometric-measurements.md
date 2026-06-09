@@ -265,7 +265,7 @@ Yukawa 2018 (N=1,200 asymptomatic): mean 13.9° ± 12.3°. Wide normal range —
 
 #### 3A.12 Lordosis classification
 
-**Method:** Hard thresholds on C2–C7 Cobb angle. Defined in Phase 4 (Interpretation), not here — this subtask just provides the raw angle.
+**Method:** Hard thresholds on C2–C7 Cobb angle. Defined in Phase 4 (Assessement), not here — this subtask just provides the raw angle.
 
 ---
 ## Open questions specific to this phase

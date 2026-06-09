@@ -3,7 +3,7 @@ Generated: 2026-06-06
 
 Purpose
 - This file is a handoff list for literature-search work.
-- Goal: identify every pipeline measurement or derived interpretation output that may need:
+- Goal: identify every pipeline measurement or derived assessement output that may need:
   - normative ranges
   - abnormal thresholds
   - severity bands / labels
@@ -297,7 +297,7 @@ Status legend
 - Phase / status: 3B.4 / Planned
 - Research needed:
   - formulas, severity cutoffs, and label bands
-  - healthy-control normalization interpretation
+  - healthy-control normalization assessement
 - Caveats:
   - depends on identified compression site
   - fully automated path relies on SCT detection first
@@ -339,7 +339,7 @@ Status legend
   - ensure convention (C3-C7 inferior-inferior here, not always C2-C7 in papers)
 
 5.2 Lordosis classification
-- Output key(s): metadata label now, future interpreted output
+- Output key(s): metadata label now, future assessed output
 - Current labels in code:
   - kyphotic
   - straightened / low lordosis
@@ -389,7 +389,7 @@ Status legend
   - depends on raw T2 intensity quality and scanner variation
 
 ==================================================
-7. Interpretation-Level Outputs That Also Need Research / Policy
+7. Assessement-Level Outputs That Also Need Research / Policy
 ==================================================
 
 These are not raw measurements, but they still need threshold or label research.

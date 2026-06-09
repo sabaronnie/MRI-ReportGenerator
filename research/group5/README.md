@@ -40,7 +40,7 @@ the non-runtime Group 5 research/support material plus research-only tests.
 ## 5→6 output contract
 - `flags_contract.py` — `build_flags_contract()` emits the per-level findings document Group 6 reads
   (fracture screen + myelomalacia + provenance/citations + `not_assessed` + caveats; no-diagnosis
-  wording throughout). Shaped for `plans/phase-4-interpretation.md`. **v0.1 — pending team sign-off.**
+  wording throughout). Shaped for `plans/phase-4-assessement.md`. **v0.1 — pending team sign-off.**
 - `test_flags_contract.py` — 7 tests.
 
 ## 5.2 — Vertebral compression/deformity screen (validated)
@@ -70,7 +70,7 @@ the non-runtime Group 5 research/support material plus research-only tests.
 - `myelomalacia_specificity.py` — `lesion_burden()` (voxels + anisotropy-safe mm³ + largest component)
   and `healthy_specificity()` (cohort false-positive rate, tunable `min_lesion_mm3`). 6 tests.
 - `run_sciseg_specificity.py` — score a folder of SCIseg lesion masks → FP rate.
-- `myelomalacia.py` / `test_myelomalacia.py` / `compare_to_sciseg.py` — interpretable hand-rolled
+- `myelomalacia.py` / `test_myelomalacia.py` / `compare_to_sciseg.py` — assessable hand-rolled
   baseline (Weber CSF-ratio + local-window) + agreement-vs-SCIseg harness.
 - **Pending:** run SCIseg on the 12 healthy Spine-Generic cords (Colab) → `run_sciseg_specificity.py`
   → confirm FP rate ~0% ("on healthy, flags nothing"); the masks then auto-pair into `run_group5_pipeline.py`.
@@ -96,7 +96,7 @@ These now live under [`colab/group5/`](../../colab/group5/).
 - `colab/group5/colab_spineps_spinegeneric.ipynb` — SPINEPS endplate-voxel alignment workflow.
 
 ## Run / test
-- Interpreter: `~/dev/group5-proto/.venv/bin/python`.
+- Python runtime: `~/dev/group5-proto/.venv/bin/python`.
 - Runtime tests: `pytest services/measurements/tests/group5`
 - Research tests: `pytest research/group5/tests`
 - Audit of the teammates' Groups 1–4 measurement code (with the verified research fixes):

@@ -1,4 +1,4 @@
-# Phase 4 Interpretation Stage Handoff
+# Phase 4 Assessement Stage Handoff
 
 **Created:** 2026-06-06  
 **Purpose:** teammate handoff for the new pipeline stage that sits after raw measurement extraction and before final report generation.
@@ -7,15 +7,15 @@
 
 ## 1. What This Stage Is
 
-This is the new **Interpretation** stage of the pipeline.
+This is the new **Assessement** stage of the pipeline.
 
 Pipeline position:
 
-`Input -> Segmentation -> Measurements -> Interpretation -> Report`
+`Input -> Segmentation -> Measurements -> Assessement -> Report`
 
 What it does:
 - takes the raw numeric outputs produced by the measurement pipeline
-- wraps them in a standard interpretation container
+- wraps them in a standard assessement container
 - prepares the system for later threshold/range logic, severity labels, and report generation
 
 What it does **not** do yet:
@@ -36,7 +36,7 @@ Before this stage, the pipeline only had:
 That was not enough for a clean report pipeline, because we need a place where the system can consistently answer:
 - what was measured?
 - where was it measured?
-- what is the interpretation status?
+- what is the assessement status?
 - should it be surfaced in findings?
 - are there quality warnings?
 - are there methodological caveats?
@@ -54,7 +54,7 @@ The key design decision was:
 
 ### Main code file
 
-- [services/measurements/interpretation.py](/Users/ronniesaba/Documents/EECE503N_Project/MRI-ReportGenerator/services/measurements/interpretation.py:1)
+- [services/measurements/assessement.py](/Users/ronniesaba/Documents/EECE503N_Project/MRI-ReportGenerator/services/measurements/assessement.py:1)
 
 ### Where it is wired in
 
@@ -63,7 +63,7 @@ The key design decision was:
 The measurement service now returns a new section:
 
 ```json
-"interpretations": {
+"assessements": {
   "measurements": [...]
 }
 ```
@@ -72,7 +72,7 @@ This list is built after all selected measurement components run.
 
 ### Current behavior
 
-For every numeric measurement already present in `report["measurements"]`, the interpretation layer creates a standard result record.
+For every numeric measurement already present in `report["measurements"]`, the assessement layer creates a standard result record.
 
 Current status logic is intentionally simple:
 
@@ -90,9 +90,9 @@ This is only a temporary Phase 4 scaffold. It is **not** the final literature-th
 
 ---
 
-## 4. Standard Interpretation Container
+## 4. Standard Assessement Container
 
-The current standard record for one interpreted measurement is:
+The current standard record for one assessed measurement is:
 
 ```json
 {
@@ -127,12 +127,12 @@ The current standard record for one interpreted measurement is:
 - examples: `mm`, `deg`, `%`, `ratio`
 
 `status`
-- the broad interpretation state
+- the broad assessement state
 - currently agreed allowed values:
   - `within_reference`
   - `outside_reference`
   - `review_only`
-  - `not_interpretable`
+  - `not_assessable`
 
 `severity`
 - intentionally **not standardized yet**
@@ -142,7 +142,7 @@ The current standard record for one interpreted measurement is:
 - boolean for whether this result should be surfaced as noteworthy in findings
 
 `demographics_used`
-- which patient demographics were actually used by the interpretation rule
+- which patient demographics were actually used by the assessement rule
 - currently empty because full demographic-aware rules are not implemented yet
 
 `quality_flags`
@@ -150,7 +150,7 @@ The current standard record for one interpreted measurement is:
 - examples: low confidence, slice mismatch, approximation, resolution issue
 
 `caveat`
-- human-readable methodology or interpretation warning carried from component metadata when available
+- human-readable methodology or assessement warning carried from component metadata when available
 
 ### Explicitly removed fields
 
@@ -183,7 +183,7 @@ Policy:
   - `within_reference`
   - `outside_reference`
   - `review_only`
-  - `not_interpretable`
+  - `not_assessable`
 
 Current implementation does not use all four yet, but the vocabulary is now decided.
 
@@ -231,9 +231,9 @@ This will need cleanup later.
 
 ### Done
 
-- Interpretation stage concept established
-- Standard per-measurement interpretation container implemented
-- Interpretation output added to measurement service responses
+- Assessement stage concept established
+- Standard per-measurement assessement container implemented
+- Assessement output added to measurement service responses
 - Reference fields intentionally removed from the container
 - `status` vocabulary agreed
 - `flag` meaning agreed
@@ -246,7 +246,7 @@ This will need cleanup later.
 - literature-backed per-measurement normal ranges
 - literature-backed severity bands
 - demographic-aware threshold logic
-- `not_interpretable` decision rules
+- `not_assessable` decision rules
 - syndrome-level rules
   - myelopathy indicator
   - radiculopathy indicator
@@ -310,7 +310,7 @@ Create a central rule-definition layer, likely something like:
   - caveats
   - citation provenance
 
-This provenance should live there, not inside each interpreted row.
+This provenance should live there, not inside each assessed row.
 
 ### Step 3: replace scaffold logic
 
@@ -324,7 +324,7 @@ Replace this with true measurement-specific logic:
   - `within_reference`
   - `outside_reference`
   - `review_only`
-  - `not_interpretable`
+  - `not_assessable`
 
 ### Step 4: implement `demographics_used`
 
@@ -342,17 +342,17 @@ Only include fields truly used by the rule.
 
 ### Step 5: define syndrome-level rules
 
-After per-measurement interpretation is trustworthy:
+After per-measurement assessement is trustworthy:
 - define possible myelopathy pattern rule
 - define possible radiculopathy pattern rule
 
-These should be second-pass rules over interpreted measurements, not raw Phase 3 outputs.
+These should be second-pass rules over assessed measurements, not raw Phase 3 outputs.
 
 ---
 
 ## 10. Important Caveats for Anyone Continuing This Work
 
-- Do not mix raw measurement logic into the interpretation layer unless absolutely necessary.
+- Do not mix raw measurement logic into the assessement layer unless absolutely necessary.
 - Do not hard-code literature citations into every output row.
 - Do not assume radiograph thresholds transfer directly to supine MRI without caveat.
 - Do not treat quality/caution flags as clinical pathology flags by default.
@@ -366,4 +366,4 @@ This stage is supposed to create **clarity and traceability**, not to force prem
 
 If you only read one paragraph:
 
-We added a new Phase 4 interpretation scaffold that wraps each raw measurement in a standard container with `measurement`, `level`, `value`, `unit`, `status`, `severity`, `flag`, `demographics_used`, `quality_flags`, and `caveat`. Right now it does not contain the real literature threshold engine yet; it mainly stabilizes the API and separates interpretation from raw measurement code. The next real job is to research thresholds/ranges for every measurement, define a central rule catalog, and then replace the temporary `outside_reference` / `review_only` scaffold logic with true per-measurement interpretation.
+We added a new Phase 4 assessement scaffold that wraps each raw measurement in a standard container with `measurement`, `level`, `value`, `unit`, `status`, `severity`, `flag`, `demographics_used`, `quality_flags`, and `caveat`. Right now it does not contain the real literature threshold engine yet; it mainly stabilizes the API and separates assessement from raw measurement code. The next real job is to research thresholds/ranges for every measurement, define a central rule catalog, and then replace the temporary `outside_reference` / `review_only` scaffold logic with true per-measurement assessement.

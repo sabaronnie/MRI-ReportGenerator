@@ -35,10 +35,10 @@ What I need from you
 - If there are dependencies between measurements, please explain them simply.
 - If there are any especially important formulas, rules, or derived metrics, please include them.
 
-3. Interpretation architecture
+3. Assessement architecture
 - How do raw measurements become findings/flags?
 - What thresholding or rule-based logic is used?
-- Are there severity bands, syndrome indicators, or structured interpretation outputs?
+- Are there severity bands, syndrome indicators, or structured assessement outputs?
 - Which parts are finalized and which parts are still provisional?
 - What are the main clinical caveats or honesty statements that must be included?
 
@@ -100,7 +100,7 @@ If it helps, you can reply using this structure:
 
 - Segmentation:
 - Measurements:
-- Interpretation:
+- Assessement:
 - Reporting:
 - Deployment:
 - Validation completed:

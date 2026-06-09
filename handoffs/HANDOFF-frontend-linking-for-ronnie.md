@@ -36,8 +36,8 @@ has no `SEG_*_URL`, so an upload won't run the real pipeline locally. Add three 
 The frontend's `live` client must hit exactly these (all under `NEXT_PUBLIC_EEP_URL`):
 - `POST /auth/login`  body `{"email","password"}` → `{"token"}`; send `Authorization: Bearer <token>` on /cases*
 - `POST /cases`  multipart: `file=<.nii.gz|.nii|DICOM .zip>` + `uploader=<str>` → **202** `{"case_id","status":"queued"}`
-- `GET /cases/{id}/job` → `{"stage","stages":["queued","segmenting","measuring","interpreting","ready"],"progress","error"}`
-- `GET /cases/{id}`  → full case: `measurements`, `flags`, `components`, `interpretations`, `report`
+- `GET /cases/{id}/job` → `{"stage","stages":["queued","segmenting","measuring","assessing","ready"],"progress","error"}`
+- `GET /cases/{id}`  → full case: `measurements`, `flags`, `components`, `assessements`, `report`
 - `GET /cases/{id}/report.html`  and  `GET /cases/{id}/report.pdf`
 - `GET /cases/{id}/mask` and `GET /cases/{id}/volume` (for the NiiVue viewer)
 - worklist/sign-off: `GET /cases`, `POST /cases/{id}/sign-off`

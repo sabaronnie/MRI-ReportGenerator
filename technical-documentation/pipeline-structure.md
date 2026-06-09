@@ -15,7 +15,7 @@ MRI (sagittal T2, DICOM/NIfTI) ─► Segmentation IEP (TSS + SCT + SPINEPS)
                                   Measurements IEP — orchestrator.run_all(ctx)
                                      │  G1 morphometry · G2 disc · G3 canal/cord · G4 alignment · G5 screens
                                      ▼
-patient: { age, sex } ───────────► Interpretation (G6) — build_interpreted_measurements()
+patient: { age, sex } ───────────► Assessement (G6) — build_assessed_measurements()
    (used by future age/sex norms)   │  status per finding: outside_reference / review_only / within
                                      ▼
                                   Reporting IEP (/render) ─► clinical report ("flagged for physician review")
@@ -40,15 +40,15 @@ on the record, but it does not feed G6. `age` + `sex` are the demographics the p
 | **G3** canal/cord | `functional_canal_ap`, `cord_ap`, `sac` | `canal_AP`, `cord_AP`, `SAC` (per level) | ✅ **strong** (p=0.0001) | ✅ |
 | **G4** alignment | `c3c7_cobb_angle`, `lordosis_classification`, `segmental_angles`, `posterior_tangent_angle` | `Cobb_C3_C7` (prefers SPINEPS C1) | **method-valid, NOT a discriminator** (balanced 26 H vs 41 U: d=0.28, AUC 0.57, p=0.32; J26); production C1 path verified | ✅ |
 | **G5** screens | `fracture_screen` (+ myelomalacia in group5 pipeline) | compression/wedge flags; lesion flags | screens validated (~91% specificity) | `fracture_screen` ✅; myelomalacia via group5 contract |
-| **G6** interpret | `services/interpretation` (`build_interpreted_measurements`, `classify`, `detect_syndromes`) | per-finding status + syndrome detection | built + unit-tested; **wired end-to-end** (J25) | ✅ called inside `run_all()`; `classify()` applied per catalogued key (see §4) |
+| **G6** assess | `services/assessement` (`build_assessed_measurements`, `classify`, `detect_syndromes`) | per-finding status + syndrome detection | built + unit-tested; **wired end-to-end** (J25) | ✅ called inside `run_all()`; `classify()` applied per catalogued key (see §4) |
 
-## 4. G6 interpretation — how it works + what's pending
+## 4. G6 assessement — how it works + what's pending
 - **`thresholds.py`** — a cited threshold catalog (`Band`/`ThresholdSpec`/`classify(key, value)`), provenance
   notes per band, demographic hooks (`ThresholdSpec.demographic`, `Band.demographic`).
-- **`interpretation.py`** — `build_interpreted_measurements(report, ...)` wraps each numeric output with a
-  status, `detect_syndromes()` flags stenosis/radiculopathy-style patterns, `interpret_group5_contract()`
-  folds in the G5 flags. The report carries `interpretations.measurements[*].demographics_used` (today `{}`).
-- **`classify()` IS wired (J25):** `build_interpreted_measurements` calls `classify(key, value)` for every
+- **`assessement.py`** — `build_assessed_measurements(report, ...)` wraps each numeric output with a
+  status, `detect_syndromes()` flags stenosis/radiculopathy-style patterns, `assess_group5_contract()`
+  folds in the G5 flags. The report carries `assessements.measurements[*].demographics_used` (today `{}`).
+- **`classify()` IS wired (J25):** `build_assessed_measurements` calls `classify(key, value)` for every
   catalogued measurement (it was NOT a pure scaffold, as an earlier draft of this doc claimed); non-catalogued
   keys fall back to flag-only (`outside_reference` if a pathology flag is set, else `review_only`).
 - **Demographics consumed (J25):** `demographics_used` is populated per measurement; **sex adjusts the
@@ -65,16 +65,16 @@ The reporting IEP emits (per `docs/contracts/data-contract-v0.1.md` on `feat/con
 ```
 { "measurements": {<key>: {<level>: value}},
   "flags":        {<flag>: {<level>: bool}},
-  "interpretations": { "measurements": [ {measurement, level, value, status, demographics_used}, ... ] },
+  "assessements": { "measurements": [ {measurement, level, value, status, demographics_used}, ... ] },
   "patient": { "sex": null, "age": null },     # <- the demographics input lands here
   "triage_badge": "none|review|urgent",        # derive from worst flag (rule TBD)
   "job": { stage, progress } }
 ```
 Quality flags (e.g. `tilt_outlier`) must NOT be shown as patient abnormalities (see
-`interpretation.QUALITY_FLAG_MARKERS`).
+`assessement.QUALITY_FLAG_MARKERS`).
 
 ## 6. Integration status (updated 2026-06-08 — most gaps now closed in code)
-1. ✅ **G2 disc wired** into the orchestrator `COMPONENTS` — disc numbers + interpretations now in the report.
+1. ✅ **G2 disc wired** into the orchestrator `COMPONENTS` — disc numbers + assessements now in the report.
 2. ✅ **`classify()` already in use** — every catalogued measurement gets its cited band status (it was not a
    pure scaffold; non-catalogued keys fall back to flag-only).
 3. ✅ **Demographics wired** — `load_context`/`run_all` carry `age/sex/height`; the report has a `patient`
@@ -83,12 +83,12 @@ Quality flags (e.g. `tilt_outlier`) must NOT be shown as patient abnormalities (
    for canal/SAC/cord beyond the dural-sac sex cut are still future work (cord is delegated to SCT PAM50).
 4. ✅ **DHI flag corrected** — debunked absolute DHI<0.30 replaced with the cited relative >30% cross-level
    drop (Suzuki 2018).
-5. 🟡 **Reporting IEP** must render `interpretations` + `patient` + `triage_badge` (confirm on infra side).
+5. 🟡 **Reporting IEP** must render `assessements` + `patient` + `triage_badge` (confirm on infra side).
 6. 🟡 **EEP → measurements**: the EEP `POST /cases` must forward `{age, sex}` into `load_context` (the
    measurement service already accepts them) — this is the frontend/infra integration point.
 7. 🟡 **G3** needs the SCT canal/cord segmentations in the context to populate canal/SAC/cord (works when
    provided; errors gracefully otherwise).
-8. ⚪ **Interpretation as a standalone Flask IEP** — deliberately NOT done: it runs inside the measurements
+8. ⚪ **Assessement as a standalone Flask IEP** — deliberately NOT done: it runs inside the measurements
    IEP (the 2 deployed IEPs are measurements + reporting). Splitting it out is optional, not required for GT3.
 
 ## 7. What the frontend chat needs from us (deliver right after G4 validation closes)

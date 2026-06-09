@@ -135,7 +135,7 @@ sct.zip (17.8 MB)      = the TSS files  +
 
 Wall‑clock on CPU (r5.2xlarge, 8 vCPU / 64 GB): TSS ~6.5 min, SPINEPS ~9.4 min (parallel with TSS),
 SCT ~4 min after TSS → ~13.5 min end‑to‑end. The full DAG, driven through the EEP (`POST /cases`,
-async `202` → poll `GET /cases/{id}/job` through `queued → segmenting → measuring → interpreting → ready`),
+async `202` → poll `GET /cases/{id}/job` through `queued → segmenting → measuring → assessing → ready`),
 produces the structured report for physician review.
 
 ---

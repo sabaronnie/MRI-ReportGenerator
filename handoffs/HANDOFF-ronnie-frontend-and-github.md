@@ -72,8 +72,8 @@ Compose has eep→measurements but **no seg services**, so an upload won't run t
 ### Verify the live client matches the REAL EEP contract (verified live this session)
 - `POST /auth/login` `{email,password}` → `{token}` (Bearer on `/cases*`)
 - `POST /cases` multipart `file` + `uploader` → **202** `{case_id, status:"queued"}`
-- `GET /cases/{id}/job` → `{stage, stages:[queued,segmenting,measuring,interpreting,ready], progress, error}`
-- `GET /cases/{id}` (measurements/flags/components/interpretations/report), `/report.html`, `/report.pdf`,
+- `GET /cases/{id}/job` → `{stage, stages:[queued,segmenting,measuring,assessing,ready], progress, error}`
+- `GET /cases/{id}` (measurements/flags/components/assessements/report), `/report.html`, `/report.pdf`,
   `/mask`, `/volume` (NiiVue viewer)
 
 ### #1 linking detail — the job is async and MINUTES long

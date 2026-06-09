@@ -1,4 +1,4 @@
-# Phase 4 — Interpretation
+# Phase 4 — Assessement
 
 **Owner:** TBD
 **Reviewer:** TBD
@@ -17,7 +17,7 @@
 
 ---
 
-Interpretation turns raw measurements into flags, severity tags, and syndrome patterns. No new measurements are computed here.
+Assessement turns raw measurements into flags, severity tags, and syndrome patterns. No new measurements are computed here.
 
 ### 4.1 Threshold tables from literature
 

@@ -25,7 +25,7 @@ A sagittal-only cervical spine MRI pipeline that takes a T2-weighted NIfTI (or D
 
 ```
 ┌─────────┐   ┌──────────────┐   ┌──────────────┐   ┌────────────────┐   ┌────────┐
-│  Input  │ → │ Segmentation │ → │ Measurements │ → │ Interpretation │ → │ Report │
+│  Input  │ → │ Segmentation │ → │ Measurements │ → │ Assessement │ → │ Report │
 └─────────┘   └──────────────┘   └──────────────┘   └────────────────┘   └────────┘
     NIfTI        TotalSpineSeg      Geometric +          Threshold             PDF /
     DICOM        + SCT cord         Cord +               flagging vs.          DOCX
@@ -96,7 +96,7 @@ The Duke CSpineSeg dataset (Zhou et al. 2025, *Scientific Data*) was reviewed in
 | 1 — Input | Any sagittal T2 cervical MRI (NIfTI or DICOM folder) loads, orientation is detected, voxel spacing recorded, and a QC pass fails fast on bad inputs |
 | 2 — Segmentation | TotalSpineSeg runs end-to-end on all 481 Duke expert-labeled cases with Dice ≥ 0.85 against Duke masks (semantic-level match); mid-sagittal slice selection works on ≥ 95% of cases |
 | 3 — Measurements | All core measurements computed on every Duke case without crashes; measurement output distributions are plausible (within literature ranges for ≥ 90% of cases) |
-| 4 — Interpretation | Every measurement has a threshold function and a severity tag (normal / mild / moderate / severe / critical); syndrome flags fire when expected on known-positive test cases |
+| 4 — Assessement | Every measurement has a threshold function and a severity tag (normal / mild / moderate / severe / critical); syndrome flags fire when expected on known-positive test cases |
 | 5 — Clinical Validation | AUBMC radiologist has reviewed ≥ 20 cases; ICC for canal AP ≥ 0.75, Cobb angle MAE ≤ 5° |
 | 6 — Report | PDF/DOCX report generated for every Duke case, passes visual review on 20 random samples |
 

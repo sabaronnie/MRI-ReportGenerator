@@ -2,7 +2,7 @@
 
 ## The framing (why this isn't model training)
 This system does **not** train a black-box model. Its decision logic is a **cited threshold table**
-(`services/interpretation/thresholds.py`) plus geometric measurement methods. So the meaningful ML
+(`services/assessement/thresholds.py`) plus geometric measurement methods. So the meaningful ML
 lifecycle here is **threshold/method versioning**, not weight training. We treat a change to the
 threshold table (or measurement code) the way a team treats a new model version:
 
@@ -14,8 +14,8 @@ This is an honest, defensible mapping of §7 onto a measurement system, and it i
 
 ## The pipeline — `mlops/validate.py`
 1. **Version** the "model": a short hash of `thresholds.py` (`threshold_version`).
-2. **Evaluate** on a fixed golden cohort (the sample interpretation contract + the 3 bundled demo
-   cases) by running the interpretation → reporting chain and computing metrics.
+2. **Evaluate** on a fixed golden cohort (the sample assessement contract + the 3 bundled demo
+   cases) by running the assessement → reporting chain and computing metrics.
 3. **Track**: log params (threshold version + gate config), metrics, and the promotion decision to
    **MLflow** (SQLite backend, `mlflow.db`; experiment `mri-threshold-validation`).
 4. **Decide** (explicit metrics + thresholds — the promotion gate):

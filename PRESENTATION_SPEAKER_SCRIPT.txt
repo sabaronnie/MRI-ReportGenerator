@@ -5,25 +5,25 @@ This version contains the actual content to say for each slide in bullet form. T
 
 Slide 1 — Automated Cervical Spine Morphometry
 - Today we are presenting our automated cervical spine MRI analysis pipeline.
-- The core idea is simple: we start from a sagittal cervical MRI, extract the important anatomical structures, convert them into clinically meaningful measurements, interpret those measurements, and finally generate a report-ready output.
+- The core idea is simple: we start from a sagittal cervical MRI, extract the important anatomical structures, convert them into clinically meaningful measurements, assess those measurements, and finally generate a report-ready output.
 - We designed this as a clinical support tool for radiologists, not as a replacement for radiologists.
 - Our team focused on building something that is technically structured, clinically relevant, and honest about its limitations.
 
 Slide 2 — Table of Contents
 - I’ll begin with the clinical problem we are trying to address.
 - Then I’ll show the overall solution and how the pipeline is organized technically.
-- After that, I’ll walk through the architecture stage by stage: segmentation, measurements, interpretation, and reporting.
+- After that, I’ll walk through the architecture stage by stage: segmentation, measurements, assessement, and reporting.
 - I’ll then discuss validation, including what worked strongly, what was only partial, and what remained weak.
 - Finally, I’ll end with deployment and the clinical credibility we gained through expert review.
 
 Slide 3 — The Problem
 - The problem starts in real clinical workflow.
 - A cervical MRI scan gives valuable image data, but the report still depends on time-consuming human review and repeated manual measurements.
-- That means the bottleneck is not only image acquisition; it is also the downstream interpretation and reporting workflow.
+- That means the bottleneck is not only image acquisition; it is also the downstream assessement and reporting workflow.
 
 Slide 4 — A patient gets a cervical MRI scan
 - From the patient’s perspective, the scan is only the beginning of the process.
-- The images still need to be reviewed, the anatomy needs to be interpreted, and the important findings need to be extracted into a report.
+- The images still need to be reviewed, the anatomy needs to be assessed, and the important findings need to be extracted into a report.
 - So even after the scan is done, the clinically useful answer is not available immediately.
 
 Slide 5 — They Wait
@@ -42,7 +42,7 @@ Slide 7 — And Wait Some More..
 
 Slide 8 — The Solution
 - Our solution is an automated cervical MRI pipeline that helps structure the reporting process.
-- Instead of leaving the scan as raw image data, the pipeline organizes it into segmentation outputs, measurements, interpreted findings, and a final report.
+- Instead of leaving the scan as raw image data, the pipeline organizes it into segmentation outputs, measurements, assessed findings, and a final report.
 - The goal is faster access to structured insights while still keeping the radiologist in the loop.
 
 Slide 9 — Faster Insights. Faster Reports
@@ -55,7 +55,7 @@ Slide 10 — Pipeline
 - The pipeline starts with the MRI scan itself.
 - Then we use open-source segmentation engines to isolate the anatomy we care about.
 - Once the anatomy is segmented, we extract different groups of measurements.
-- Those measurements are then interpreted against medical references and organized into structured findings.
+- Those measurements are then assessed against medical references and organized into structured findings.
 - Finally, the reporting layer turns those findings into a physician-facing output.
 - We intentionally designed this as a modular system so each stage has a clear responsibility.
 
@@ -69,7 +69,7 @@ Slide 11 — Expected Benefits
 Slide 12 — Pipeline Architecture
 - This section shifts from the clinical motivation into the technical design.
 - I’ll now walk through how the pipeline is organized internally.
-- The key stages are segmentation, measurement, interpretation, and reporting, each with a distinct role.
+- The key stages are segmentation, measurement, assessement, and reporting, each with a distinct role.
 
 Slide 13 — 3 segmentation engines, 6 measurement groups, 1 tool
 - At a high level, our system uses three segmentation engines, six measurement groups, and one integrated end-to-end workflow.
@@ -138,8 +138,8 @@ Slide 19 — Measurement Service: Screening Features
 - So this branch mixes two very different techniques: 6-point vertebral morphometry for fracture-style screening, and cord lesion or signal-based screening for myelomalacia-style review.
 - The important point is that these are screening outputs meant to highlight suspicious patterns for review, not to make diagnoses independently.
 
-Slide 20 — Interpretation Service
-- After measurements are extracted, the interpretation stage turns them into readable findings.
+Slide 20 — Assessement Service
+- After measurements are extracted, the assessement stage turns them into readable findings.
 - It reviews the measurements, compares them to medical references from the literature, and highlights the patterns that matter most clinically.
 - This stage is what transforms isolated numeric outputs into a meaningful review layer.
 - It also prepares the findings in a structured way so they can flow directly into the report.
@@ -147,7 +147,7 @@ Slide 20 — Interpretation Service
 
 Slide 21 — Reporting Service
 - The reporting service is the final presentation layer of the pipeline.
-- Locally, the reporting package takes the post-interpretation contract, normalizes it into a stable report document, and renders human-readable outputs.
+- Locally, the reporting package takes the post-assessement contract, normalizes it into a stable report document, and renders human-readable outputs.
 - It combines measurements, impressions, patient context, disclaimers, and quality notes into one final physician-facing structure.
 - The local reporting code already supports both a clinical-style report and a technical or explainability-style report.
 - That means the pipeline is not only producing numbers; it is producing a reportable artifact.
@@ -155,7 +155,7 @@ Slide 21 — Reporting Service
 Slide 22 — Validation
 - At this point, the important question becomes: does the system actually work in a clinically meaningful way?
 - For medical AI, technical structure alone is never enough.
-- So the next section focuses on how we validated the measurements and how honestly we interpreted those results.
+- So the next section focuses on how we validated the measurements and how honestly we assessed those results.
 
 Slide 23 — Validation Approach
 - Our validation approach was cohort-based rather than anecdotal.
@@ -183,7 +183,7 @@ Slide 25 — Validation Results
 - The alignment branch reached an AUC of 0.57 with p equal to 0.32, which means it did not provide convincing separation between the groups.
 - So we present alignment as a useful measurement method, but not as a validated disease discriminator.
 - The myelomalacia screen was more encouraging on the specificity side, with about 91 percent healthy specificity.
-- The interpretation stage is already connected end-to-end, but it has not yet been clinically accuracy-tested as a full downstream decision layer.
+- The assessement stage is already connected end-to-end, but it has not yet been clinically accuracy-tested as a full downstream decision layer.
 - This slide is important because it shows that we kept the strong results strong, and we kept the weak ones honestly labeled as weak.
 
 Slide 26 — Deployment
@@ -193,7 +193,7 @@ Slide 26 — Deployment
 
 Slide 27 — Deployment Architecture
 - The deployment model is a multi-service cloud architecture.
-- In the local repo, that architecture is reflected by separate service areas for the public orchestration entry point, segmentation, measurements, interpretation, and reporting.
+- In the local repo, that architecture is reflected by separate service areas for the public orchestration entry point, segmentation, measurements, assessement, and reporting.
 - The public-facing service is the EEP, or external endpoint, which is the entry point for a case submission.
 - Behind it are the internal services, or IEPs, which handle the heavier processing stages such as segmentation and measurement.
 - The deployment folders also mirror this design: there is a Docker area for service images, a Compose area for local multi-service orchestration, and a Kubernetes area for cloud deployment manifests.
@@ -220,7 +220,7 @@ Slide 28 — Dr. Imad Nahle
 
 Slide 29 — Thank You
 - To close, this project delivers an end-to-end cervical MRI analysis workflow that starts with a sagittal MRI and ends with a report-ready output.
-- It combines specialized open-source segmentation, structured measurement extraction, interpretation, and reporting.
+- It combines specialized open-source segmentation, structured measurement extraction, assessement, and reporting.
 - The strongest validated result was the canal, cord, and SAC branch.
 - We also stayed honest about partial and weak branches rather than overstating them.
 - Finally, the system gained extra credibility through direct clinical review and guidance from Dr. Imad Nahle.

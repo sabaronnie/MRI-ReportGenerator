@@ -34,7 +34,7 @@ SLIDE_SHAPE_UPDATES: dict[int, dict[int, list[str]]] = {
         267: ["The Problem"],
         268: ["Manual baseline, bottlenecks, and design constraints"],
         269: ["Pipeline Architecture"],
-        270: ["Segmentation, measurements, interpretation, and reporting"],
+        270: ["Segmentation, measurements, assessement, and reporting"],
         271: ["Deployment Architecture"],
         272: ["EEP + 2 IEPs on AWS EKS with Grafana monitoring"],
         273: ["Validation"],
@@ -80,7 +80,7 @@ SLIDE_SHAPE_UPDATES: dict[int, dict[int, list[str]]] = {
     10: {
         304: [
             "Input: one sagittal T2 cervical MRI. Output: a structured contract with "
-            "measurements, flags, interpretations, patient fields, and report fields "
+            "measurements, flags, assessements, patient fields, and report fields "
             "that a front end can render into a clinical report and PDF export."
         ],
         305: ["Project output"],
@@ -101,7 +101,7 @@ SLIDE_SHAPE_UPDATES: dict[int, dict[int, list[str]]] = {
         446: ["One sagittal T2 MRI", "drives the full pipeline"],
         447: [
             "Segmentation feeds measurement groups G1-G6, which then flow into cited "
-            "interpretation, a clinical report, impressions, and PDF export."
+            "assessement, a clinical report, impressions, and PDF export."
         ],
     },
     13: {
@@ -119,7 +119,7 @@ SLIDE_SHAPE_UPDATES: dict[int, dict[int, list[str]]] = {
         476: ["3"],
         477: ["Segmentation engines: TSS, SCT, and the SPINEPS Cobb add-on"],
         479: ["6"],
-        480: ["Measurement groups", "from G1 vertebral to G6 interpretation"],
+        480: ["Measurement groups", "from G1 vertebral to G6 assessement"],
         482: ["250"],
         483: ["MMCSD cohort cases, with 49 segmented in the current validation set"],
     },
@@ -141,7 +141,7 @@ SLIDE_SHAPE_UPDATES: dict[int, dict[int, list[str]]] = {
         505: [
             "Input: one sagittal T2 cervical MRI",
             "Segment vertebrae, discs, canal, cord, and Cobb endplates",
-            "Compute G1-G5 measurements and G6 interpretation outputs",
+            "Compute G1-G5 measurements and G6 assessement outputs",
             "Render measurements, flags, impressions, and PDF export",
         ],
     },
@@ -154,7 +154,7 @@ SLIDE_SHAPE_UPDATES: dict[int, dict[int, list[str]]] = {
         617: ["Runtime", "Phase 6"],
         629: ["Segmentation: TSS primary, SCT for G3/G5.1, SPINEPS for Cobb"],
         630: ["Measurements: six groups and about 16 components"],
-        631: ["Interpretation: cited thresholds, status bands, and review flags"],
+        631: ["Assessement: cited thresholds, status bands, and review flags"],
         632: ["Reporting: clinical report, impressions, and PDF export"],
     },
     20: {
@@ -167,13 +167,13 @@ SLIDE_SHAPE_UPDATES: dict[int, dict[int, list[str]]] = {
         653: ["G1-G5 compute morphometry, discs, cord/canal, alignment, and screens"],
         654: ["04 Report"],
         655: [
-            "G6 interpretation feeds a clinical report, impressions, and PDF export"
+            "G6 assessement feeds a clinical report, impressions, and PDF export"
         ],
     },
     21: {
         699: ["Technical Specification"],
         700: ["03"],
-        701: ["Segmentation, measurements, interpretation, and reporting"],
+        701: ["Segmentation, measurements, assessement, and reporting"],
     },
     22: {
         709: ["Segmentation"],
@@ -202,16 +202,16 @@ SLIDE_SHAPE_UPDATES: dict[int, dict[int, list[str]]] = {
         939: ["G5"],
         940: ["Fracture and myelomalacia screens"],
         941: ["G6"],
-        942: ["Interpretation outputs: threshold bands and syndrome flags"],
+        942: ["Assessement outputs: threshold bands and syndrome flags"],
         943: ["Inputs"],
         944: ["Group dependencies, inputs, and outputs are tracked per group"],
         945: ["Outputs"],
-        946: ["About 16 components merge into measurements, flags, and interpretations"],
+        946: ["About 16 components merge into measurements, flags, and assessements"],
     },
     25: {
-        1010: ["Interpretation & Reporting"],
+        1010: ["Assessement & Reporting"],
         1018: ["Raw value to cited threshold band to status"],
-        1019: ["Interpretation"],
+        1019: ["Assessement"],
         1020: [
             "within_reference / outside_reference / review_only with sex-specific "
             "dural-sac cut"
@@ -253,7 +253,7 @@ SLIDE_SHAPE_UPDATES: dict[int, dict[int, list[str]]] = {
         1093: ["Deployment architecture"],
         1094: ["Public API and orchestration layer"],
         1095: ["EEP"],
-        1096: ["Runs the measurement and interpretation stack"],
+        1096: ["Runs the measurement and assessement stack"],
         1097: ["Measurements IEP"],
         1098: ["Produces the clinical report, impressions, and PDF export"],
         1099: ["Reporting IEP"],

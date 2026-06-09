@@ -34,7 +34,7 @@ MRI-ReportGenerator/
 │   ├── phase-3a-geometric-measurements.md  # Vertebra/disc/canal geometry (AP, heights, Cobb…)
 │   ├── phase-3b-cord-compression.md   # Cord measurements via SCT, SAC, compression
 │   ├── phase-3c-signal-based.md       # Experimental T2-signal engine (myelomalacia / T2-MI)
-│   ├── phase-4-interpretation.md      # Threshold flagging, demographic percentiles
+│   ├── phase-4-assessement.md      # Threshold flagging, demographic percentiles
 │   ├── phase-5-clinical-validation.md # Validation vs radiologist GT (ICC / Bland-Altman)
 │   ├── phase-6-report-generation.md   # Structured PDF/DOCX report + figure overlays
 │   └── phase-7-deferred.md            # Out-of-scope / deferred features (append-only)
@@ -54,7 +54,7 @@ MRI-ReportGenerator/
 │   │       ├── __init__.py
 │   │       └── test_input_handler.py  # Synthetic-NIfTI unit tests for Phase 1
 │   │
-│   └── measurements/                  # IEP2 — Measurements + Interpretation service (Phase 3+4)
+│   └── measurements/                  # IEP2 — Measurements + Assessement service (Phase 3+4)
 │       ├── __init__.py
 │       ├── context.py                 # Per-case loader: canonical-RAS + 1mm-iso guard;
 │       │                              #   defines MeasurementContext + ComponentResult dataclasses

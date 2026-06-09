@@ -11,7 +11,7 @@ This file is the top-level plan and index. Deep-dive research for each phase liv
 
 ## Goal
 
-Build a cervical spine MRI analysis pipeline that takes one preselected sagittal cervical spine MRI series as input, preferably T2-weighted and provided as either a DICOM series or derived NIfTI file, and produces a structured radiology-style report containing vertebral, disc, canal, and cord measurements, threshold-based interpretation against literature norms, and anomaly flags for physician review.
+Build a cervical spine MRI analysis pipeline that takes one preselected sagittal cervical spine MRI series as input, preferably T2-weighted and provided as either a DICOM series or derived NIfTI file, and produces a structured radiology-style report containing vertebral, disc, canal, and cord measurements, threshold-based assessement against literature norms, and anomaly flags for physician review.
 
 The system is positioned as an **Application** (provisional — pending explicit team sign-off): a clinical-workflow tool, with manual radiologist measurement as the non-AI baseline.
 
@@ -23,7 +23,7 @@ The system is positioned as an **Application** (provisional — pending explicit
 
 ```
 ┌─────────┐   ┌──────────────┐   ┌──────────────┐   ┌────────────────┐   ┌────────┐
-│  Input  │ → │ Segmentation │ → │ Measurements │ → │ Interpretation │ → │ Report │
+│  Input  │ → │ Segmentation │ → │ Measurements │ → │ Assessement │ → │ Report │
 └─────────┘   └──────────────┘   └──────────────┘   └────────────────┘   └────────┘
   Phase 1        Phase 2           Phase 3             Phase 4            Phase 6
                  TotalSpineSeg     Geometric +         Threshold          PDF/DOCX
@@ -42,7 +42,7 @@ This prototype operates on a single preselected sagittal cervical spine MR serie
 
 - **External Endpoint (EEP):** Flask orchestrator (decided 2026-04-28 by Roni; was FastAPI in v1 — Flask is sufficient for a stateless inference pipeline with no per-request persistence). Public API, input validation, rate-limit, report assembly. Not yet implemented.
 - **Internal Endpoint 1 (IEP1):** Segmentation service. TotalSpineSeg + Spinal Cord Toolbox wrappers. Non-trivial DL inference. **Implementation:** [`services/segmentation/`](./services/segmentation/) — Phase 1 input handling + Phase 2.1 TSS wrapper landed 2026-04-28; SCT (Phase 2.2), mid-sagittal slice selection (2.3), and segmentation QC (2.4) pending.
-- **Internal Endpoint 2 (IEP2):** Measurements + Interpretation service. Geometric, cord, signal engines + threshold flagging. **Implementation:** [`services/measurements/`](./services/measurements/) — pluggable-component scaffold landed 2026-04-28; the first producer component is now [`services/measurements/geometric/cervical_body_morphometry.py`](./services/measurements/geometric/cervical_body_morphometry.py), which outputs vertebral body AP width and anterior/middle/posterior heights for C3-C7. Downstream geometric components consume its corners/AP widths via `DEPENDS_ON`. Remaining 3A / 3B / 3C / Phase 4 components pending.
+- **Internal Endpoint 2 (IEP2):** Measurements + Assessement service. Geometric, cord, signal engines + threshold flagging. **Implementation:** [`services/measurements/`](./services/measurements/) — pluggable-component scaffold landed 2026-04-28; the first producer component is now [`services/measurements/geometric/cervical_body_morphometry.py`](./services/measurements/geometric/cervical_body_morphometry.py), which outputs vertebral body AP width and anterior/middle/posterior heights for C3-C7. Downstream geometric components consume its corners/AP widths via `DEPENDS_ON`. Remaining 3A / 3B / 3C / Phase 4 components pending.
 
 Three services → three Docker images (rubric S4) → three owners.
 
@@ -82,7 +82,7 @@ Owners and reviewers are assigned here once the team decides. Until then, every 
 | 3A — Geometric Measurements | [`plans/phase-3a-geometric-measurements.md`](./plans/phase-3a-geometric-measurements.md) | TBD | TBD |
 | 3B — Cord / Compression | [`plans/phase-3b-cord-compression.md`](./plans/phase-3b-cord-compression.md) | TBD | TBD |
 | 3C — Signal-based (experimental) | [`plans/phase-3c-signal-based.md`](./plans/phase-3c-signal-based.md) | TBD | TBD |
-| 4 — Interpretation | [`plans/phase-4-interpretation.md`](./plans/phase-4-interpretation.md) | TBD | TBD |
+| 4 — Assessement | [`plans/phase-4-assessement.md`](./plans/phase-4-assessement.md) | TBD | TBD |
 | 5 — Clinical Validation | [`plans/phase-5-clinical-validation.md`](./plans/phase-5-clinical-validation.md) | TBD | TBD |
 | 6 — Report Generation | [`plans/phase-6-report-generation.md`](./plans/phase-6-report-generation.md) | TBD | TBD |
 | 7 — Deferred / Out of scope | [`plans/phase-7-deferred.md`](./plans/phase-7-deferred.md) | All (append) | — |

@@ -2,7 +2,7 @@
 
 Cervical-spine MRI analysis pipeline: sagittal **T2 MRI (DICOM/NIfTI) in → structured,
 radiologist-style report out**. The report carries vertebral / disc / canal / cord / alignment
-measurements, threshold-based interpretation against cited norms, and anomaly flags **for physician
+measurements, threshold-based assessement against cited norms, and anomaly flags **for physician
 review**.
 
 **Course:** EECE503N / EECE798N — AI Engineering, AUB — Final Project (Spring 2026)
@@ -15,7 +15,7 @@ review**.
 Input (DICOM/NIfTI, sagittal T2)
   → Segmentation        (TotalSpineSeg + Spinal Cord Toolbox + SPINEPS)
   → Measurements        (G1 vertebra · G2 disc · G3 canal/cord · G4 alignment · G5 screens)
-  → Interpretation (G6) (cited threshold catalog → status per finding)
+  → Assessement (G6) (cited threshold catalog → status per finding)
   → Report              (clinical report, "flagged for physician review")
 ```
 
@@ -24,9 +24,9 @@ Input (DICOM/NIfTI, sagittal T2)
 - **EEP** — public orchestrator: input validation, rate-limiting, orchestrates the IEPs, assembles the response.
 - **IEP — Segmentation:** three engines wrapped behind HTTP — TotalSpineSeg (vertebrae/discs/canal),
   Spinal Cord Toolbox (cord/canal + SCIseg lesion screen), SPINEPS (endplate voxels for the Cobb angle).
-- **IEP — Measurements + Interpretation:** geometric / cord / signal engines + the cited-threshold
-  interpretation layer (Group 6).
-- **IEP — Reporting:** turns the interpretation handoff into a clinical report (HTML/PDF).
+- **IEP — Measurements + Assessement:** geometric / cord / signal engines + the cited-threshold
+  assessement layer (Group 6).
+- **IEP — Reporting:** turns the assessement handoff into a clinical report (HTML/PDF).
 - **Deployment:** AWS, Docker images, docker-compose + Kubernetes, Prometheus + Grafana, MLflow.
 
 ## Where to start (read order)
@@ -49,7 +49,7 @@ No public dataset pairs cervical MRI with per-case expert measurements, so valid
 | G2 disc | ⚠️ **partial** — disc/VB AP ratio AUC 0.62; signal & bulge are documented negatives |
 | G4 alignment (Cobb) | ❌ **not a discriminator** (validated *measurement*, not a screen; balanced d=0.28, p=0.32) |
 | G1 Ha/Hp + G5.1 myelomalacia | ✅ healthy-validated **screens** (compression-fracture arm untested — no dataset) |
-| G6 interpretation | 🟢 wired end-to-end |
+| G6 assessement | 🟢 wired end-to-end |
 
 ## Medical-AI rules (hard, non-negotiable)
 
@@ -83,6 +83,6 @@ No public dataset pairs cervical MRI with per-case expert measurements, so valid
 ## Tests
 
 ```bash
-pytest services tests              # measurement / interpretation / reporting / web-layer suites
+pytest services tests              # measurement / assessement / reporting / web-layer suites
 tectonic overleaf/paper/main.tex   # compile the paper (also each overleaf/deliverables/*.tex)
 ```

@@ -28,13 +28,13 @@ v2's to push first; coordinate before pushing this).
 2. **Merged `feat/app/fullstack-local` (JWT auth + admin + workflow layer + PDF + clinical frontend) into
    this branch** so there is ONE EEP image with BOTH auth and the seg fan-out. Merge was small: only 4
    both-changed files (.gitignore, SESSION_LOG, `app.py`, `conftest.py`). **No graded-science conflicts**
-   — all measurement/interpretation files changed only on seg/deploy (validated), unchanged on fullstack,
+   — all measurement/assessement files changed only on seg/deploy (validated), unchanged on fullstack,
    so they merged cleanly. `app.py`: unioned auth/workflow wiring + `segmentation_ready` in /readyz.
    `conftest.py`: hermetic DB/JWT env set before app import + the auth-aware `client` fixture.
    New runtime deps: `pyjwt`, `argon2-cffi` (EEP), `fpdf2` (reporting).
 3. **Golden regenerated (1 line):** the merge adopts fullstack's `_format_value` (2 decimals when |v|<2),
    so the myelomalacia screen renders `1.00` not `1.0` — value/status/wording identical, no measurement
-   or interpretation change. Q2 gate honored (deliberate, reviewed regeneration).
+   or assessement change. Q2 gate honored (deliberate, reviewed regeneration).
 
 **Verify:** `cd integration-worktree && /tmp/venv-itest/bin/python -m pytest -q` → **54 passed, 6 skipped**
 (needs `pip install pyjwt argon2-cffi fpdf2` on top of requirements-dev).
@@ -214,21 +214,21 @@ The AWS stack + Grafana are still LIVE for the demo.
 
 **Update (later 2026-06-09):** Docker hang fixed (force-killed the stuck engine procs, relaunched — up in 6s). Stack back; **dashboard verified LIVE** (5 cases, 2 urgent, flags-by-group populated), 0 errors. Mapped `spondy_pct_of_lower_AP` → Alignment so the dashboard "Other" bucket is gone (now Canal/cord 5 · Vertebra 1 · Alignment 5).
 
-**Pending / next action:** Deploy goes through the infra chat (merge this branch into `feat/seg/deploy` first). Live-upload link still needs EEP `POST /cases` to forward `{age,sex}` (routers/cases.py = infra-owned) + measurement/interpretation code merged into the measurements IEP image. Demographics capture UI (upload form age/sex) not yet built. PRs still unopened. See the handoff prompt for the full picture.
+**Pending / next action:** Deploy goes through the infra chat (merge this branch into `feat/seg/deploy` first). Live-upload link still needs EEP `POST /cases` to forward `{age,sex}` (routers/cases.py = infra-owned) + measurement/assessement code merged into the measurements IEP image. Demographics capture UI (upload form age/sex) not yet built. PRs still unopened. See the handoff prompt for the full picture.
 
 ## 2026-06-08 (cont. 4) — Andrew (LINK measurement pipeline → report + radiologist ZIP)
 
 **Branch:** `feat/app/fullstack-local` — pushed.
 
 **What was done:** Linked the measurement pipeline output to the report UI/PDF and produced the radiologist deliverable.
-- **§3 mapping committed:** `services/eep/tools/run_all_to_case.py` (pipeline `run_all` → contract envelope: passthrough measurements/flags/interpretations; derive impression + triage; demographics; §4 sex-neutral caveat when sex absent).
+- **§3 mapping committed:** `services/eep/tools/run_all_to_case.py` (pipeline `run_all` → contract envelope: passthrough measurements/flags/assessements; derive impression + triage; demographics; §4 sex-neutral caveat when sex absent).
 - **Clean clinical rendering:** report shows a clinical allowlist (canal/cord/SAC/disc/alignment) + any flag (not all 150+ rows); values rounded (2dp ratios / 1dp mm·deg), `unknown` unit dropped, Cobb rounded — in PDF (`pdf_report.py`) + builder (`builder.py`) + worklist table (`findings-table.tsx`).
 - **Radiologist ZIP built** (local, **not in git** — mmcsd is research-use): `Project/radiologist-deliverable/cervical-mri-radiologist-demo.zip` = 2 branded PDFs + 2 MRIs + README/license. Values match handoff §5 EXACTLY (sub-amu01 none/canal min 14.5/Cobb +16.7°/0 flags; mmcsd urgent/canal min 10.0/SAC C6 3.4/Cobb +4.3°/dural-sac 10.0 flagged). Both cases also live in the running worklist for the §6.1 cross-check.
 - Demo fixtures `case-demo-*.json` gitignored. 3 reporting tests green; prod build/tsc clean; 0 console errors.
 
 **Files changed:** `services/eep/tools/{run_all_to_case,__init__}.py` (new), `services/reporting/{pdf_report,builder}.py`, `frontend/src/components/report/findings-table.tsx`, `.gitignore`.
 
-**Pending / next action:** (1) Andrew cross-checks the 2 reports against a local re-run (§6.2) — send the ZIP/values. (2) Full LIVE-upload link still needs: merge `services/measurements`+`services/interpretation` from `research/andrew/writeups` into the measurements IEP image, and **EEP `POST /cases` forward `{age,sex}` into `load_context`** (routers/cases.py = infra-owned → coordinate). The ZIP used ground-truth `run_all` JSON, so it didn't need the live upload path. [[demographics_interpretation_coupling]]
+**Pending / next action:** (1) Andrew cross-checks the 2 reports against a local re-run (§6.2) — send the ZIP/values. (2) Full LIVE-upload link still needs: merge `services/measurements`+`services/assessement` from `research/andrew/writeups` into the measurements IEP image, and **EEP `POST /cases` forward `{age,sex}` into `load_context`** (routers/cases.py = infra-owned → coordinate). The ZIP used ground-truth `run_all` JSON, so it didn't need the live upload path. [[demographics_interpretation_coupling]]
 
 ## 2026-06-08 (cont. 3) — Andrew (session 401-loop fix + real branded report PDF)
 
@@ -240,7 +240,7 @@ The AWS stack + Grafana are still LIVE for the demo.
 
 **Files changed:** `frontend/src/lib/api/{workflow,admin,client}.ts`, `app/api/session/expired/route.ts`, `services/eep/auth/db.py` (fix); `services/reporting/{pdf_report,render_pdf,app}.py` + `requirements.txt` + `assets/logo.png`, `services/eep/workflow/router.py`, `app/api/cases/[id]/report-pdf/route.ts`, `components/report/case-header.tsx` (PDF).
 
-**Pending / next action:** Andrew bringing **measurement codes** + the **age/height/sex → interpretation** wiring (demographics capture is on hold until then; [[demographics_interpretation_coupling]] — must also be coded in Group 6). PDF demographics row auto-appears once `case_header.patient_summary` is populated upstream. Infra note unchanged: `services/eep/app.py` mounts auth+workflow routers.
+**Pending / next action:** Andrew bringing **measurement codes** + the **age/height/sex → assessement** wiring (demographics capture is on hold until then; [[demographics_interpretation_coupling]] — must also be coded in Group 6). PDF demographics row auto-appears once `case_header.patient_summary` is populated upstream. Infra note unchanged: `services/eep/app.py` mounts auth+workflow routers.
 
 ## 2026-06-08 (cont. 2) — Andrew (radiologist workflow features: worklist A/B/C/D)
 
@@ -274,13 +274,13 @@ The AWS stack + Grafana are still LIVE for the demo.
 **Branch:** `feat/frontend/scaffold` (worktree `frontend-worktree/`, 39 commits, pushed, **unmerged**). EEP work continues on `feat/eep/scaffold` (worktree `eep-worktree/`).
 
 **What was done:**
-- **Full polished frontend built** — Next.js 16 + Tailwind v4 + shadcn/ui, **mock-first** (`NEXT_PUBLIC_API_MODE=mock`, typed client `lib/api/client.ts`) against the frozen data + report contracts (`docs/contracts/`). Screens: worklist, case report (findings table from `interpretations.measurements[]` + impressions + disclaimers), interactive **NiiVue viewer** (real Spine-Generic `sub-amu01` volume + TSS mask, gitignored under `public/samples/`), **auth/RBAC** (4 roles, mock cookie session, radiologist-only sign-off), **upload + simulated processing**.
+- **Full polished frontend built** — Next.js 16 + Tailwind v4 + shadcn/ui, **mock-first** (`NEXT_PUBLIC_API_MODE=mock`, typed client `lib/api/client.ts`) against the frozen data + report contracts (`docs/contracts/`). Screens: worklist, case report (findings table from `assessements.measurements[]` + impressions + disclaimers), interactive **NiiVue viewer** (real Spine-Generic `sub-amu01` volume + TSS mask, gitignored under `public/samples/`), **auth/RBAC** (4 roles, mock cookie session, radiologist-only sign-off), **upload + simulated processing**.
 - **Design pass** (light clinical, teal petrol accent, **IBM Plex** serif/sans/mono) + **animation pass** (Framer Motion `motion`, `sonner` toasts, `lucide-react` icons; page transitions, working mobile menu, Back button, uniform button micro-interactions). Light-only, no purple (Andrew's prefs).
 - Fixed 4 bugs (optional report fields; Base-UI button API; route-handler in-memory store not shared with RSC → switched to `router.refresh` polling; font-var mismatch). Type-clean, 0 console errors, verified in-browser per milestone.
 
 **Files changed:** new `frontend-worktree/frontend/**` (whole Next.js app). No `main` files touched (isolated worktree).
 
-**Pending / next action:** Build the **EEP** (FastAPI front-door in `services/eep/`) orchestrating measurements + interpretation (segmentation = Colab/GPU upstream; reporting = Ronnie, pending) → then **containerize** frontend + EEP (`deployment/`) → flip frontend to `live` mode → **AWS deploy (needs Andrew's creds)**. Frontend design refinements pending Andrew's review.
+**Pending / next action:** Build the **EEP** (FastAPI front-door in `services/eep/`) orchestrating measurements + assessement (segmentation = Colab/GPU upstream; reporting = Ronnie, pending) → then **containerize** frontend + EEP (`deployment/`) → flip frontend to `live` mode → **AWS deploy (needs Andrew's creds)**. Frontend design refinements pending Andrew's review.
 
 ---
 
@@ -486,7 +486,7 @@ Phase-4 threshold research returns (separate chat). 5.1 lesion masks live in `~/
 **Pending / next action (state at end of 2026-06-06, Andrew asleep):**
 - **RUNNING in parallel (separate chats):** (1) corner/endplate-method research = the fix for Ronnie's keystone; (2) Group-6/Phase-4 threshold research = the cited threshold table our Group 6 will hard-code (handoffs in `../handoffs/research-prompts/`).
 - **RUNNING: Colab** = SCIseg on the 12 healthy cords → download to `out_sg_lesion/` to close 5.1.
-- **QUEUED: Group 6 takeover.** Group 6 = the interpretation/validation layer (Ronnie's "Phase 4"); we're taking it over. Context + plan saved in memory `group6_takeover_context.md`. **TRIGGER: when the Phase-4 threshold research returns → FLAG Andrew to start Group 6.**
+- **QUEUED: Group 6 takeover.** Group 6 = the assessement/validation layer (Ronnie's "Phase 4"); we're taking it over. Context + plan saved in memory `group6_takeover_context.md`. **TRIGGER: when the Phase-4 threshold research returns → FLAG Andrew to start Group 6.**
 - **PENDING: Mohammad's reply** → re-validate his disc code correctly.
 - Commit convention (2026-06-06): plain 1-2 sentence messages, NO signatures/trailers. Keep appending DEVELOPMENT_JOURNEY + committing granularly.
 
@@ -607,7 +607,7 @@ Phase-4 threshold research returns (separate chat). 5.1 lesion masks live in `~/
 - `plans/phase-3a-geometric-measurements.md`
 - `plans/phase-3b-cord-compression.md`
 - `plans/phase-3c-signal-based.md`
-- `plans/phase-4-interpretation.md`
+- `plans/phase-4-assessement.md`
 - `plans/phase-5-clinical-validation.md`
 - `plans/phase-6-report-generation.md`
 - `plans/phase-7-deferred.md`
