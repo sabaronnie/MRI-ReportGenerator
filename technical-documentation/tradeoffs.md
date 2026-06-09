@@ -32,14 +32,14 @@ Three explicit tradeoffs made during system design, each with the choice, the al
 
 ---
 
-## T3 — CPU inference on EKS vs. GPU instances
+## T3 — Async job queue (202 + polling) vs. synchronous response
 
-**Chosen:** CPU inference on `r5.2xlarge` nodes (8 vCPU / 64 GB RAM) for the segmentation node group, with GPU-ready manifests available but not default.
+**Chosen:** `POST /cases` returns `202 Accepted` immediately with a case ID; the pipeline runs in a FastAPI `BackgroundTask`; the client polls `GET /cases/{id}/job` until `stage == "ready"`.
 
-**Alternative considered:** `g4dn.xlarge` GPU instances as the default compute, which are available in the EKS node group config and would reduce per-scan wall-clock significantly.
+**Alternative considered:** a blocking `POST /cases` that waits for the full pipeline to complete before returning the report, as a conventional synchronous REST endpoint would.
 
-**Why we chose this:** GPU instances cost roughly 3–4× more per hour than `r5.2xlarge` on eu-north-1 (g4dn.xlarge ~$0.526/hr vs r5.2xlarge ~$0.126/hr at on-demand pricing). For a radiology assistant that processes a handful of scans at a time rather than a batch pipeline, the latency difference does not justify the cost. CPU inference is also more reproducible across environments (no CUDA version dependency, no driver mismatch).
+**Why we chose this:** end-to-end segmentation wall-clock is ~13.5 min on CPU (TSS ~6.5 min + SPINEPS ~9.4 min in parallel + SCT ~4 min sequentially after TSS). Standard HTTP clients, proxies, and load balancers time out well before that — typically 30–60 s. A synchronous design would either drop the connection mid-pipeline (losing the result entirely) or require clients to hold a raw TCP connection open for over ten minutes, which is impractical across a load balancer. The async design also lets the frontend show a live progress bar through the five pipeline stages (`queued → segmenting → measuring → assessing → ready`).
 
-**What we gave up:** significant latency. Wall-clock on `r5.2xlarge` CPU: TSS ~6.5 min, SPINEPS ~9.4 min (parallel with TSS), SCT ~4 min after TSS — ~13.5 min end-to-end. GPU would reduce this to under 2 min per scan for TSS/SPINEPS. For a real-time radiology workflow this matters; for a research pipeline or asynchronous review queue it does not.
+**What we gave up:** simplicity. The async design requires a case store to persist job state across the request boundary (currently an in-memory dict in `services/eep/store.py`, replaced by Postgres in a production deployment), a separate `/job` polling endpoint, and frontend polling logic. A synchronous endpoint would be a single request/response with no state to manage.
 
-**Evidence:** verified run on EKS deployment (2026-06-09) on `r5.2xlarge`, all three engines HTTP 200. GPU path is pre-wired: `--gpus all` flag documented in RUNBOOK Part A, `nvidia.com/gpu: 1` resource limits commented out in `deployment/k8s/segmentation.yaml`, and `g4dn.xlarge` block commented out in `deployment/aws/segmentation-nodegroup.yaml`.
+**Evidence:** the constraint is explicit in `services/eep/orchestration.py`: *"Real segmentation takes MINUTES, so it must NOT run inside the upload request."* The `POST /cases` handler in `services/eep/routers/cases.py` uses FastAPI `BackgroundTasks` to hand off to `enqueue_upload`, returning the `202` before the pipeline starts. Wall-clock verified on EKS deployment (2026-06-09): ~13.5 min end-to-end on CPU.

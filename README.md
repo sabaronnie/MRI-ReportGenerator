@@ -50,7 +50,7 @@ Covers the full Prometheus + Grafana stack (rubric §11 M3): per-service metrics
 
 ### Tradeoffs
 
-**[`technical-documentation/tradeoffs.md`](technical-documentation/tradeoffs.md)** — three explicit engineering tradeoffs (rubric §5): three containers vs. one, threshold catalog vs. ML classifier, CPU vs. GPU inference — each with what was chosen, what was not, and evidence.
+**[`technical-documentation/tradeoffs.md`](technical-documentation/tradeoffs.md)** — three explicit engineering tradeoffs (rubric §5): three containers vs. one, threshold catalog vs. ML classifier, async job queue vs. synchronous response — each with what was chosen, what was not, and evidence.
 
 ### MLOps & CI
 
