@@ -42,6 +42,12 @@ Four standalone rubric documents in [`deliverables/docs/`](deliverables/docs/):
 | [`P4_publishability.pdf`](deliverables/docs/P4_publishability.pdf) | Argues the value and publishability of the work — positions the system relative to existing tools and makes the case for clinical and research impact |
 | [`C1_P3_novelty.pdf`](deliverables/docs/C1_P3_novelty.pdf) | Novelty and AI justification — explains what is genuinely new about this system and why AI is the right approach rather than a rule-based substitute |
 
+### Monitoring & Observability
+
+**[`deliverables/monitoring.md`](deliverables/monitoring.md)**
+
+Covers the full Prometheus + Grafana stack (rubric §11 M3): per-service metrics exposed by each IEP, all seven Grafana dashboard panels with PromQL, the ML-specific signal (pathology flag distribution as output-drift proxy), install/access instructions, and teardown notes.
+
 ---
 
 ## Deployment
@@ -64,7 +70,8 @@ The runbook covers two paths:
 | G3 canal / SAC / cord | ✅ strong (p=0.0001) |
 | G2 disc | ⚠️ partial — disc/VB AP ratio AUC 0.62; signal & bulge are documented negatives |
 | G4 alignment (Cobb) | ✅ measurement validated (method-valid; not a disease discriminator — d=0.28, p=0.32 — reported as reference value) |
-| G1 Ha/Hp + G5.1 myelomalacia | ✅ healthy-validated screens (compression-fracture arm untested — no dataset) |
+| G1 Ha/Hp | ✅ correctly null on spondylosis cohort (p=0.92) — healthy-validated compression screen; dedicated fracture dataset not available |
+| G5 fracture (5.2) + myelomalacia (5.1) | ✅ 5.2 fracture screen validated + calibrated (healthy FP 17% → 0%, Spine-Generic n=60); 5.1 myelomalacia wired (healthy-specificity Colab run pending) |
 | G6 assessment | wired end-to-end |
 
 Full results: [`docs/validation/results-final-2026-06-08.md`](docs/validation/results-final-2026-06-08.md)

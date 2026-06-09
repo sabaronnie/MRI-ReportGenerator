@@ -1,7 +1,5 @@
 # Monitoring & Observability
 
-> **Moved.** This document now lives at [`deliverables/monitoring.md`](../deliverables/monitoring.md).
-
 Satisfies rubric §11 (M3): Prometheus metrics + Grafana dashboards with per-service latency
 (p50/p95), error rate, throughput, and an ML-specific signal.
 
