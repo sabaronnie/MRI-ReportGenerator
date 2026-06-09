@@ -1,88 +1,128 @@
 # MRI-ReportGenerator
 
-Cervical-spine MRI analysis pipeline: sagittal **T2 MRI (DICOM/NIfTI) in → structured,
-radiologist-style report out**. The report carries vertebral / disc / canal / cord / alignment
-measurements, threshold-based assessement against cited norms, and anomaly flags **for physician
-review**.
+Cervical spine MRI analysis pipeline — sagittal T2 MRI (DICOM/NIfTI) in, structured radiologist-style report out. The report carries vertebral/disc/canal/cord measurements, threshold-based assessment against cited norms, and anomaly flags **for physician review**.
 
 **Course:** EECE503N / EECE798N — AI Engineering, AUB — Final Project (Spring 2026)
 
 ---
 
-## Pipeline
+## How it works
 
 ```
 Input (DICOM/NIfTI, sagittal T2)
-  → Segmentation        (TotalSpineSeg + Spinal Cord Toolbox + SPINEPS)
-  → Measurements        (G1 vertebra · G2 disc · G3 canal/cord · G4 alignment · G5 screens)
-  → Assessement (G6) (cited threshold catalog → status per finding)
-  → Report              (clinical report, "flagged for physician review")
+  → Segmentation        TotalSpineSeg + Spinal Cord Toolbox + SPINEPS
+  → Measurements        vertebra · disc · canal/cord · alignment · screens
+  → Assessment          threshold catalog → status per finding
+  → Report              clinical report, flagged for physician review
 ```
 
-## Architecture (EECE503N rubric)
+**Architecture (EECE503N rubric):**
+- **EEP** — public gateway: input validation, rate-limiting, orchestrates all IEPs, assembles the response
+- **IEP – Segmentation:** three engines behind HTTP (TotalSpineSeg, SCT, SPINEPS)
+- **IEP – Measurements + Assessment:** geometric/cord/signal engines + cited-threshold assessment layer
+- **IEP – Reporting:** turns the assessment handoff into an HTML/PDF clinical report
+- **Deployment:** AWS EKS, Docker images, Kubernetes manifests, Prometheus + Grafana, MLflow
 
-- **EEP** — public orchestrator: input validation, rate-limiting, orchestrates the IEPs, assembles the response.
-- **IEP — Segmentation:** three engines wrapped behind HTTP — TotalSpineSeg (vertebrae/discs/canal),
-  Spinal Cord Toolbox (cord/canal + SCIseg lesion screen), SPINEPS (endplate voxels for the Cobb angle).
-- **IEP — Measurements + Assessement:** geometric / cord / signal engines + the cited-threshold
-  assessement layer (Group 6).
-- **IEP — Reporting:** turns the assessement handoff into a clinical report (HTML/PDF).
-- **Deployment:** AWS, Docker images, docker-compose + Kubernetes, Prometheus + Grafana, MLflow.
+---
 
-## Where to start (read order)
+## Deliverables
 
-1. **[`docs/pipeline-structure.md`](docs/pipeline-structure.md)** — full input→report map, per group.
-2. **[`docs/validation/results-final-2026-06-08.md`](docs/validation/results-final-2026-06-08.md)** —
-   final per-group verdicts (single source of truth) · **[`group-status`](docs/validation/group-status-2026-06-08.md)**.
-3. **[`DEVELOPMENT_JOURNEY.md`](DEVELOPMENT_JOURNEY.md)** — the mistake→fix→validation narrative (J1–J26).
-4. **[`overleaf/`](overleaf/)** — the paper + rubric deliverables (T1 AI-depth, P2 baseline, P4
-   publishability, C1/P3 novelty); compile with `tectonic`.
+### Paper
 
-## Validation status (final, reproduced from committed code)
+The research paper lives in [`deliverables/paper/`](deliverables/paper/) — source `.tex` files + compiled `main.pdf`.
 
-No public dataset pairs cervical MRI with per-case expert measurements, so validation is
-**threshold-crossing / distribution-separation**, never per-case sensitivity/specificity.
+Compile with:
+```bash
+tectonic deliverables/paper/main.tex
+```
+
+### Rubric deliverables
+
+Four standalone rubric documents in [`deliverables/docs/`](deliverables/docs/), each self-contained and compilable independently:
+
+| File | What it covers |
+|------|----------------|
+| [`T1_ai_depth.tex`](deliverables/docs/T1_ai_depth.tex) | AI depth — models, training, integration |
+| [`P2_baseline.tex`](deliverables/docs/P2_baseline.tex) | Baseline comparison |
+| [`P4_publishability.tex`](deliverables/docs/P4_publishability.tex) | Publishability argument |
+| [`C1_P3_novelty.tex`](deliverables/docs/C1_P3_novelty.tex) | Novelty & AI justification |
+
+Compile any with:
+```bash
+tectonic deliverables/docs/<filename>.tex
+```
+
+---
+
+## Deployment & running the pipeline
+
+Full step-by-step instructions — local Docker run and full AWS EKS deployment — are in the runbook:
+
+**[`technical-documentation/RUNBOOK-deployment.md`](technical-documentation/RUNBOOK-deployment.md)**
+
+Short version:
+```bash
+# Build the 3 segmentation model images
+docker build -f deployment/docker/seg-tss.Dockerfile     -t mri-seg-tss:latest     .
+docker build -f deployment/docker/seg-sct.Dockerfile     -t mri-seg-sct:latest     .
+docker build -f deployment/docker/seg-spineps.Dockerfile -t mri-seg-spineps:latest .
+
+# Start them
+docker run -d --name seg-tss     -p 8083:8083 --shm-size=4g        mri-seg-tss:latest
+docker run -d --name seg-sct     -p 8084:8084 --shm-size=2g        mri-seg-sct:latest
+docker run -d --name seg-spineps -p 8085:8085 --shm-size=4g -m 40g mri-seg-spineps:latest
+
+# Run one scan through the DAG
+curl -sS -F "file=@scan.nii.gz;filename=input.nii.gz" http://localhost:8083/segment -o tss.zip &
+curl -sS -F "file=@scan.nii.gz;filename=input.nii.gz" http://localhost:8085/segment -o spineps.zip &
+wait
+curl -sS -F "file=@tss.zip;filename=segmentation.zip" http://localhost:8084/segment-sct -o sct.zip
+```
+
+See the runbook for AWS deployment, GPU setup, and known gotchas.
+
+---
+
+## Validation status
 
 | Group | Verdict |
-|---|---|
-| G3 canal / SAC / cord | ✅ **strong** (p=0.0001) |
-| G2 disc | ⚠️ **partial** — disc/VB AP ratio AUC 0.62; signal & bulge are documented negatives |
-| G4 alignment (Cobb) | ❌ **not a discriminator** (validated *measurement*, not a screen; balanced d=0.28, p=0.32) |
-| G1 Ha/Hp + G5.1 myelomalacia | ✅ healthy-validated **screens** (compression-fracture arm untested — no dataset) |
-| G6 assessement | 🟢 wired end-to-end |
+|-------|---------|
+| G3 canal / SAC / cord | ✅ strong (p=0.0001) |
+| G2 disc | ⚠️ partial — disc/VB AP ratio AUC 0.62; signal & bulge are documented negatives |
+| G4 alignment (Cobb) | ❌ not a discriminator (validated measurement, not a screen; d=0.28, p=0.32) |
+| G1 Ha/Hp + G5.1 myelomalacia | ✅ healthy-validated screens (compression-fracture arm untested — no dataset) |
+| G6 assessment | wired end-to-end |
 
-## Medical-AI rules (hard, non-negotiable)
+Full results: [`docs/validation/results-final-2026-06-08.md`](docs/validation/results-final-2026-06-08.md)
 
-1. **Cite every clinical claim** — link the paper/guideline/normative study. If it can't be cited, it isn't claimed.
-2. **Never diagnose.** Output wording is *"finding flagged for physician review"* / *"pattern consistent
-   with possible X; clinical correlation required"* — never *"patient has X."*
-3. **Separate training from evaluation data.** Segmenters are pretrained + frozen; the symptomatic cohort
-   is a *demonstration* set, never trained on (no overfitting by construction).
-4. **No patient data in git** — NIfTI/DICOM are `.gitignore`d; data lives locally or in cloud storage.
-5. **No secrets in git** — `.env` / Secrets Manager / Actions secrets only.
-6. **Prove on one case before scaling** to a corpus.
-
-## Licenses (dependencies)
-
-| Component | License | Note |
-|---|---|---|
-| TotalSpineSeg | LGPLv3 | dynamic CLI invocation |
-| Spinal Cord Toolbox (incl. SCIseg) | LGPLv3 | dynamic CLI invocation |
-| SPINEPS | Apache-2.0 | — |
-| TPTBox (+ `spinestats`, pulled by SPINEPS) | Apache-2.0 | verified — not AGPL, not a redistribution blocker |
-| nnU-Net v2 | Apache-2.0 | via TotalSpineSeg |
-| dcm2niix / nibabel / Flask | MIT / BSD / BSD | — |
-| Duke CSpineSeg dataset | CC BY-NC-ND 4.0 | **non-commercial, no redistribution of derivatives** |
-
-## Datasets
-
-- **Spine-Generic** — healthy multi-vendor cervical T2 (the healthy anchor for norms).
-- **MMCSD** (Synapse `syn63903115`, Yu et al. 2025, *Sci Data*) — symptomatic CSM/CSR demonstration cohort.
-- **Duke CSpineSeg** (Zhou et al. 2025, *Sci Data*) — distribution-only sanity checks (no per-case measurement GT).
+---
 
 ## Tests
 
 ```bash
-pytest services tests              # measurement / assessement / reporting / web-layer suites
-tectonic overleaf/paper/main.tex   # compile the paper (also each overleaf/deliverables/*.tex)
+pytest services tests
 ```
+
+---
+
+## Medical-AI rules
+
+1. **Cite every clinical claim.** If it can't be cited, it isn't claimed.
+2. **Never diagnose.** Output wording: *"finding flagged for physician review"* / *"pattern consistent with possible X; clinical correlation required"* — never *"patient has X."*
+3. **Separate training from evaluation data.** Segmenters are pretrained + frozen; the symptomatic cohort is a demonstration set, never trained on.
+4. **No patient data in git** — NIfTI/DICOM are `.gitignore`d.
+5. **No secrets in git** — `.env` / Secrets Manager / Actions secrets only.
+
+---
+
+## Licenses
+
+| Component | License | Note |
+|-----------|---------|------|
+| TotalSpineSeg | LGPLv3 | dynamic CLI invocation |
+| Spinal Cord Toolbox (incl. SCIseg) | LGPLv3 | dynamic CLI invocation |
+| SPINEPS | Apache-2.0 | — |
+| TPTBox / spinestats | Apache-2.0 | not AGPL, not a redistribution blocker |
+| nnU-Net v2 | Apache-2.0 | via TotalSpineSeg |
+| dcm2niix / nibabel / Flask | MIT / BSD / BSD | — |
+| Duke CSpineSeg dataset | CC BY-NC-ND 4.0 | **non-commercial, no redistribution of derivatives** |
