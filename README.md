@@ -29,28 +29,18 @@ Input (DICOM/NIfTI, sagittal T2)
 
 ### Paper
 
-The research paper lives in [`deliverables/paper/`](deliverables/paper/) — source `.tex` files + compiled `main.pdf`.
-
-Compile with:
-```bash
-tectonic deliverables/paper/main.tex
-```
+The compiled paper is at [`deliverables/paper/main.pdf`](deliverables/paper/main.pdf).
 
 ### Rubric deliverables
 
 Four standalone rubric documents in [`deliverables/docs/`](deliverables/docs/), each self-contained and compilable independently:
 
-| File | What it covers |
-|------|----------------|
-| [`T1_ai_depth.tex`](deliverables/docs/T1_ai_depth.tex) | AI depth — models, training, integration |
-| [`P2_baseline.tex`](deliverables/docs/P2_baseline.tex) | Baseline comparison |
-| [`P4_publishability.tex`](deliverables/docs/P4_publishability.tex) | Publishability argument |
-| [`C1_P3_novelty.tex`](deliverables/docs/C1_P3_novelty.tex) | Novelty & AI justification |
-
-Compile any with:
-```bash
-tectonic deliverables/docs/<filename>.tex
-```
+| PDF | What it covers |
+|-----|----------------|
+| [`T1_ai_depth.pdf`](deliverables/docs/T1_ai_depth.pdf) | AI depth — models, training, integration |
+| [`P2_baseline.pdf`](deliverables/docs/P2_baseline.pdf) | Baseline comparison |
+| [`P4_publishability.pdf`](deliverables/docs/P4_publishability.pdf) | Publishability argument |
+| [`C1_P3_novelty.pdf`](deliverables/docs/C1_P3_novelty.pdf) | Novelty & AI justification |
 
 ---
 
