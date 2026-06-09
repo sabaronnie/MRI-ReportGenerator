@@ -79,16 +79,6 @@ pytest services tests
 
 ---
 
-## Medical-AI rules
-
-1. **Cite every clinical claim.** If it can't be cited, it isn't claimed.
-2. **Never diagnose.** Output wording: *"finding flagged for physician review"* / *"pattern consistent with possible X; clinical correlation required"* — never *"patient has X."*
-3. **Separate training from evaluation data.** Segmenters are pretrained + frozen; the symptomatic cohort is a demonstration set, never trained on.
-4. **No patient data in git** — NIfTI/DICOM are `.gitignore`d.
-5. **No secrets in git** — `.env` / Secrets Manager / Actions secrets only.
-
----
-
 ## Licenses
 
 | Component | License | Note |
