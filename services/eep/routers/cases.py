@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
 
 from .. import config, store
 from ..models import CaseSummary, SignOffRequest, UploadAccepted
-from ..orchestration import process_upload, render_case_report
+from ..orchestration import enqueue_upload, render_case_report
 
 router = APIRouter(prefix="/cases", tags=["cases"])
 
@@ -22,7 +22,9 @@ def list_cases():
 
 
 @router.post("", response_model=UploadAccepted, status_code=202)
-async def upload_case(file: UploadFile = File(...), uploader: str = Form("demo")):
+async def upload_case(
+    background: BackgroundTasks, file: UploadFile = File(...), uploader: str = Form("demo")
+):
     name = file.filename or "uploaded-study.nii.gz"
     if not name.lower().endswith(config.ACCEPTED_SUFFIXES):
         _err(415, "unsupported_type", "expected a DICOM .zip or NIfTI .nii/.nii.gz", failed_stage="upload", retryable=False)
@@ -35,7 +37,7 @@ async def upload_case(file: UploadFile = File(...), uploader: str = Form("demo")
         if size > config.MAX_UPLOAD_BYTES:
             _err(413, "too_large", "file exceeds the upload limit", failed_stage="upload", retryable=False)
         buf.extend(chunk)
-    return process_upload(name, uploader, bytes(buf))
+    return enqueue_upload(name, uploader, bytes(buf), background)
 
 
 @router.get("/{case_id}")

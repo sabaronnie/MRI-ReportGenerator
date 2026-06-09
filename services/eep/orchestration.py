@@ -12,6 +12,8 @@ import tempfile
 import uuid
 from pathlib import Path
 
+from fastapi import BackgroundTasks
+
 from . import config, store
 from .clients import segmentation as seg
 from .clients.measurements import MeasurementsClient
@@ -34,30 +36,67 @@ def _map_core(handoff: dict) -> dict | None:
     return core or None
 
 
-def _resolve_segmentation(filename: str, input_bytes: bytes | None) -> Path | None:
-    """Real segmentation (3 engines in parallel) when wired + we have the upload; else the stand-in.
-
-    Returns a path to the segmentation zip the measurements IEP consumes, or None.
-    """
-    if input_bytes and seg.all_engines_configured():
-        try:
-            merged = seg.run_segmentation(input_bytes, filename)
-            tmp = Path(tempfile.gettempdir()) / f"segzip-{uuid.uuid4().hex[:8]}.zip"
-            tmp.write_bytes(merged)
-            return tmp
-        except Exception:  # noqa: BLE001 — any engine failure falls back to the stand-in, never crashes
-            pass
+def _standin_seg_zip() -> Path | None:
+    """The bundled stand-in mask zip the measurements IEP consumes, or None if absent."""
     return SEG_ZIP if SEG_ZIP.exists() else None
 
 
+def enqueue_upload(
+    filename: str, uploader: str, input_bytes: bytes | None, background: BackgroundTasks
+) -> dict:
+    """Route entry point. Returns immediately with a queued case.
+
+    Real segmentation (all 3 engines wired + we have the upload bytes) takes MINUTES, so it must NOT
+    run inside the upload request: create a queued case and run seg -> measurements in a BACKGROUND
+    task. Otherwise the stand-in fast path runs synchronously (~1-2 s — current demo, unchanged).
+    """
+    if input_bytes and seg.all_engines_configured():
+        created = store.create_case(filename, uploader, simulated=False)
+        background.add_task(run_pipeline, created["case_id"], filename, input_bytes)
+        return created
+    return process_upload(filename, uploader, input_bytes)
+
+
 def process_upload(filename: str, uploader: str, input_bytes: bytes | None = None) -> dict:
+    """Synchronous stand-in path: measure the bundled mask zip (fast) and create a simulated case."""
     client = MeasurementsClient()
     core: dict | None = None
-    seg_zip = _resolve_segmentation(filename, input_bytes)
+    seg_zip = _standin_seg_zip()
     if client.configured and seg_zip is not None and seg_zip.exists():
         handoff = client.measure(seg_zip, case_id="pending", filename=filename)
         core = _map_core(handoff or {})
     return store.create_case(filename, uploader, core=core)
+
+
+def run_pipeline(case_id: str, filename: str, input_bytes: bytes) -> None:
+    """Background worker: real 3-engine segmentation -> measurements -> ready (or error).
+
+    Runs in a threadpool thread (FastAPI BackgroundTasks for a sync callable) — i.e. OFF the request
+    event loop. That makes the sync `seg.run_segmentation` wrapper's `asyncio.run(...)` safe (no loop
+    is already running in this thread) and keeps the blocking measurements call from stalling the
+    request loop. Failures are recorded on the case (status "error"), never silently masked.
+    """
+    tmp: Path | None = None
+    try:
+        store.set_stage(case_id, "segmenting", progress=0.1)
+        merged = seg.run_segmentation(input_bytes, filename)  # parallel fan-out over the 3 engines
+        tmp = Path(tempfile.gettempdir()) / f"segzip-{uuid.uuid4().hex[:8]}.zip"
+        tmp.write_bytes(merged)
+
+        store.set_stage(case_id, "measuring", progress=0.6)
+        client = MeasurementsClient()
+        core: dict | None = None
+        if client.configured:
+            handoff = client.measure(tmp, case_id=case_id, filename=filename)
+            core = _map_core(handoff or {})
+        if core:
+            store.update_case_core(case_id, core)
+        store.set_stage(case_id, "ready", progress=1.0)
+    except Exception as exc:  # noqa: BLE001 — surface on the case; a worker crash must not be silent
+        store.set_stage(case_id, "error", error=f"segmentation/measurement failed: {exc}")
+    finally:
+        if tmp is not None:
+            tmp.unlink(missing_ok=True)
 
 
 def measurements_ready() -> bool:

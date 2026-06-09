@@ -86,14 +86,25 @@ def get_job(case_id: str) -> dict | None:
     return c["job"] if c else None
 
 
-def create_case(filename: str, uploader: str, core: dict | None = None) -> dict:
-    """Create a new queued case. `core` (real measurements output) overrides the cloned baseline."""
+def _apply_core(base: dict, core: dict | None) -> None:
+    """Overlay a real measurements/interpretation core onto a (cloned) case envelope."""
+    if not core:
+        return
+    for key in ("measurements", "flags", "components", "interpretations", "report"):
+        if key in core:
+            base[key] = core[key]
+
+
+def create_case(filename: str, uploader: str, core: dict | None = None, *, simulated: bool = True) -> dict:
+    """Create a new queued case. `core` (real measurements output) overrides the cloned baseline.
+
+    `simulated=True` (default, stand-in demo) drives status via the simulated UX clock. Real-seg
+    cases pass `simulated=False`: the background worker drives status (set_stage/update_case_core),
+    so the clock must NOT auto-advance them.
+    """
     with _lock:
         base = deepcopy(_store.get("demo-healthy-0001") or next(iter(_store.values())))
-        if core:
-            for key in ("measurements", "flags", "components", "interpretations", "report"):
-                if key in core:
-                    base[key] = core[key]
+        _apply_core(base, core)
         cid = f"upload-{uuid.uuid4().hex[:8]}"
         now = _now_iso()
         base["case"].update(
@@ -109,8 +120,42 @@ def create_case(filename: str, uploader: str, core: dict | None = None) -> dict:
         )
         base["job"] = {"stage": "queued", "stages": _STAGE_ORDER, "progress": 0.0, "error": None}
         _store[cid] = base
-        _sim_start[cid] = time.monotonic()
+        if simulated:
+            _sim_start[cid] = time.monotonic()
         return {"case_id": cid, "status": "queued"}
+
+
+def set_stage(case_id: str, stage: str, *, progress: float | None = None, error: str | None = None) -> dict | None:
+    """Drive a real-seg case's job/status from the background worker.
+
+    `stage` is one of _STAGE_ORDER or "error". Status maps to ready / error / processing. `progress`
+    is kept at its prior value when not supplied.
+    """
+    with _lock:
+        c = _store.get(case_id)
+        if c is None:
+            return None
+        prev = c.get("job") or {}
+        c["job"] = {
+            "stage": stage,
+            "stages": _STAGE_ORDER,
+            "progress": prev.get("progress", 0.0) if progress is None else round(progress, 3),
+            "error": error,
+        }
+        c["case"]["status"] = "ready" if stage == "ready" else ("error" if stage == "error" else "processing")
+        c["case"]["updated_at"] = _now_iso()
+        return deepcopy(c)
+
+
+def update_case_core(case_id: str, core: dict | None) -> dict | None:
+    """Write the real measurements/interpretation core onto an existing case (background worker)."""
+    with _lock:
+        c = _store.get(case_id)
+        if c is None:
+            return None
+        _apply_core(c, core)
+        c["case"]["updated_at"] = _now_iso()
+        return deepcopy(c)
 
 
 def sign_off(case_id: str, signed_by: str) -> dict | None:
