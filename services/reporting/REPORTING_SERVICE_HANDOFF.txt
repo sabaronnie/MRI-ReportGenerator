@@ -1,0 +1,436 @@
+REPORTING SERVICE HANDOFF
+=========================
+
+Purpose
+-------
+The reporting package is the final presentation layer after measurement and interpretation.
+Its job is to take the post-interpretation handoff contract, normalize it into a stable
+report document, and render human-readable report artifacts.
+
+This package does not compute medical measurements, run segmentation, or decide threshold
+logic itself. It depends on upstream services to produce interpreted findings first.
+
+
+Current Role In The Pipeline
+----------------------------
+Pipeline position:
+
+  Input MRI
+  -> segmentation
+  -> measurements
+  -> interpretation
+  -> reporting
+
+Reporting is therefore a formatter and document builder, not an inference engine.
+
+
+What It Consumes
+----------------
+The reporting package consumes the post-interpretation JSON contract documented in:
+
+  services/interpretation/REPORTING_HANDOFF_CONTRACT.md
+
+The top-level keys it currently requires are:
+
+  - contract_version
+  - case
+  - manifest
+  - components
+  - measurements
+  - flags
+  - interpretations
+  - report_context
+
+Validation for these keys is enforced in builder.py before document construction begins.
+
+
+What It Produces
+----------------
+The main internal product is a normalized report document built by:
+
+  build_report_document(payload)
+
+That normalized document is the reporting layer's core data model. Renderers consume this
+document instead of depending directly on the raw interpretation payload.
+
+The current normalized document includes:
+
+  - report_version
+  - source_contract_version
+  - title
+  - case_header
+  - case
+  - summary
+  - clinical_report
+  - findings
+  - impression
+  - quality_caveats
+  - quality_notes
+  - disclaimers
+  - metadata
+  - appendix
+
+
+Main Source Files
+-----------------
+1. builder.py
+   The central normalization layer. Converts the interpretation handoff contract into
+   a structured report document suitable for rendering.
+
+2. render_html.py
+   Renders two HTML variants from the normalized report document:
+   - clinical / radiology-style report
+   - technical / explainability report
+
+3. render_pdf.py
+   Current PDF scaffold. It does not yet run a real HTML-to-PDF engine. It returns the
+   rendered HTML bytes that a future PDF backend should consume.
+
+4. __init__.py
+   Exposes the package surface:
+   - build_report_document
+   - render_clinical_report_html
+   - render_technical_report_html
+   - render_report_html
+   - render_clinical_report_pdf
+   - render_technical_report_pdf
+   - render_report_pdf
+
+5. examples/
+   Contains a sample reporting contract, generated sample document JSON, and rendered
+   example HTML/PDF artifacts for both report variants.
+
+6. tests/
+   Validates document construction and verifies that the clinical and technical variants
+   expose the expected content boundaries.
+
+
+Internal Flow
+-------------
+The reporting package currently works in three conceptual stages.
+
+Stage 1: Validate payload
+  builder.py checks that the expected top-level contract keys exist and that
+  interpretations is a structured object containing both measurements and syndromes.
+
+Stage 2: Normalize into a report document
+  The builder converts upstream interpreted rows into reporting-specific structures:
+
+  - findings table rows
+  - highlighted abnormal rows
+  - impression bullets
+  - alignment summary
+  - grouped level-specific findings
+  - quality notes
+  - general caveats
+  - provenance appendix rows
+  - case header and summary metadata
+
+Stage 3: Render report variants
+  render_html.py turns the normalized document into either:
+
+  - a clinical report with only the user-facing sections
+  - a technical report with appendix, provenance, and raw structured data
+
+  render_pdf.py currently wraps those HTML renderers and returns HTML bytes as a stand-in
+  for a future PDF engine.
+
+
+How Clinical Meaning Enters The Report
+--------------------------------------
+The reporting layer does not define clinical thresholds itself, but it does enrich display
+content using the interpretation threshold catalog:
+
+  services.interpretation.THRESHOLDS
+
+builder.py imports THRESHOLDS to attach reporting-friendly metadata such as:
+
+  - clinical display name
+  - citation
+  - tag
+  - provenance note
+  - modality caveat
+
+This is why the report can show human-readable measurement names and threshold provenance
+without duplicating the threshold logic inside reporting.
+
+
+Clinical Report Variant
+-----------------------
+The clinical HTML variant is intentionally reduced. It is designed to be the radiology-style
+or clinician-facing view.
+
+Included:
+  - case header
+  - summary
+  - findings sections
+  - impression
+  - disclaimers
+
+Excluded:
+  - raw structured data
+  - threshold provenance appendix
+  - explainability appendix
+
+This separation is deliberate so the end-user report stays readable and does not expose
+implementation-heavy internals.
+
+
+Technical Report Variant
+------------------------
+The technical HTML variant is the explainability and auditability view.
+
+Included in addition to the clinical content:
+  - structured findings table
+  - quality and caveat sections
+  - threshold provenance table
+  - raw structured data appendix
+
+This variant is intended for engineering review, traceability, debugging, and model-method
+explanation rather than only end-user readability.
+
+
+How Findings Are Built
+----------------------
+The builder transforms each interpreted measurement row into a reporting table row with:
+
+  - measurement key
+  - clinical display name
+  - level
+  - numeric value
+  - unit
+  - status
+  - severity
+  - abnormal flag
+  - quality flags
+  - caveat
+  - citation
+  - tag
+
+Only rows that are both flagged and not tagged as quality-only are treated as clinically
+reportable rows for the main clinical findings sections.
+
+Rows are grouped by spinal level to generate level-specific narrative findings such as:
+
+  "At C5, ... "
+
+
+How Impression Bullets Are Built
+--------------------------------
+Impression bullets are synthesized from:
+
+  - syndrome advisories
+  - flagged clinical rows
+  - alignment information when present
+
+The builder also removes duplicate bullets while preserving order.
+
+There are currently two impression constructions:
+
+  - a general impression list returned as document["impression"]
+  - a clinical-report-specific impression list embedded in document["clinical_report"]
+
+
+Quality And Caveat Handling
+---------------------------
+Reporting preserves non-diagnostic caution information in two ways.
+
+1. Measurement-level quality notes
+   These come from interpreted rows that carry quality_flags.
+
+2. Component-level error notes
+   These are created when an upstream component in payload["components"] has status == "error".
+
+General caveats are deduplicated from:
+
+  - interpreted measurement caveats
+  - syndrome caveats
+
+This allows reporting to surface uncertainty, modality limits, QC warnings, and advisory-only
+language without mixing them into the main findings narrative.
+
+
+Case Header Construction
+------------------------
+The report header is built from the case section of the input contract. It currently includes:
+
+  - title
+  - exam
+  - technique
+  - case_id
+  - job_id
+  - submitted_at
+  - source filename
+  - patient summary
+
+The patient summary is derived from available demographic context such as:
+
+  - sex
+  - age_years
+  - height_cm
+
+
+Summary Block
+-------------
+The summary section is a compact aggregate over interpreted rows and syndromes. It tracks:
+
+  - total interpreted measurement rows
+  - number of flagged measurements
+  - number of syndromes
+  - counts by status:
+    - within_reference
+    - outside_reference
+    - review_only
+    - not_interpretable
+
+
+Appendix Content
+----------------
+The appendix stores provenance and raw structured outputs needed for technical review.
+
+Current appendix sections:
+
+  - manifest
+  - provenance
+  - raw_data
+
+raw_data contains:
+
+  - components
+  - measurements
+  - flags
+
+This makes the technical report traceable back to the upstream structured payload.
+
+
+Rendering Technology
+--------------------
+The current HTML renderer is implemented directly in Python string-building helpers in
+render_html.py with inline CSS.
+
+Important detail:
+  There is a templates directory in the package, but the current v1 rendering path is
+  code-driven through render_html.py rather than a live Jinja rendering pipeline.
+
+Styling is self-contained inside the renderer via a shared _base_css() helper.
+
+
+Current PDF State
+-----------------
+The package has PDF entry points, but they are still scaffolds.
+
+render_pdf.py currently:
+
+  - renders HTML if needed
+  - encodes the HTML to UTF-8 bytes
+  - returns those bytes as the present PDF placeholder
+
+So the reporting package currently supports:
+
+  normalized document -> HTML
+  normalized document -> HTML bytes for a future PDF backend
+
+It does not yet contain a true PDF rendering dependency such as WeasyPrint, wkhtmltopdf,
+Playwright, or Chromium-based print automation.
+
+
+Examples And Fixtures
+---------------------
+The examples folder is important for handoff because it shows the concrete report shapes
+produced by the package.
+
+Notable artifacts:
+
+  - sample_reporting_contract.json
+  - sample_report_document.json
+  - sample_clinical_report.html
+  - sample_technical_report.html
+  - sample_report.pdf
+  - sample_clinical_report.pdf
+
+generate_example_reports.py rebuilds the sample document JSON and HTML outputs from the
+sample contract.
+
+
+Test Coverage
+-------------
+The reporting package currently has focused tests for:
+
+  - contract validation
+  - normalized document construction
+  - case header formatting
+  - impression generation
+  - quality-caveat propagation
+  - appendix/provenance population
+  - separation between clinical and technical render variants
+
+Relevant test files:
+
+  - services/reporting/tests/test_builder.py
+  - services/reporting/tests/test_render_variants.py
+
+
+Dependencies And Coupling
+-------------------------
+The reporting layer is intentionally coupled to interpretation at the contract boundary and
+the threshold catalog boundary.
+
+It depends on:
+
+  - services.interpretation.REPORTING_HANDOFF_CONTRACT.md for payload shape
+  - services.interpretation.THRESHOLDS for naming and provenance metadata
+
+It should not depend directly on measurement-component internals beyond what is already
+represented in the handoff contract.
+
+
+Current Design Intent
+---------------------
+The package is designed around a stable intermediate document model so that:
+
+  - interpretation can evolve without forcing renderers to know raw internals
+  - new output formats can be added later
+  - clinical and technical variants can diverge in presentation while sharing the same
+    normalized source document
+
+
+Current Limitations
+-------------------
+1. No standalone network API exists in this package today.
+   The reporting layer currently exists as a Python package and renderer set, not as a
+   separate deployed HTTP service endpoint.
+
+2. PDF generation is not a true PDF backend yet.
+   The current PDF functions return HTML bytes only.
+
+3. Rendering is code-built rather than using a more formal templating system at runtime.
+
+4. Reporting inherits the quality of upstream interpretation.
+   If upstream components omit, misclassify, or mark measurements as error, reporting will
+   faithfully surface that state rather than correcting it.
+
+5. The clinical/technical split is present, but future productization may still need:
+   - localization expansion
+   - richer formatting controls
+   - sign-off / audit metadata
+   - real PDF backend integration
+
+
+Bottom Line
+-----------
+The reporting package is the structured presentation layer for the cervical spine MRI
+pipeline. It takes the interpreted handoff contract, builds a stable report document,
+and renders two output views:
+
+  - a clinician-facing radiology-style report
+  - a technical explainability report
+
+Its main strengths are:
+
+  - clean contract boundary
+  - stable normalized document model
+  - separation of clinical vs technical outputs
+  - preservation of caveats, quality notes, and provenance
+
+Its main unfinished area is the final PDF backend, which is currently scaffolded but not
+yet implemented as a true HTML-to-PDF engine.

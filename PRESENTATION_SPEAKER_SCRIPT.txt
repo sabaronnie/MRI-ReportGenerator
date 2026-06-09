@@ -1,0 +1,227 @@
+Presentation Speaker Script
+Deck: animated-healthcare-center.pptx
+
+This version contains the actual content to say for each slide in bullet form. The bullets are written as speaking points, so you can read them almost directly while still sounding natural.
+
+Slide 1 — Automated Cervical Spine Morphometry
+- Today we are presenting our automated cervical spine MRI analysis pipeline.
+- The core idea is simple: we start from a sagittal cervical MRI, extract the important anatomical structures, convert them into clinically meaningful measurements, interpret those measurements, and finally generate a report-ready output.
+- We designed this as a clinical support tool for radiologists, not as a replacement for radiologists.
+- Our team focused on building something that is technically structured, clinically relevant, and honest about its limitations.
+
+Slide 2 — Table of Contents
+- I’ll begin with the clinical problem we are trying to address.
+- Then I’ll show the overall solution and how the pipeline is organized technically.
+- After that, I’ll walk through the architecture stage by stage: segmentation, measurements, interpretation, and reporting.
+- I’ll then discuss validation, including what worked strongly, what was only partial, and what remained weak.
+- Finally, I’ll end with deployment and the clinical credibility we gained through expert review.
+
+Slide 3 — The Problem
+- The problem starts in real clinical workflow.
+- A cervical MRI scan gives valuable image data, but the report still depends on time-consuming human review and repeated manual measurements.
+- That means the bottleneck is not only image acquisition; it is also the downstream interpretation and reporting workflow.
+
+Slide 4 — A patient gets a cervical MRI scan
+- From the patient’s perspective, the scan is only the beginning of the process.
+- The images still need to be reviewed, the anatomy needs to be interpreted, and the important findings need to be extracted into a report.
+- So even after the scan is done, the clinically useful answer is not available immediately.
+
+Slide 5 — They Wait
+- This waiting happens because radiologists still need to perform repeated review and measurement work.
+- Even when the anatomy is visible, turning the scan into a structured and consistent report takes time.
+- In busy workflows, that creates backlogs and slows how quickly results get back to the patient and physician.
+
+Slide 6 — And Wait..
+- At this point, the issue is not just time; it is also uncertainty.
+- The patient is waiting, and the physician is also waiting for a report that is usable for next-step decisions.
+- That makes reporting speed and consistency clinically important, not just operationally convenient.
+
+Slide 7 — And Wait Some More..
+- Delays in this stage can affect decision-making, follow-up, and treatment planning.
+- So the motivation for this project is to reduce repetitive technical workload while keeping the outputs clinically understandable and clinically cautious.
+
+Slide 8 — The Solution
+- Our solution is an automated cervical MRI pipeline that helps structure the reporting process.
+- Instead of leaving the scan as raw image data, the pipeline organizes it into segmentation outputs, measurements, interpreted findings, and a final report.
+- The goal is faster access to structured insights while still keeping the radiologist in the loop.
+
+Slide 9 — Faster Insights. Faster Reports
+- The pipeline is designed to shorten the path from image to report-ready information.
+- It automates measurements that would otherwise need to be repeated manually.
+- It also standardizes the way findings are organized, so the output is more consistent from case to case.
+- In other words, it supports faster reporting, more consistent measurements, and reduced repetitive workload.
+
+Slide 10 — Pipeline
+- The pipeline starts with the MRI scan itself.
+- Then we use open-source segmentation engines to isolate the anatomy we care about.
+- Once the anatomy is segmented, we extract different groups of measurements.
+- Those measurements are then interpreted against medical references and organized into structured findings.
+- Finally, the reporting layer turns those findings into a physician-facing output.
+- We intentionally designed this as a modular system so each stage has a clear responsibility.
+
+Slide 11 — Expected Benefits
+- The first expected benefit is reduced reporting time, because repeated measurements no longer have to be done manually every time.
+- The second is consistency, because the same extraction logic is applied across cases.
+- The third is reduced repetitive workload for radiologists.
+- The fourth is smoother workflow, because the outputs are already structured and easier to review.
+- Most importantly, this is meant to support radiologists, not replace them.
+
+Slide 12 — Pipeline Architecture
+- This section shifts from the clinical motivation into the technical design.
+- I’ll now walk through how the pipeline is organized internally.
+- The key stages are segmentation, measurement, interpretation, and reporting, each with a distinct role.
+
+Slide 13 — 3 segmentation engines, 6 measurement groups, 1 tool
+- At a high level, our system uses three segmentation engines, six measurement groups, and one integrated end-to-end workflow.
+- We use multiple segmentation engines because different anatomical tasks are handled best by different tools.
+- We separate measurements into six groups because not all clinically useful information comes from the same type of anatomy or the same type of computation.
+- Even though there are many internal modules, the goal is still one coherent clinical support tool.
+
+Slide 14 — Segmentation Service
+- The segmentation stage is built around three specialized engines.
+- TotalSpineSeg is the primary broad segmenter, and it gives us vertebrae, discs, and canal-level structure.
+- Spinal Cord Toolbox is used for cord-focused analysis, especially when we care about canal and cord measurements or lesion-related screening.
+- SPINEPS is used more narrowly for Cobb-related endplate geometry, because precise endplate representation matters for alignment measurements.
+- So the main design idea here is: use the right segmentation tool for the right anatomical task instead of forcing one model to do everything.
+
+Slide 15 — Measurement Service: Vertebrae Measurements
+- The first measurement branch focuses on vertebral morphometry.
+- The main vertebral-body measurement technique is a validated-style morphometry pipeline built directly on the segmentation mask.
+- First, the body is isolated in 3D using disc-anchored body isolation so posterior elements do not distort the measurement.
+- Then a canal-visible midline band is used to choose the best sagittal slice, and the code can average across the best slice plus or minus one neighbor for stability.
+- Vertebral heights are measured with a Genant-style 3-point method: anterior height, middle height, and posterior height.
+- AP width is measured with a SHIP-style mid-body AP method, so it is taken from the body itself rather than from a loose bounding box.
+- These measurements also generate the vertebral landmarks and corners used later by downstream components such as slippage calculations.
+- Conceptually, this is the bone-focused part of the measurement service.
+
+Slide 16 — Measurement Service: Disc Measurements
+- The second branch focuses on disc-related structure.
+- Here we measure things like disc height, AP ratio, and additional disc appearance features such as signal and bulge-related information.
+- The core geometric technique here is per-disc midsagittal slice measurement with PCA-based 4-corner and centerline geometry.
+- For each disc, the code finds anterior-superior, anterior-inferior, posterior-superior, and posterior-inferior corners, then computes anterior, middle, and posterior disc heights as well as AP width.
+- Disc Height Index is then derived by dividing disc middle height by the mean middle height of the adjacent vertebral bodies.
+- Bulge is estimated by comparing disc AP width to adjacent vertebral width and by measuring posterior contour excursion relative to a reference line between adjacent posterior vertebral corners.
+- The signal branch then looks inside the disc itself, using raw T2 intensity values to estimate features such as nucleus signal, heterogeneity, and CSF-normalized brightness.
+- So this branch combines PCA-based geometry, derived height ratios, posterior contour comparison, and intensity-based signal analysis.
+- This branch tries to capture both structural disc geometry and features that may relate to degeneration.
+- Later in validation, we found that some disc features were more useful than others, so this branch became a partial rather than a uniformly strong result.
+
+Slide 17 — Measurement Service: Canal / Cord / SAC
+- The third branch is the most important one from a validation standpoint.
+- It measures the canal, the cord, and the space available for the cord, or SAC.
+- The canal measurement uses Spinal Cord Toolbox segmentation followed by slice-by-slice processing.
+- More specifically, SCT measures AP diameter on each slice, and the code reports the narrowest stable value by taking the minimum 3-slice rolling median within each vertebral level.
+- The cord measurement also uses SCT slice-by-slice processing, but it is aligned to the focal slice chosen by the canal branch so that the two measurements are compared at the same anatomical level.
+- SAC is then derived directly as canal AP minus cord AP on the matched slice.
+- So the actual technique here is SCT-based per-slice morphometry plus same-slice subtraction for the derived space-available-for-cord metric.
+- These are highly relevant for stenosis and compression-related patterns because they quantify how much space remains around the spinal cord.
+- This branch ended up being the strongest validated part of the entire pipeline, and it is the main result we emphasize later.
+
+Slide 18 — Measurement Service: Alignment
+- The fourth branch focuses on cervical alignment and Cobb-related geometry.
+- The actual technique here is endplate-line fitting rather than simple corner-to-corner estimation.
+- For the global Cobb angle, the code fits straight lines to the C3 and C7 inferior endplates after canal-cut body isolation, and then measures the angle between those endplate lines.
+- The line fitting uses a Theil-Sen approach, which is more robust than a simple least-squares line when boundaries are irregular.
+- Segmental angles are computed the same way, but between the inferior endplate of the upper vertebra and the superior endplate of the lower vertebra at each adjacent level.
+- So the key alignment technique is robust endplate-line fitting on the segmentation itself.
+- Alignment is clinically meaningful, but it is also sensitive to the quality of endplate representation and the imaging context.
+- In our validation, this branch was method-valid as a measurement branch, but it was not a strong disease discriminator.
+
+Slide 19 — Measurement Service: Screening Features
+- The fifth branch is more screening-oriented than purely geometric.
+- It includes fracture-related screening features based on vertebral shape and compression patterns.
+- It also includes myelomalacia-related screening features based on cord lesion or signal patterns.
+- For fracture-style screening, the code uses a 6-point Genant-style morphometry approach on the vertebral body.
+- That means it measures anterior height, middle height, and posterior height, then turns those into deformity patterns such as wedge, biconcave, or crush-style loss.
+- In the current runtime integration, the vertebral compression screen is mainly driven by the Ha over Hp ratio, which acts as a cervical deformity screen.
+- For myelomalacia-style screening, the pipeline relies on cord-focused lesion or signal analysis rather than plain vertebral geometry.
+- So this branch mixes two very different techniques: 6-point vertebral morphometry for fracture-style screening, and cord lesion or signal-based screening for myelomalacia-style review.
+- The important point is that these are screening outputs meant to highlight suspicious patterns for review, not to make diagnoses independently.
+
+Slide 20 — Interpretation Service
+- After measurements are extracted, the interpretation stage turns them into readable findings.
+- It reviews the measurements, compares them to medical references from the literature, and highlights the patterns that matter most clinically.
+- This stage is what transforms isolated numeric outputs into a meaningful review layer.
+- It also prepares the findings in a structured way so they can flow directly into the report.
+- So this is the point where the system stops being just a measurement pipeline and starts acting like a clinical support pipeline.
+
+Slide 21 — Reporting Service
+- The reporting service is the final presentation layer of the pipeline.
+- Locally, the reporting package takes the post-interpretation contract, normalizes it into a stable report document, and renders human-readable outputs.
+- It combines measurements, impressions, patient context, disclaimers, and quality notes into one final physician-facing structure.
+- The local reporting code already supports both a clinical-style report and a technical or explainability-style report.
+- That means the pipeline is not only producing numbers; it is producing a reportable artifact.
+
+Slide 22 — Validation
+- At this point, the important question becomes: does the system actually work in a clinically meaningful way?
+- For medical AI, technical structure alone is never enough.
+- So the next section focuses on how we validated the measurements and how honestly we interpreted those results.
+
+Slide 23 — Validation Approach
+- Our validation approach was cohort-based rather than anecdotal.
+- We ran the pipeline on healthy and symptomatic cohorts and checked whether different measurements could clearly separate the two populations.
+- We also used statistical testing, including p-values, to test whether the separation was meaningful rather than random.
+- Low p-values gave stronger evidence that the difference between the groups was real.
+- It is also important to say that we did not have unlimited data.
+- That means our validation had to be careful and realistic: we focused on the cohorts we actually had, and we avoided pretending that limited data could support stronger claims than it really could.
+- In other words, the size of the dataset shaped the strength of our conclusions.
+- Most importantly, we did not call everything validated; we only labeled the strongest and most consistent branches as validated.
+
+Slide 24 — Validation Results
+- The vertebral compression screen worked well as a screening tool, so that branch was considered validated in screening terms.
+- The disc branch gave a partial result: the disc ratio reached an AUC of 0.62, so it showed some discriminatory value, but not enough to claim it as a uniformly strong branch.
+- The strongest result came from the canal, cord, and SAC measurements.
+- In that branch, canal measurements showed a difference from 11.7 to 8.6 millimeters with p equal to 0.0001.
+- SAC changed from 4.7 to 2.3 millimeters, again with p equal to 0.0001.
+- Cord measurements changed from 6.3 to 5.5 millimeters with p equal to 0.009.
+- So this is the branch where the separation between healthy and symptomatic cohorts was clearest and statistically strongest.
+- At the same time, we should be honest that these results come from limited cohorts rather than very large clinical populations.
+- So the point of this slide is not to claim that everything is solved, but to show which measurements stayed strong even under that limited-data constraint.
+
+Slide 25 — Validation Results
+- Alignment measurements were much weaker as discriminators.
+- The alignment branch reached an AUC of 0.57 with p equal to 0.32, which means it did not provide convincing separation between the groups.
+- So we present alignment as a useful measurement method, but not as a validated disease discriminator.
+- The myelomalacia screen was more encouraging on the specificity side, with about 91 percent healthy specificity.
+- The interpretation stage is already connected end-to-end, but it has not yet been clinically accuracy-tested as a full downstream decision layer.
+- This slide is important because it shows that we kept the strong results strong, and we kept the weak ones honestly labeled as weak.
+
+Slide 26 — Deployment
+- After validation, the next question is whether the project exists only as an experiment or whether it can support a deployable workflow.
+- We intentionally designed the system as something that can run end-to-end, not just as a notebook demonstration.
+- The next slide explains the deployment view.
+
+Slide 27 — Deployment Architecture
+- The deployment model is a multi-service cloud architecture.
+- In the local repo, that architecture is reflected by separate service areas for the public orchestration entry point, segmentation, measurements, interpretation, and reporting.
+- The public-facing service is the EEP, or external endpoint, which is the entry point for a case submission.
+- Behind it are the internal services, or IEPs, which handle the heavier processing stages such as segmentation and measurement.
+- The deployment folders also mirror this design: there is a Docker area for service images, a Compose area for local multi-service orchestration, and a Kubernetes area for cloud deployment manifests.
+- Containerization matters because each service has different dependencies, and some of them are heavy, especially the segmentation stage.
+- Kubernetes matters because it gives us service separation, orchestration, and scaling, which is important when one part of the system is lightweight and another part depends on GPU-backed deep learning inference.
+- The segmentation side is especially important here because we are not running a single model only.
+- We use parallel specialized segmentation engines: TotalSpineSeg for broad anatomy, Spinal Cord Toolbox for cord-focused analysis, and SPINEPS for endplate-specific alignment work.
+- That means the deployment design needs to support multiple segmentation tools cleanly rather than collapsing them into one fragile environment.
+- Monitoring is also part of the architecture. Locally, the measurement service already exposes health and metrics endpoints, and the intended deployment story includes Prometheus and Grafana for observability.
+- On the cloud side, AWS is the target platform, and Kubernetes on AWS gives the project a path to a real multi-service deployment rather than a demo-only setup.
+- One practical constraint worth mentioning is GPU access.
+- The segmentation stage, especially TotalSpineSeg, benefits strongly from GPU-backed inference, and that means deployment planning includes GPU-capable instances and the operational overhead that comes with them.
+- So the overall message here is that the project was designed as a deployable system architecture, not only as local research code.
+
+Slide 28 — Dr. Imad Nahle
+- This slide is one of our strongest credibility slides.
+- Beyond the technical pipeline and the cohort-based validation, we also had direct clinical review from Dr. Imad Nahle.
+- Dr. Nahle reviewed the generated reports, the extracted measurements, and whether the outputs made clinical sense overall.
+- His background gives that review real weight: adult and pediatric spine and scoliosis surgery, professor of orthopedic surgery, and affiliation with the American University of Beirut Medical Center.
+- What makes this especially valuable is that he did not only review results after the fact.
+- He also told us personally what kinds of outputs would actually be useful in his day-to-day practice.
+- That helped us shape the project around practical clinical usefulness instead of only around what engineers think is interesting.
+- So this slide is really about clinical credibility, real-world relevance, and the fact that the project was informed by expert use-case feedback.
+
+Slide 29 — Thank You
+- To close, this project delivers an end-to-end cervical MRI analysis workflow that starts with a sagittal MRI and ends with a report-ready output.
+- It combines specialized open-source segmentation, structured measurement extraction, interpretation, and reporting.
+- The strongest validated result was the canal, cord, and SAC branch.
+- We also stayed honest about partial and weak branches rather than overstating them.
+- Finally, the system gained extra credibility through direct clinical review and guidance from Dr. Imad Nahle.
+- Thank you, and I’d be happy to take questions about the architecture, validation, or clinical workflow relevance.

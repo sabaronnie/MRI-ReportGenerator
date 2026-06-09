@@ -1,5 +1,4 @@
 # LaTeX build artifacts (compiled by Overleaf / tectonic)
-*.pdf
 *.aux
 *.log
 *.out

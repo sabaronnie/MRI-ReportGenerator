@@ -1,0 +1,119 @@
+Hi,
+
+I am continuing the presentation and need your help collecting the technical content for the remaining architecture slides. Please send me the information below in whatever format is easiest for you (bullet points are totally fine). I mainly need enough detail to build clear slides for the architecture, deployment, and validation sections.
+
+Important:
+- I am not asking for polished slide text yet.
+- I just need the technical facts, decisions, and any numbers/results you want included.
+- If something is still undecided, please mark it clearly as "planned", "proposed", or "open question".
+
+What I need from you
+
+1. Segmentation architecture
+- What is the segmentation pipeline, step by step?
+- What is the exact input to this stage?
+- What is the exact output from this stage?
+- Which models/tools are used?
+- Why were these chosen over alternatives?
+- If alternatives were considered, please mention them and why they were not selected.
+- Any important preprocessing steps?
+- Any postprocessing or QC steps?
+- Any key limitations or caveats that should be mentioned on the slide?
+
+2. Measurement architecture
+- What measurements are extracted?
+- Please group them in a clean way if possible, for example:
+  geometric measurements
+  cord/canal measurements
+  signal-based measurements
+  derived measurements
+- For each group, I need:
+  what the inputs are
+  what the outputs are
+  how the measurement is computed at a high level
+  whether it is core or experimental
+- If there are dependencies between measurements, please explain them simply.
+- If there are any especially important formulas, rules, or derived metrics, please include them.
+
+3. Interpretation architecture
+- How do raw measurements become findings/flags?
+- What thresholding or rule-based logic is used?
+- Are there severity bands, syndrome indicators, or structured interpretation outputs?
+- Which parts are finalized and which parts are still provisional?
+- What are the main clinical caveats or honesty statements that must be included?
+
+4. Reporting architecture
+- What is the reporting stage expected to produce?
+- What is the input contract into reporting?
+- What are the output formats?
+- What sections are included in the final report?
+- Is there both a clinical-facing and a technical/explainability-facing output?
+- Any screenshots, examples, or report structure details that should appear in the presentation?
+
+5. Deployment architecture
+- What is the intended service architecture?
+- What are the external and internal services?
+- Is reporting a separate service or still part of the main orchestrator?
+- What cloud provider / deployment target is planned?
+- What containerization/orchestration approach is planned?
+- What observability/monitoring pieces are included?
+- Any open deployment questions I should mention honestly?
+
+6. Validation done / validation story
+- Please separate clearly:
+  what has already been validated
+  what is planned but not yet executed
+- For anything already validated, send:
+  what was validated
+  on what data
+  using which metric
+  what the result was
+- For planned validation, send:
+  dataset/source
+  metric
+  acceptance target
+  current status
+- If there are no completed results yet, that is okay. I just need that stated clearly so I do not overclaim in the slides.
+
+7. Numbers I may need on slides
+- Dataset size
+- Number of annotated cases
+- Number of stages/services
+- Number of validation cases planned
+- Any performance or accuracy numbers you definitely want shown
+- Any metrics that should NOT be shown yet
+
+8. Presentation guidance
+- What are the 3-5 most important messages you want the audience to remember?
+- Which parts should sound confident because they are decided?
+- Which parts should be framed as proposed / under review / future work?
+- Any wording I should avoid?
+
+9. Nice-to-have attachments
+- Any diagrams
+- Any architecture sketch
+- Any screenshot of the pipeline/report
+- Any table of measurements
+- Any validation figure or summary table
+
+If it helps, you can reply using this structure:
+
+- Segmentation:
+- Measurements:
+- Interpretation:
+- Reporting:
+- Deployment:
+- Validation completed:
+- Validation planned:
+- Key numbers:
+- Caveats / open questions:
+
+Once you send this, I can turn it into slide-ready content.
+
+
+Multi-service cloud architecture
+Containerized deployment on AWS with Kubernetes
+Parallel segmentation engines for specialized tasks
+Independent services for each pipeline stage
+Grafana monitoring
+End-to-end runnable pipeline
