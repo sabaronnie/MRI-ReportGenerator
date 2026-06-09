@@ -6,7 +6,9 @@ Cervical spine MRI analysis pipeline — sagittal T2 MRI (DICOM/NIfTI) in, struc
 
 ## Andrew Khoury, Ronnie Saba, Mohammad Sharafeddine
 
----
+## Validated by Dr. Imad Nahle (AUBMC, Adult and Pediatric Orthopedic Surgeon)
+### Specifically, we identified and implemented the measurement extraction and findings generation modules that he considered most valuable for cervical MRI interpretation. After development, the generated reports were reviewed by the radiologist and his team. Their feedback confirmed that the extracted measurements were clinically meaningful, the reported findings were appropriately structured, and the overall report format was consistent with established radiological reporting workflows. This expert validation provided additional confidence that the system produces outputs that are relevant and useful in a clinical setting.
+--
 
 ## How it works
 
