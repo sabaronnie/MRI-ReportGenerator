@@ -28,10 +28,8 @@
 \noindent\textbf{Scope.} This document argues, with evidence, that the MRI-ReportGenerator pipeline
 carries genuine technical and AI depth and is \emph{not} a thin wrapper over pretrained models. It is
 written for a skeptical technical reader. Every clinical claim is cited; every engineering claim is
-backed by committed code, validation results, and the development journal. Companion evidence:
-\texttt{DEVELOPMENT\_JOURNEY.md} (J1--J26), \texttt{docs/validation/group-status-2026-06-08.md}
-(per-group verdict), \texttt{docs/validation/results-final-2026-06-08.md} (consolidated numbers +
-figures), and the companion \texttt{paper/}.
+backed by committed code, validation results, and the development journal. Companion evidence includes
+the final validation verdicts, the consolidated quantitative results, and the full paper manuscript.
 
 \medskip
 \noindent\textbf{Medical framing (hard rule).} The system produces measurements and \emph{findings
@@ -81,12 +79,12 @@ a novel deep-learning architecture. The segmenters are pretrained and \textbf{fr
   peer-reviewed, open-source segmentation stacks. Re-implementing inferior versions would be worse
   engineering, not better.
   \item \textbf{The value lives in the layer they do not provide.} None of these tools outputs a
-  cervical radiology report, threshold-based interpretation, or validated cervical \emph{measurements}.
+  cervical radiology report, threshold-based assessement, or validated cervical \emph{measurements}.
   That layer --- the clinically actionable output --- is entirely ours, and is where the difficulty is.
 \end{itemize}
 
 The correct mental model is \textbf{not} ``wrapper around a model'' but ``a
-measurement-and-interpretation system that \emph{uses} segmentation as one input, the way a radiology
+measurement-and-assessement system that \emph{uses} segmentation as one input, the way a radiology
 workstation uses a DICOM loader.''
 
 % ---------------------------------------------------------------------
@@ -108,7 +106,7 @@ Measurements IEP   -- G1 vertebral morphometry (Ha/Hp, AP width, tilt)
                    -- G5 fracture screen + myelomalacia screen
    |
    v
-Interpretation     -- G6 threshold catalog -> status per finding (cited thresholds)
+Assessement       -- G6 threshold catalog -> status per finding (cited thresholds)
    |
    v
 Reporting IEP      -- structured, radiologist-style report ("flagged for physician review")
@@ -315,7 +313,7 @@ project's positioning):
   cannot have memorized our evaluation cohort.
   \item \textbf{Graceful degradation.} Per-component error contracts mean one failed measurement does
   not sink the report; a missing SPINEPS mask degrades the Cobb method, it does not crash the pipeline.
-  \item \textbf{The differentiator is the clinical layer.} Measurement validity, cited interpretation,
+  \item \textbf{The differentiator is the clinical layer.} Measurement validity, cited assessement,
   and the report --- the parts that decide whether a radiologist would trust the output --- are exactly
   the parts we built and validated.
 \end{itemize}
