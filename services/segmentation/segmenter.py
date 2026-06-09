@@ -71,10 +71,16 @@ def run_totalspineseg(
     levels = _expect_one_nifti(out_dir / "step1_levels", "step1_levels")
     iso_input = None
     if iso:
-        iso_dir = out_dir / "input_iso"
-        if iso_dir.is_dir():
-            iso_files = sorted(iso_dir.glob("*.nii.gz"))
-            iso_input = iso_files[0] if iso_files else None
+        # TotalSpineSeg --iso writes the 1mm-isotropic-resampled input the masks live in to
+        # <out_dir>/input/ (e.g. in_0000.nii.gz); <out_dir>/input_raw/ is the original. SCT needs the
+        # ISO-resampled volume (same geometry as step2_output), so read it from input/.
+        for sub in ("input", "input_iso"):
+            iso_dir = out_dir / sub
+            if iso_dir.is_dir():
+                iso_files = sorted(iso_dir.glob("*.nii.gz"))
+                if iso_files:
+                    iso_input = iso_files[0]
+                    break
 
     labels_present = _check_cervical_labels(step2)
 
