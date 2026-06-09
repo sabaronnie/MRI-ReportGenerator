@@ -63,7 +63,7 @@ The runbook covers two paths:
 |-------|---------|
 | G3 canal / SAC / cord | ✅ strong (p=0.0001) |
 | G2 disc | ⚠️ partial — disc/VB AP ratio AUC 0.62; signal & bulge are documented negatives |
-| G4 alignment (Cobb) | ❌ not a discriminator (validated measurement, not a screen; d=0.28, p=0.32) |
+| G4 alignment (Cobb) | ✅ measurement validated (method-valid; not a disease discriminator — d=0.28, p=0.32 — reported as reference value) |
 | G1 Ha/Hp + G5.1 myelomalacia | ✅ healthy-validated screens (compression-fracture arm untested — no dataset) |
 | G6 assessment | wired end-to-end |
 
