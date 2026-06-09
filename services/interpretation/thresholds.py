@@ -183,6 +183,26 @@ _DHI_CAVEAT = (
     "absolute disc height <3 mm instead. Review-only."
 )
 
+# Disc / VB AP-width ratio (disc_vb_ap_ratio). G2's discriminating metric (lesion vs
+# non-lesion AUC 0.62, p=0.0018, level-controlled, within-MMCSD; J23). NO published cervical
+# disc-AP/VB-AP-width ratio norm exists (search NEGATIVE, memory disc_vb_ap_ratio_norm), so the
+# >=1.10 cut is COHORT-DERIVED from the MMCSD/healthy distribution -- the same approach as the
+# Ha/Hp cohort z-screen, NOT a literature cutoff. The mechanism IS literature-grounded: cervical
+# disc AP diameter widens with age/degeneration (Machino 2021, PMID 34098133, n=1211 MRI).
+_DISC_VB_RATIO_CUT = 1.10
+_DISC_VB_RATIO_CITATION = (
+    "Cohort-derived cut (no published cervical disc-AP/VB-AP-width ratio norm exists -- "
+    "search NEGATIVE). Mechanism literature-grounded: disc AP diameter increases with "
+    "degeneration (Machino 2021, PMID 34098133, n=1211 cervical MRI). Bulge-beyond-margin "
+    "concept = Fardon v2.0 2014 (Spine J 14(11):2525-2545, doi:10.1016/j.spinee.2014.04.022; "
+    "lumbar borrow)."
+)
+_DISC_VB_RATIO_CAVEAT = (
+    "Cohort-calibrated (MMCSD), NOT a literature threshold; discriminates only modestly "
+    "(AUC 0.62, level-controlled) and has no per-case ground truth. Finding for physician "
+    "review; clinical correlation required."
+)
+
 
 # Canal / cord / stenosis.
 # dural_sac_AP_min: SOFT-TISSUE dural sac (SCT), not osseous canal. Bands are a provisional
@@ -339,6 +359,22 @@ THRESHOLDS: dict[str, ThresholdSpec] = {
         provenance_note=(
             "Replaces in-code >=2 mm / ratio>=1.10 flag; >1 mm is non-specific (review, not outside); "
             "1.35 mm cord-risk band REMOVED (unverified/confabulated, A.6)."
+        ),
+    ),
+    "disc_vb_ap_ratio": ThresholdSpec(
+        key="disc_vb_ap_ratio",
+        clinical_name="disc AP width / adjacent vertebral-body AP width ratio",
+        unit="ratio",
+        tag="derived",
+        bands=(
+            Band("within_cohort", None, _DISC_VB_RATIO_CUT, "within"),
+            Band("disc_spread_review", _DISC_VB_RATIO_CUT, None, "review"),
+        ),
+        citation=_DISC_VB_RATIO_CITATION,
+        modality_caveat=_DISC_VB_RATIO_CAVEAT,
+        provenance_note=(
+            "Cohort-derived >=1.10 cut (no published cervical disc/VB-AP-ratio norm; mechanism "
+            "Machino 2021). G2's discriminating metric (AUC 0.62, J23); review-only, no per-case GT."
         ),
     ),
     "pfirrmann_grade": ThresholdSpec(

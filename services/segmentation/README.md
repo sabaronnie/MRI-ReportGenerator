@@ -1,9 +1,12 @@
 # Segmentation Services
 
-This folder now contains two segmentation-stage services:
+This folder now contains **three** segmentation-stage services (three engines):
 
-- `services.segmentation.app` — input handling + TotalSpineSeg
-- `services.segmentation.sct_app` — SCT canal + cord segmentation on top of the TotalSpineSeg zip
+- `services.segmentation.app` — input handling + TotalSpineSeg (vertebrae / discs / canal labelmap), port 8080
+- `services.segmentation.sct_app` — SCT canal + cord segmentation on top of the TotalSpineSeg zip, **plus SCIseg lesion (Group 5.1, non-fatal)**, port 8082
+- `services.segmentation.spineps_app` — SPINEPS per-vertebra instances + endplate voxel sheets (the Group 4 endplate-voxel Cobb input), port 8081. **Separate image** — SPINEPS hard-pins `numpy==2.0.2`, incompatible with the TSS/nnU-Net ABI
+
+Dependency order at deploy time: TSS ∥ SPINEPS run on the raw T2 in parallel; SCT is staged **after** TSS (it consumes TSS's `input_iso.nii.gz`).
 
 ## Install
 
@@ -52,6 +55,7 @@ Outputs land under `/tmp/sctwork/`:
 ```bash
 flask --app services.segmentation.app run --host 0.0.0.0 --port 8080
 flask --app services.segmentation.sct_app run --host 0.0.0.0 --port 8082
+flask --app services.segmentation.spineps_app run --host 0.0.0.0 --port 8081  # separate image (numpy 2.0.2 pin)
 ```
 
 ### Endpoints
@@ -76,11 +80,17 @@ curl -X POST -F "file=@out.zip" http://localhost:8082/segment-sct -o out_sct.zip
 pytest services/segmentation/tests
 ```
 
-The suite uses synthetic NIfTI (no patient data) and validates only the input-handling logic. End-to-end TotalSpineSeg verification must be done locally on a real case (CLAUDE.md medical-AI rule #5).
+The suite uses synthetic NIfTI (no patient data) and validates only the input-handling logic. End-to-end TotalSpineSeg verification must be done locally on a real case (medical-AI rule: prove on one case before scaling; see root README).
 
 ## License notes
 
 - TotalSpineSeg — LGPLv3 (dynamic CLI invocation; do not statically embed)
+- Spinal Cord Toolbox (SCT) — LGPLv3 (CLI invocation)
+- SCIseg / `sct_deepseg` lesion model (G5.1) — ships within SCT (LGPLv3); cite Naga Karthik 2024 (PMC11065035)
+- SPINEPS — Apache 2.0
+- TPTBox (pulled in by SPINEPS, incl. the `spinestats` subpackage) — **Apache-2.0, verified 2026-06-09**
+  (root LICENSE + repo; `spinestats` has no separate license). **NOT AGPL → not a blocker** for shipping
+  the SPINEPS image publicly.
 - nnU-Net v2 — Apache 2.0
 - dcm2niix — MIT
 - nibabel — BSD

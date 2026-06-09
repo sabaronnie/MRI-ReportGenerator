@@ -1,5 +1,10 @@
 # Validation Run 1 — threshold-crossing on real healthy + unhealthy MRI (2026-06-07)
 
+> **⚠️ SUPERSEDED — earliest snapshot (n=12 vs 10).** The G4 "directional" alignment lead was later
+> revised to **NOT a discriminator** (balanced 26 H vs 41 U: d=0.28, AUC 0.57, p=0.32; J26) and the G2
+> disc result was re-evaluated to **partial** (disc/VB AP ratio AUC 0.62; signal/bulge negative; J23).
+> See **`results-final-2026-06-08.md`** for the current, reproduced-from-code verdicts.
+
 First end-to-end validation on real cervical MRI: **12 healthy** (Spine-Generic) vs **10 symptomatic**
 (MMCSD cervical spondylosis: 5 CSM + 5 CSR). Segmentation: TotalSpineSeg (G1/G4) + Spinal Cord Toolbox
 (G3), Colab A100. Measurements run locally with our methods. Design = **threshold-crossing**

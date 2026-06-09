@@ -29,9 +29,9 @@
 carries genuine technical and AI depth and is \emph{not} a thin wrapper over pretrained models. It is
 written for a skeptical technical reader. Every clinical claim is cited; every engineering claim is
 backed by committed code, validation results, and the development journal. Companion evidence:
-\texttt{DEVELOPMENT\_JOURNEY.md} (J1--J23), \texttt{docs/validation/group-status-2026-06-08.md}
-(per-group verdict), \texttt{docs/validation/results-full-2026-06-08.md} (numbers + figures), and the
-companion \texttt{paper/}.
+\texttt{DEVELOPMENT\_JOURNEY.md} (J1--J26), \texttt{docs/validation/group-status-2026-06-08.md}
+(per-group verdict), \texttt{docs/validation/results-final-2026-06-08.md} (consolidated numbers +
+figures), and the companion \texttt{paper/}.
 
 \medskip
 \noindent\textbf{Medical framing (hard rule).} The system produces measurements and \emph{findings
@@ -291,8 +291,9 @@ a clinical requirement.
 \midrule
 G3 canal / SAC / cord (SCT) & canal AP $11.7\!\to\!8.6$\,mm \textbf{p=0.0001}; SAC $4.7\!\to\!2.3$\,mm
 \textbf{p=0.0001}; cord $6.3\!\to\!5.5$\,mm p=0.009 & \textbf{Validated (strong)} \\
-G4 C3--C7 Cobb (SPINEPS) & Correct lordosis $+15.2^\circ$ ($=$ literature $15.4^\circ$); discrimination
-underpowered ($d=0.91$, awaiting larger $n$) & Method-validated \\
+G4 C3--C7 Cobb (SPINEPS) & Correct lordosis on well-positioned controls ($+15$--$20^\circ$ $=$
+literature); discrimination dissolves on a balanced cohort (26 H vs 41 U: $d=0.28$, AUC 0.57, $p=0.32$) &
+Method-valid, NOT a discriminator \\
 G1 Ha/Hp compression screen & 0\% false-flag on healthy; correctly null on (non-compressive)
 spondylosis, confirmed $n=49$ & Validated as a screen \\
 G2 disc & Signal/bulge documented negatives; disc/VB AP ratio discriminates (AUC 0.62, level-controlled)

@@ -1,13 +1,20 @@
 # Rubric Tracker — what's done, what's left
 
-> Living checklist mapping the EECE503N rubric to our actual state. Updated 2026-06-08 (Andrew, infra chat).
-> Legend: ✅ done · 🟡 partial · 🔴 not started · 🧭 needs a team decision
-> Owner tags: `[infra]` this chat (EEP/frontend/deploy/CI/monitoring) · `[science]` measurement-validation chat · `[report]` Ronnie/reporting · `[team]`
+> Living checklist mapping the EECE503N rubric to our actual state. Updated 2026-06-09 (Andrew; science
+> rows finalized). Legend: ✅ done · 🟡 partial · 🔴 not started · 🧭 needs a decision
+> Owner tags: `[infra]` EEP/frontend/deploy/CI/monitoring · `[science]` measurement-validation · `[report]` reporting
+>
+> **Science track is COMPLETE (2026-06-09):** deliverables T1/P2/P4/C1-P3 written (`overleaf/deliverables/`,
+> compile with tectonic) + the paper (`overleaf/paper/`). Final per-group verdicts (reproduced from committed
+> code, `docs/validation/results-final-2026-06-08.md`): **G3 canal/SAC/cord ✅ strong (p=0.0001)** · **G2 disc
+> ⚠️ partial** (disc/VB AP ratio AUC 0.62; signal/bulge negative) · **G4 alignment ❌ NOT a discriminator**
+> (validated *measurement*, not a screen; balanced d=0.28, p=0.32) · **G1/G5.1 ✅ healthy-validated screens**
+> · **G6 🟢 wired end-to-end**. Frontend + infra code are the remaining open tracks.
 
 ## ⚠️ Top risks (read first)
 1. ~~**GT3 / T3 / T4 — second IEP + real EEP orchestration.**~~ ✅ **RESOLVED 2026-06-08.** Wrapped the existing `services/reporting/` builder/renderers in a Flask IEP (`/render`), wired the EEP to orchestrate **measurements → reporting**, and DEPLOYED it. Live EEP `/readyz` shows `measurements_ready:true` AND `reporting_ready:true`; `GET /cases/{id}/report.html` renders a clinical report via the reporting IEP. EEP now orchestrates TWO independent IEPs. GT3/T3/T4 met.
 2. **MLOps (§7 / M1–M2) is the weakest fit — needs a framing decision.** We don't *train* a model (TotalSpineSeg/SCT are pretrained; interpretation is threshold-based). To satisfy "automated pipeline covering eval + promotion decision + experiment tracking + thresholds," frame it as an **automated validation pipeline**: run the pipeline on the golden cohort → log metrics to **MLflow** → gate "promotion" (merge to main / threshold-table version bump) on metric thresholds. This is defensible but must be decided + built. 🧭 `[team]+[infra]+[science]`
-3. **Competitive grading + a duplicate title.** Team 14 also submitted "Automated Cervical Spine MRI Analysis." Originality (C1) and AI-justification (P3) are scored relative to cohort → sharpen the novelty claim (healthy-anchored geometric detectors, frozen contracts, threshold-crossing validation, the React clinical UI). 🧭 `[team]`
+3. ~~**Competitive grading + a duplicate title.**~~ ✅ **ADDRESSED 2026-06-09.** Team 14 also submitted "Automated Cervical Spine MRI Analysis." The novelty + AI-justification is now written up standalone (`overleaf/deliverables/C1_P3_novelty.tex`): healthy-anchored disease-agnostic detectors, no-per-case-GT validation methodology, the physical-dimension scanner-immunity insight, honest negatives, and a cited review-only interpretation layer. Argument stands on its own; a point-by-point head-to-head can be appended if Team 14's scope is shared. `[science]`
 
 ---
 
@@ -25,7 +32,7 @@
 ## T — AI Technical Complexity & Execution (30%)
 | # | Item | Status | Next |
 |---|------|--------|------|
-| T1 | AI depth / non-triviality | 🟡→✅ | Pipeline is genuinely non-trivial (TotalSpineSeg + SCT cord/canal + geometric morphometry + group5 fracture/myelomalacia + threshold interpretation). Just needs to be *written up*. `[science]` |
+| T1 | AI depth / non-triviality | ✅ | **Written up: `overleaf/deliverables/T1_ai_depth.tex`** (+ `docs/ai-depth.md` mirror) — multi-model segmentation composition, the geometric measurement algorithms (endplate-line fit, canal-cut, SPINEPS Cobb), and the validation methodology, with a bug-ledger of clinically-wrong naïve outputs we caught + fixed. `[science]` |
 | T2 | IEP 1 independence & value (measurements) | ✅ | Real Flask IEP, 10 components, frozen contract, graceful per-component errors (verified). |
 | T3 | IEP 2 independence & value | ✅ | reporting IEP (Flask `/render`) — independent service, turns the interpretation handoff into a clinical report. Deployed on EKS. |
 | T4 | EEP orchestration logic | 🟡→✅ | EEP now calls TWO IEPs (measurements on upload + reporting for `/report.html`), with fixture/error fallbacks. Could add parallel/conditional for extra credit. |
@@ -44,25 +51,25 @@
 ## P — Application / Research Positioning (10%)
 | # | Item | Status | Next |
 |---|------|--------|------|
-| P1 | Problem / question clarity | 🟡 | Write the operational problem + decision augmented. `[team]` |
-| P2 | Baseline / benchmark rigor | 🟡 | Non-AI baseline = manual radiologist measurement; quantify (time, inter-observer variability). `[science]` |
-| P3 | AI justification / contribution | 🟡 | Sharpen vs the duplicate-title team. `[team]` |
-| P4 | Value or publishability | 🟡 | Application value; `feat/paper/draft` exists as upside. `[team]` |
+| P1 | Problem / question clarity | ✅ | `docs/positioning.md` — operational problem (radiologist shortage/wait-times) + the decision augmented (auto measurement table + threshold-screen flags). `[science]` |
+| P2 | Baseline / benchmark rigor | ✅ | `overleaf/deliverables/P2_baseline.tex` + `docs/positioning.md` — manual baseline quantified, PMID-verified: read time 2.7–3.8 min (Forsberg 2017) + 5–10 min geometry (Zhu 2024); inter-observer Pfirrmann κ 0.265, cord AP ICC 0.66 axial, compression 0.35–0.56, Cobb mixed-reader ~0.55. `[science]` |
+| P3 | AI justification / contribution | ✅ | `overleaf/deliverables/C1_P3_novelty.tex` — disease-agnostic healthy-anchored detectors + no-per-case-GT validation + scanner-immunity insight + honest negatives. `[science]` |
+| P4 | Value or publishability | ✅ | `overleaf/deliverables/P4_publishability.tex` + the paper (`overleaf/paper/`). Application value; methodology = publishable upside. `[science]` |
 
 ## D — Presentation / Demo / Wow (20%) — mostly demo-day
 | # | Item | Status | Next |
 |---|------|--------|------|
 | D1 | Demo completeness | 🟡 | Needs deployed system. |
 | D2 | Technical clarity | 🔴 | Slides/docs. |
-| D3 | Evidence shown | 🟡 | Validation run1 results exist (`feat/validation/run1-results`). |
+| D3 | Evidence shown | ✅ | Final consolidated validation (`docs/validation/results-final-2026-06-08.md`) + figures + `DEVELOPMENT_JOURNEY.md` (J1–J26). `[science]` |
 | D4 | Q&A & delivery | 🔴 | Prep. |
 | D5 | Visual polish / wow | ✅ | The React clinical UI is a genuine differentiator. Keep. `[infra]` |
 
 ## C — Creativity & Innovation (5%)
 | # | Item | Status | Next |
 |---|------|--------|------|
-| C1 | Originality | 🟡 | See risk #3 (duplicate title). `[team]` |
-| C2 | Insightful design choices | 🟡→✅ | Mock-first contract-driven UI, healthy-anchored detectors, threshold-crossing validation — write these up. |
+| C1 | Originality | ✅ | Risk #3 addressed — `overleaf/deliverables/C1_P3_novelty.tex`. `[science]` |
+| C2 | Insightful design choices | ✅ | Mock-first contract-driven UI, healthy-anchored detectors, threshold-crossing validation — written up (T1 + C1/P3 + paper). |
 
 ## Q — Quality Assurance (5%)
 | # | Item | Status | Next |
@@ -94,14 +101,14 @@ Q2 (golden + gate) · M1+M2 (MLOps validate + MLflow) · M3 (Prometheus+Grafana)
 T5 (tradeoffs) · T2/T3/T4 (EEP + 2 IEPs orchestrated) · CI (GitHub Actions) · G2 (PRs #2, #3 open).
 
 ### Andrew must provide / decide
-- 🧭 **Merge the PRs** (#2 backend/infra, #3 frontend) — main is protected, needs a teammate review/approve.
-- 🧭 **Novelty/positioning** sharpening vs the duplicate-title team (C1/P3) — team.
-- 🧭 **Business/positioning one-pager** (P1–P4) — problem, decision augmented, non-AI baseline, who deploys.
+- 🧭 **Final merges to main** — Andrew is handling the final stage solo; science + docs reconciled to main
+  via the `integration/finalize-main` work (2026-06-09). Frontend + infra branches still to fold in.
 - After the demo: `deployment/aws/teardown.sh` to stop the cluster cost.
 
-### `[science]` / `[report]` (other chats)
-- Write-ups: AI depth (T1), baseline rigor (P2), publishability angle (P4).
-- Deeper clinical validation (distribution separation) feeds the threshold table the MLOps gate guards.
+### `[science]` — COMPLETE (2026-06-09)
+- ✅ Write-ups: AI depth (T1), baseline rigor (P2), publishability (P4), novelty (C1/P3) — all in `overleaf/`.
+- ✅ Validation finalized (`results-final-2026-06-08.md`): G3 strong, G2 partial, G4 not-a-discriminator,
+  G1/G5.1 screens, G6 wired. Distribution-separation results feed the threshold table the MLOps gate guards.
 
 ### Optional polish (not blocking)
 - S3: add explicit httpx retries (timeouts + fixture fallback already in).

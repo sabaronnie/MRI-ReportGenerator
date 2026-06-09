@@ -1,13 +1,13 @@
 # Positioning — Application (rubric §3.1, P1–P4, GT5)
 
-Positioning: **Application** (per `CLAUDE.md`). This is the product/business framing; the deeper
+Positioning: **Application** (project decision). This is the product/business framing; the deeper
 methods/validation write-ups (T1 AI depth, detailed clinical validation, publishability) live in the
 science-track docs and are referenced here.
 
-> **Sources note (medical hard rule):** the figures below come from a literature/web scan and are
-> attributed to the named organization/journal + year. Treat them as directional for positioning;
-> the science track should confirm primary sources before final submission. Items the scan itself
-> hedged are marked *(approx.)*.
+> **Sources note (medical hard rule):** the **clinical inter-observer / measurement-time figures (P2)
+> are PMID-verified** (Crossref/PubMed, 2026-06-09 — see Sources + `manual_baseline_cost`). The
+> **workforce / wait-time figures** come from a literature/web scan and are attributed to the named
+> organization/journal + year — treat those as directional for positioning.
 
 ## The operational problem (P1)
 Demand for imaging is outrunning the people who read it, and patients pay for it in delay:
@@ -39,12 +39,17 @@ ones that need a careful look.
 
 ## Non-AI baseline + why it's insufficient (P2 — the required explicit baseline)
 - **Baseline:** manual radiologist measurement (current standard of care).
-- **Why insufficient — it's not reproducible:** manual cervical/spinal measurement shows substantial
-  **inter-observer variability** — e.g. qualitative stenosis grading at **κ ≈ 0.26** (lumbar, *Spine*);
-  quantitative cervical-myelopathy metrics at interobserver **ICC ≈ 0.75–0.86**; T2 cord-signal grading
-  **κ ≈ 0.74**; AP cord diameter **ICC ≈ 0.82 (sagittal)** — and **structured/automated measurement
-  measurably reduces disagreement** (e.g. neural-foraminal-stenosis disagreement **46%→35%**, facet OA
-  **45%→22%** with structured reporting). *(Some cervical ICC/κ values approx.; science track to confirm.)*
+- **Why insufficient — it's slow:** a cervical-MRI read is ≈ **2.7 min median / 3.8 min mean** of PACS
+  interaction (Forsberg 2017, PMID 27714473), plus a self-reported **5–10 min/case** of manual geometry
+  (Zhu 2024, PMID 38269650). No formal time-motion study isolates the geometry step — itself a gap.
+- **Why insufficient — it's not reproducible:** inter-observer agreement collapses for exactly the
+  structures we automate (human-reader, cervical MRI unless noted):
+  cervical **disc-degeneration grading** (original Pfirrmann) **κ ≈ 0.265** (Urbanschitz 2021,
+  PMID 34966859) — the grading axis, *not* lumbar stenosis; **cord AP diameter** ICC **0.82 midsagittal /
+  0.66 axial** (Grochmal 2018, PMID 29913296); **cord-compression** metrics ICC **0.35–0.56** (Fehlings
+  2006, PMID 16816769); **Cobb angle** ≈ **0.88** single trained reader vs **≈ 0.55** mixed readers
+  (Sevin 2025, PMID 41011045). Structured/automated measurement measurably reduces disagreement
+  (structured-reporting literature; CAR study in Sources). A pipeline computes the same geometry every time.
 - **And it doesn't scale:** see the shortage + wait-time figures above — there simply aren't enough
   reader-hours, and the hours that exist are spent partly on geometry a deterministic pipeline computes
   identically every time.
@@ -71,8 +76,11 @@ saved on geometry + consistency across readers, with a clear physician-in-the-lo
 ## Value / publishability (P4)
 - **Application value:** reproducible measurements + triage flags → less reader time on geometry, more
   consistent reports, faster turnaround on clearly-normal cases; fully auditable (every flag cited).
-- **Research upside:** the validation work (healthy-anchored norms, threshold-crossing analysis; see
-  the science-track docs + `feat/paper/draft`) is a benchmark/paper-draft angle. The project stays
+- **Research upside:** the validation work (healthy-anchored norms, threshold-crossing analysis) is
+  written up as a full paper (`overleaf/paper/`) with standalone rubric deliverables (`overleaf/
+  deliverables/` — T1 AI-depth, P2 baseline, P4 publishability, C1/P3 novelty). The methodological
+  contribution — a no-per-case-ground-truth validation design + the honest negatives (G4 alignment is
+  not a discriminator; disc signal/bulge are dead) — is the publishable angle. The project stays
   **Application**; publishability is upside, not the bar.
 
 ## Honesty / scope guardrails
@@ -80,9 +88,13 @@ saved on geometry + consistency across readers, with a clear physician-in-the-lo
 - Demo measurements are real pipeline output but **pre-validation**; clinical correlation required.
   Full clinical-validation status: science-track docs + `docs/validation*`.
 
-## Sources (attributions — verify primaries before submission)
-AAMC physician-workforce projections (2024) · HRSA Workforce Analysis (2025) · US BLS Occupational
-Outlook (radiologists) · Neiman Health Policy Institute, *JACR* (2025) · Royal College of Radiologists,
-*State of the Wait* · Fraser Institute, *Waiting Your Turn* (2024) · AMN Healthcare imaging-access survey
-(2025) · *Spine* inter-observer stenosis-grading study · cervical-myelopathy MRI reliability studies
-(ICC/κ — some author/year to be confirmed by the science track) · CAR structured-reporting study.
+## Sources
+**Inter-observer / time (PMID-verified, 2026-06-09):** Forsberg 2017 (PMID 27714473, read time) · Zhu 2024
+(PMID 38269650, geometry time) · Urbanschitz 2021 (PMID 34966859, cervical Pfirrmann κ 0.265) · Grochmal
+2018 (PMID 29913296, cord AP ICC) · Fehlings 2006 (PMID 16816769, compression ICC) · Sevin 2025
+(PMID 41011045, Cobb ICC). Full table + caveats: memory `manual_baseline_cost`, deliverable
+`overleaf/deliverables/P2_baseline.tex`.
+**Workforce / wait-time (directional, attributed):** AAMC physician-workforce projections (2024) · HRSA
+Workforce Analysis (2025) · US BLS Occupational Outlook (radiologists) · Neiman Health Policy Institute,
+*JACR* (2025) · Royal College of Radiologists, *State of the Wait* · Fraser Institute, *Waiting Your Turn*
+(2024) · AMN Healthcare imaging-access survey (2025) · CAR structured-reporting study.
