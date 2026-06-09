@@ -29,47 +29,31 @@ Input (DICOM/NIfTI, sagittal T2)
 
 ### Paper
 
-The compiled paper is at [`deliverables/paper/main.pdf`](deliverables/paper/main.pdf).
+The full research paper is at [`deliverables/paper/main.pdf`](deliverables/paper/main.pdf). It covers the clinical background, pipeline architecture, all six measurement groups, validation methodology, and results.
 
-### Rubric deliverables
+### Rubric documents
 
-Four standalone rubric documents in [`deliverables/docs/`](deliverables/docs/), each self-contained and compilable independently:
+Four standalone rubric documents in [`deliverables/docs/`](deliverables/docs/):
 
-| PDF | What it covers |
-|-----|----------------|
-| [`T1_ai_depth.pdf`](deliverables/docs/T1_ai_depth.pdf) | AI depth — models, training, integration |
-| [`P2_baseline.pdf`](deliverables/docs/P2_baseline.pdf) | Baseline comparison |
-| [`P4_publishability.pdf`](deliverables/docs/P4_publishability.pdf) | Publishability argument |
-| [`C1_P3_novelty.pdf`](deliverables/docs/C1_P3_novelty.pdf) | Novelty & AI justification |
+| PDF | Summary |
+|-----|---------|
+| [`T1_ai_depth.pdf`](deliverables/docs/T1_ai_depth.pdf) | Demonstrates AI technical depth and non-triviality — covers the three segmentation models, how they integrate into the pipeline, and why each choice is non-trivial |
+| [`P2_baseline.pdf`](deliverables/docs/P2_baseline.pdf) | Non-AI baseline comparison with primary-source numbers — establishes what manual radiologist measurement achieves and where the pipeline improves on it |
+| [`P4_publishability.pdf`](deliverables/docs/P4_publishability.pdf) | Argues the value and publishability of the work — positions the system relative to existing tools and makes the case for clinical and research impact |
+| [`C1_P3_novelty.pdf`](deliverables/docs/C1_P3_novelty.pdf) | Novelty and AI justification — explains what is genuinely new about this system and why AI is the right approach rather than a rule-based substitute |
 
 ---
 
-## Deployment & running the pipeline
+## Deployment
 
-Full step-by-step instructions — local Docker run and full AWS EKS deployment — are in the runbook:
+Full step-by-step instructions are in the runbook:
 
 **[`technical-documentation/RUNBOOK-deployment.md`](technical-documentation/RUNBOOK-deployment.md)**
 
-Short version:
-```bash
-# Build the 3 segmentation model images
-docker build -f deployment/docker/seg-tss.Dockerfile     -t mri-seg-tss:latest     .
-docker build -f deployment/docker/seg-sct.Dockerfile     -t mri-seg-sct:latest     .
-docker build -f deployment/docker/seg-spineps.Dockerfile -t mri-seg-spineps:latest .
+The runbook covers two paths:
 
-# Start them
-docker run -d --name seg-tss     -p 8083:8083 --shm-size=4g        mri-seg-tss:latest
-docker run -d --name seg-sct     -p 8084:8084 --shm-size=2g        mri-seg-sct:latest
-docker run -d --name seg-spineps -p 8085:8085 --shm-size=4g -m 40g mri-seg-spineps:latest
-
-# Run one scan through the DAG
-curl -sS -F "file=@scan.nii.gz;filename=input.nii.gz" http://localhost:8083/segment -o tss.zip &
-curl -sS -F "file=@scan.nii.gz;filename=input.nii.gz" http://localhost:8085/segment -o spineps.zip &
-wait
-curl -sS -F "file=@tss.zip;filename=segmentation.zip" http://localhost:8084/segment-sct -o sct.zip
-```
-
-See the runbook for AWS deployment, GPU setup, and known gotchas.
+- **Part A — Docker only (local):** build and run the three segmentation model containers on your machine, no cloud required. Good for verifying the models work.
+- **Part B — AWS EKS (recommended):** full production deployment on Amazon EKS with all six services, ECR image registry, load balancers, and monitoring. This is the deployment the project runs on.
 
 ---
 
