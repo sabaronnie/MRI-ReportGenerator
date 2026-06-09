@@ -21,9 +21,10 @@ RUN git clone --depth 1 --branch 7.0 https://github.com/spinalcordtoolbox/spinal
 ENV PATH="/opt/sct/bin:${PATH}"
 
 # Pre-fetch the exact v7 deepseg tasks the wrapper invokes (sct_segmenter.py): cord + canal (G3) and
-# the SCIseg cord-lesion (G5.1). Names must match `sct_deepseg <task>` in the wrapper. Best-effort
-# (|| true): if a name/flag differs by patch release, the model just downloads on the first request.
-RUN for t in spinalcord canal lesion_sci_t2; do \
+# the SCIseg cord-lesion (G5.1). Names must match `sct_deepseg <task>` in the wrapper. The canal task
+# in SCT 7.0 is `sc_canal_t2` (NOT `canal`, which argparse rejects). Best-effort (|| true): if a
+# name/flag differs by patch release, the model just downloads on the first request.
+RUN for t in spinalcord sc_canal_t2 lesion_sci_t2; do \
       sct_deepseg "$t" -install 2>/dev/null || sct_deepseg -install-task "$t" 2>/dev/null || true; \
     done
 
