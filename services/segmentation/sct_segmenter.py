@@ -115,7 +115,7 @@ def run_sct_segmentations(
     work_dir = Path(work_dir).resolve()
     work_dir.mkdir(parents=True, exist_ok=True)
 
-    canal_seg = run_sct_deepseg("canal", input_path, work_dir / "canal")
+    canal_seg = run_sct_deepseg("sc_canal_t2", input_path, work_dir / "canal")
     cord_seg = run_sct_deepseg("spinalcord", input_path, work_dir / "spinalcord")
     lesion_seg = run_sct_sciseg(input_path, work_dir / "lesion")  # G5.1; None if unavailable
     return SCTSegmentationResult(
