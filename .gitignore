@@ -161,6 +161,7 @@ services/eep/data/
 *.db
 *.db-wal
 *.db-shm
+*.tex
 
 # Demo case fixtures generated from research data (mmcsd research-use — not redistributable)
 services/eep/fixtures/case-demo-*.json
