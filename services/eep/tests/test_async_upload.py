@@ -40,10 +40,21 @@ def real_seg(monkeypatch):
     monkeypatch.setattr(config, "SEG_SPINEPS_URL", "http://spineps")
     monkeypatch.setattr(config, "MEASUREMENTS_URL", "http://measurements")
 
-    async def fake_segment_one(name, url, data, filename):
-        return name, _zip(_ENGINE_OUTPUT[name])
+    async def fake_post(client, base_url, path, data, send_name):
+        # Real DAG: TSS + SPINEPS on /segment; SCT on /segment-sct re-including the TSS artifact.
+        if base_url == "http://tss":
+            return _zip(_ENGINE_OUTPUT["totalspineseg"])
+        if base_url == "http://spineps":
+            return _zip(_ENGINE_OUTPUT["spineps"])
+        if base_url == "http://sct":
+            buf = io.BytesIO()
+            with zipfile.ZipFile(buf, "w") as z:
+                z.writestr(_ENGINE_OUTPUT["totalspineseg"], b"x")
+                z.writestr(_ENGINE_OUTPUT["sct"], b"x")
+            return buf.getvalue()
+        raise AssertionError(base_url)
 
-    monkeypatch.setattr(seg, "_segment_one", fake_segment_one)
+    monkeypatch.setattr(seg, "_post", fake_post)
 
     def fake_measure(self, seg_zip, *, case_id, filename):
         # The worker must hand the merged zip to the measurements IEP (proves seg ran first).
@@ -70,10 +81,10 @@ def test_real_seg_upload_queues_then_completes(client, real_seg):
 
 
 def test_real_seg_failure_marks_case_error(client, monkeypatch, real_seg):
-    async def boom(name, url, data, filename):
-        raise RuntimeError("engine down")
+    async def boom(client, base_url, path, data, send_name):
+        raise RuntimeError("engine down")  # TSS fails -> the DAG raises -> case marked error
 
-    monkeypatch.setattr(seg, "_segment_one", boom)
+    monkeypatch.setattr(seg, "_post", boom)
 
     r = client.post("/cases", files={"file": ("study.nii.gz", b"rawscan", "application/gzip")})
     assert r.status_code == 202  # still accepted immediately — the failure is async
