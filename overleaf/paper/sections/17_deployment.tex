@@ -13,7 +13,7 @@ measurement logic.
 \subsection{The data contract}
 A versioned data contract (v0.1) is the single coupling point between the science track and the
 frontend/infrastructure track: it freezes the shapes of the measurements dictionary, flags dictionary,
-per-component status, and the interpreted-measurement container (with the four-value status vocabulary),
+per-component status, and the assessed-measurement container (with the four-value status vocabulary),
 and proposes the case/job/upload/error/report envelopes. The frontend builds against a mock that matches
 these shapes, and the real measurement code drops in behind them unchanged. A companion contract specifies
 the NIfTI volume$+$mask delivery and label map for an interactive WebGL viewer.

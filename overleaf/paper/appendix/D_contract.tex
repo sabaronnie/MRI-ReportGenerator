@@ -32,11 +32,11 @@ key & unit & keyed by & group \\
 \end{longtable}
 \end{center}
 
-\subsection{Interpreted measurement container}
+\subsection{Assessed measurement container}
 Each (measurement $\times$ level) is wrapped as
 \texttt{\{measurement, level, value, unit, status, severity, flag, demographics\_used, quality\_flags,
 caveat\}}. \texttt{status} is one of the four standardized values \texttt{within\_reference},
-\texttt{outside\_reference}, \texttt{review\_only}, \texttt{not\_interpretable}; \texttt{flag} is true iff
+\texttt{outside\_reference}, \texttt{review\_only}, \texttt{not\_assessable}; \texttt{flag} is true iff
 \texttt{status} is \texttt{outside\_reference}; \texttt{severity} is a per-measurement label;
 \texttt{caveat} is the cited modality caveat.
 

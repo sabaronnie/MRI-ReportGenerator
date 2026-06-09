@@ -9,7 +9,7 @@ that the science (the thresholds) lives in one auditable place.
 (clinical name, unit, severity bands, flag threshold, citation, modality caveat, and a tag of
 raw/derived/quality). \texttt{classify(key, value)} walks the ordered bands and returns a standardized
 status (\texttt{within\_reference} / \texttt{outside\_reference} / \texttt{review\_only} /
-\texttt{not\_interpretable}), a per-measurement severity label, the boolean clinical flag
+\texttt{not\_assessable}), a per-measurement severity label, the boolean clinical flag
 (\texttt{true} iff the value lands in an ``outside'' band), and the locked citation and caveat. Where no
 cited threshold exists, the spec says so (citation \texttt{None}, status \texttt{review\_only}) --- the
 system never invents a number.

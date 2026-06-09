@@ -55,8 +55,8 @@ context is the input contract for every measurement component.
 \subsection{Output data contract}
 Each component returns a standard \texttt{ComponentResult} (\texttt{measurements}, \texttt{flags},
 \texttt{intermediate}, \texttt{metadata}). The orchestrator flattens these into
-\texttt{\{components, measurements, flags, interpretations\}}, and the assessement layer wraps each
+\texttt{\{components, measurements, flags, assessements\}}, and the assessement layer wraps each
 (measurement $\times$ level) into a container carrying \texttt{status} (\texttt{within\_reference} /
-\texttt{outside\_reference} / \texttt{review\_only} / \texttt{not\_interpretable}), a per-measurement
+\texttt{outside\_reference} / \texttt{review\_only} / \texttt{not\_assessable}), a per-measurement
 \texttt{severity}, a boolean clinical \texttt{flag}, the cited \texttt{caveat}, and any quality flags.
 This contract is frozen as v0.1 and is the coupling point to the frontend and deployment layers.
