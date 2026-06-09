@@ -11,6 +11,39 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-09 (evening) — Andrew (DAG validated end-to-end, canned removed, clean app deployed, SCT 7.0 migration, AWS torn down)
+
+**Branches:** `feat/seg/deploy` (seg images/Dockerfiles/runbook/journey) and `feat/eep/auth-async-integration`
+(canonical app: EEP DAG client + measurements) — both pushed.
+
+**What was done:** finished validating the real 3-engine DAG on EKS, then closed out the deployment.
+- **Clean DAG validated end-to-end** on the public sample T2: TSS ✅ (200, iso exported), SPINEPS ✅
+  (200, no OOM on the r5.2xlarge/64 GB node), SCT ✅ (200, canal+cord+lesion masks).
+- **SCT 7.0 CLI migration (3 fixes, all proven in-cluster before/without over-rebuilding):**
+  (1) deepseg canal task `canal`→`sc_canal_t2` (seg-sct: wrapper + Dockerfile bake);
+  (2) measurements image now installs the SCT CLI (G3 morphometry needs `sct_process_segmentation`);
+  (3) `sct_process_segmentation` flag `-discfile`→`-vertfile`. G3 verified producing per-level canal AP
+  (C7 15.3 mm, C6 14.5 mm) on real masks.
+- **Canned demo fully removed** (local `/tmp/eep-build`, untracked files, `_local_canned_demo` branch).
+- **All 4 images rebuilt clean** on ephemeral EC2 builders → ECR → redeployed (seg-sct from scratch;
+  eep `223a550e` with SEG_*_URLs wired + `DEMO_PASSWORD` dropped; measurements with SCT CLI).
+- **Live e2e passed** (`POST /cases` → DAG → measurements → report `ready`): real TSS measurements +
+  SPINEPS `segmental_angles` populated; G3 fix landed in repo after the e2e exposed it.
+- **Runbook finalized** with verified sample outputs + gotchas 8–9; DEVELOPMENT_JOURNEY J28+J29.
+- **AWS fully torn down** (`eksctl delete cluster`) per professor's call to run the models on his own
+  compute — the deliverable is the reproducible repo infra, now complete.
+
+**Files changed:** `services/segmentation/sct_segmenter.py`, `services/measurements/cord/functional_canal_ap.py`,
+`services/measurements/sct.py`, `deployment/docker/{seg-sct,measurements}.Dockerfile`, `docs/RUNBOOK-run-the-3-models.md`,
+`DEVELOPMENT_JOURNEY.md`, seg client tests.
+
+**Pending / next action:** **Reconcile `feat/seg/deploy` + `feat/eep/auth-async-integration` and merge to
+`main` (team PR, §9).** Also: **G5.1 (SCIseg lesion reader) is not yet wired into the measurements service**
+(lives on `research/andrew/groups-5-6-week1`) — integrate it when G5.1 is in scope. AWS is down; to re-run,
+rebuild the 4 images from the (now-correct) Dockerfiles and redeploy per the runbook.
+
+---
+
 ## 2026-06-09 — Andrew (live 3-engine segmentation deployed + debugged end-to-end on CPU)
 
 **Branch:** `feat/seg/deploy` (off `feat/eep/scaffold`, full-merged `research/andrew/writeups`) — pushed.
