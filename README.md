@@ -48,6 +48,10 @@ Four standalone rubric documents in [`deliverables/docs/`](deliverables/docs/):
 
 Covers the full Prometheus + Grafana stack (rubric §11 M3): per-service metrics exposed by each IEP, all seven Grafana dashboard panels with PromQL, the ML-specific signal (pathology flag distribution as output-drift proxy), install/access instructions, and teardown notes.
 
+### Tradeoffs
+
+**[`technical-documentation/tradeoffs.md`](technical-documentation/tradeoffs.md)** — three explicit engineering tradeoffs (rubric §5): three containers vs. one, threshold catalog vs. ML classifier, CPU vs. GPU inference — each with what was chosen, what was not, and evidence.
+
 ### MLOps & CI
 
 | File | What it covers |
