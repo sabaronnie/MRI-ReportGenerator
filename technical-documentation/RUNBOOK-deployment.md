@@ -212,33 +212,7 @@ Open the frontend ELB → log in → **Upload** an MRI → it runs the 3‑engin
 
 ---
 
-## 6. Gotchas already fixed (don't re‑hit these)
-
-These were debugged during bring‑up and are already baked into the Dockerfiles / wrappers / manifests:
-
-1. **`kornia<0.8`** pinned — newer kornia removed `kornia.core.Tensor` that TotalSpineSeg's `auglab` imports.
-2. **`--no-stalling` + a real `/dev/shm`** — the default 64 MB shm deadlocks nnU‑Net multiprocessing (TSS
-   silently hangs at "Generating preview images").
-3. **SPINEPS weights baked at build** (semantic + instance + labeling) and `checkpoint_final.pth` copied to
-   `checkpoint_best.pth` (the release ships `final`, the loader wants `best`).
-4. **SPINEPS `-cpu` flag** added when no GPU — it otherwise calls `.cuda()` and crashes on a CPU host.
-5. **SPINEPS RAM ≥ ~28 GB on CPU** — OOM‑killed below that.
-6. **TotalSpineSeg writes the iso volume to `out_dir/input/`** (not `input_iso/`); the wrapper now reads it
-   from there so SCT gets `input_iso.nii.gz`.
-7. **DAG, not flat fan‑out** — SCT is `/segment-sct` and consumes the TSS zip (see §0).
-8. **SCT canal task is `sc_canal_t2`, not `canal`** — SCT 7.0 renamed the spinal‑canal deepseg task;
-   the old `sct_deepseg canal` is rejected by argparse (exit 2). Both the wrapper invocation and the
-   Dockerfile model pre‑install must use `sc_canal_t2` (otherwise the model is silently never baked).
-9. **G3 morphometry (the measurements image) needs the SCT CLI + the `-vertfile` flag** — the cervical
-   canal/cord/SAC measurements shell out to `sct_process_segmentation` on the *pre‑computed* SCT masks, so
-   `measurements.Dockerfile` installs the SCT 7.0 CLI (no model weights — segmentation already ran in
-   `seg-sct`). SCT 7.0 also renamed that command's vertebral‑labeling flag `-discfile` → `-vertfile`
-   (old name → `unrecognized arguments`). Both are already fixed in the repo; verified in‑cluster
-   producing per‑level canal AP diameters from the TSS `step1_levels` labeling.
-
----
-
-## 7. Teardown (stop AWS cost)
+## 6. Teardown (stop AWS cost)
 ```bash
 eksctl delete nodegroup -f deployment/aws/segmentation-nodegroup.yaml --approve
 helm uninstall kps -n monitoring 2>/dev/null || true
