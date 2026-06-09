@@ -23,6 +23,7 @@ from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_
 
 from .builder import build_report_document
 from .render_html import render_clinical_report_html, render_technical_report_html
+from .render_pdf import render_clinical_report_pdf
 
 app = Flask(__name__)
 
@@ -71,6 +72,26 @@ def render():
         report=document,
         artifacts={"clinical_html": clinical_html, "technical_html": technical_html},
     )
+
+
+@app.post("/render.pdf")
+def render_pdf_route():
+    """Body = the handoff contract. Returns the branded clinical report as a real PDF."""
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        RENDERS.labels("bad_request").inc()
+        return jsonify(error="request body must be the JSON handoff contract"), 400
+    start = time.perf_counter()
+    try:
+        document = build_report_document(payload)
+        pdf = render_clinical_report_pdf(document)
+    except (ValueError, KeyError, TypeError) as e:
+        RENDERS.labels("error").inc()
+        return jsonify(error=f"reporting failed: {e}"), 422
+    finally:
+        RENDER_LATENCY.observe(time.perf_counter() - start)
+    RENDERS.labels("ok").inc()
+    return Response(bytes(pdf), mimetype="application/pdf")
 
 
 if __name__ == "__main__":

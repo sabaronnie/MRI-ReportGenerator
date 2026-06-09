@@ -1,0 +1,4 @@
+# NIfTI volumes/masks are loaded at runtime (mock) or served by the EEP (live).
+# They're too large / data-adjacent to commit — keep them out of git.
+*.nii
+*.nii.gz

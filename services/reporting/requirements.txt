@@ -1,3 +1,5 @@
 flask>=3.0
 prometheus_client>=0.20
-# builder.py imports services.interpretation (pure-Python thresholds); renderers use stdlib only.
+fpdf2>=2.7
+# builder.py imports services.interpretation (pure-Python thresholds); the HTML renderers
+# use stdlib only; the clinical PDF renderer uses fpdf2 (pure-Python, no system deps).

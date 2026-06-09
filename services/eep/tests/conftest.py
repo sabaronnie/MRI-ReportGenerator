@@ -1,25 +1,31 @@
 """Shared test fixtures for the EEP.
 
-The `client` fixture is **forward-compatible with the JWT auth** added on the full-stack branch:
-- On this branch (no auth) there is no `/auth/login` route → the fixture returns a plain client.
-- After the auth merge, `/cases*` requires a Bearer token → the fixture logs in with a seeded demo
-  account and attaches the token, so these API tests keep passing without per-test changes.
+Hermetic test env — temp DBs + a test JWT secret, set BEFORE the app imports (so neither the real
+users.db nor workflow.db is touched by the suite, and auth has a valid secret at import time).
+
+The `client` fixture logs in with the seeded demo account and attaches the Bearer token. It is a
+no-op if `/auth/login` isn't wired, so the API tests pass with or without the auth layer.
 """
 
-from __future__ import annotations
-
 import os
+import tempfile
 
-import pytest
-from fastapi.testclient import TestClient
+_TMP = tempfile.mkdtemp()
+os.environ.setdefault("USERS_DB_PATH", os.path.join(_TMP, "users.db"))
+os.environ.setdefault("WORKFLOW_DB_PATH", os.path.join(_TMP, "workflow.db"))
+os.environ.setdefault("JWT_SECRET", "test-secret-min-32-bytes-long-aaaaaaaa")
+os.environ.setdefault("DEMO_PASSWORD", "demo12345")
 
-from services.eep.app import app
+import pytest  # noqa: E402  (env above must be set before the app imports)
+from fastapi.testclient import TestClient  # noqa: E402
+
+from services.eep.app import app  # noqa: E402
 
 
 def _auth_header_if_needed(client: TestClient) -> None:
     paths = {getattr(r, "path", None) for r in app.routes}
     if "/auth/login" not in paths:
-        return  # auth not wired on this branch
+        return  # auth not wired
     email = os.environ.get("DEMO_EMAIL", "radiologist@demo")
     password = os.environ.get("DEMO_PASSWORD", "demo12345")
     resp = client.post("/auth/login", json={"email": email, "password": password})

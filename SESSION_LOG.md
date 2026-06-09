@@ -11,6 +11,42 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-09 (cont. 7) — Andrew (async-upload fix + frontend/auth merge into one EEP image)
+
+**Branch:** `feat/eep/auth-async-integration` (new, off `feat/seg/deploy` @ 15cca77) in a fresh
+`integration-worktree/` — created so as NOT to disturb the live `eep-worktree` (Deployment v2 owns
+AWS, 4 unpushed commits there) or `frontend-worktree`. **NOT pushed** (those 4 commits are Deployment
+v2's to push first; coordinate before pushing this).
+
+**What was done:**
+1. **Async-upload fix (addendum §1 critical).** Upload now returns `202 queued` immediately and runs
+   real 3-engine seg → measurements in a FastAPI `BackgroundTasks` worker (sync callable → threadpool,
+   off the event loop), killing the `asyncio.run`-inside-the-running-loop crash and the 60s ELB-timeout
+   risk. Store gained `set_stage`, `update_case_core`, and `create_case(simulated=False)` so real cases
+   are worker-driven (queued→segmenting→measuring→ready / error), not faked by the UX sim clock. Stand-in
+   fast path unchanged. +5 tests (`test_async_upload.py`).
+2. **Merged `feat/app/fullstack-local` (JWT auth + admin + workflow layer + PDF + clinical frontend) into
+   this branch** so there is ONE EEP image with BOTH auth and the seg fan-out. Merge was small: only 4
+   both-changed files (.gitignore, SESSION_LOG, `app.py`, `conftest.py`). **No graded-science conflicts**
+   — all measurement/interpretation files changed only on seg/deploy (validated), unchanged on fullstack,
+   so they merged cleanly. `app.py`: unioned auth/workflow wiring + `segmentation_ready` in /readyz.
+   `conftest.py`: hermetic DB/JWT env set before app import + the auth-aware `client` fixture.
+   New runtime deps: `pyjwt`, `argon2-cffi` (EEP), `fpdf2` (reporting).
+3. **Golden regenerated (1 line):** the merge adopts fullstack's `_format_value` (2 decimals when |v|<2),
+   so the myelomalacia screen renders `1.00` not `1.0` — value/status/wording identical, no measurement
+   or interpretation change. Q2 gate honored (deliberate, reviewed regeneration).
+
+**Verify:** `cd integration-worktree && /tmp/venv-itest/bin/python -m pytest -q` → **54 passed, 6 skipped**
+(needs `pip install pyjwt argon2-cffi fpdf2` on top of requirements-dev).
+
+**Pending / next action:** (a) Deployment v2 confirms ownership + pushes its 4 commits, then this branch
+can be pushed/PR'd or merged into `feat/seg/deploy`. (b) Build the EEP image from THIS branch (auth + seg
+fan-out + async upload) for the final deploy. (c) Frontend still polls a sim clock — once real status is
+live it should poll `/cases/{id}/job` (addendum §8). (d) Live-wire `SEG_*_URL` only AFTER this async
+upload is deployed (addendum §1/§2).
+
+---
+
 ## 2026-06-08 (cont. 6) — Andrew (live 3-engine segmentation: deploy-side built, BLOCKED on science wrappers)
 
 **Branch:** `feat/eep/scaffold` — pushed.
@@ -91,6 +127,89 @@ MLOps gate: `pip install -r requirements-mlops.txt && python -m mlops.validate`.
 (P1–P4) + novelty vs the duplicate-title team (C1/P3) — team; (3) science write-ups (T1/P2);
 (4) TEARDOWN after the demo: `deployment/aws/teardown.sh` (+ `helm uninstall kps -n monitoring`).
 The AWS stack + Grafana are still LIVE for the demo.
+
+## 2026-06-09 — Andrew (Dashboard + landing page + sidebar tabs + animation uniformity)
+
+**Branch:** `feat/app/fullstack-local` — pushed.
+
+**What was done:** Installed `@efferd/header-2` + `@efferd/dashboard-4`, integrated both into our app.
+- **Clinical Dashboard** (`/dashboard`) — rewrote the e-commerce dashboard to our data: KPI cards (total/urgent/awaiting/signed), **triage donut** + **flags-by-group bar** (recharts via shadcn `chart`), quick actions. Backed by new **EEP `GET /workflow/stats`** (aggregates from the case store).
+- **Landing page** (`/`) from header-2, rebranded: our logo, hero + teal FloatingPaths, how-it-works, safety box; "Sign in" → /login. (`/` was just a redirect before.)
+- **Sidebar tabs:** added Dashboard + Upload (dropped the duplicate Upload CTA) → 4 tabs.
+- **Animation uniformity:** replaced native `<select>`s (worklist filters, admin role, create-user role) with the animated shadcn `Select` — now consistent fade/zoom with dropdown/dialog. (The shadcn dropdown/select/dialog primitives were already uniform; the native selects were the "basic" ones.)
+- Removed the vendored e-commerce dashboard + unused re-pulled shell files. tsc clean; **prod build green**; landing + dashboard verified in-browser (dashboard in mock — see below), 0 console errors.
+
+**Files:** new `src/app/(app)/dashboard/`, `src/components/dashboard/*`, `src/components/{header,mobile-nav,portal}.tsx`, `src/hooks/use-scroll.ts`, `ui/{chart,item}.tsx`; modified `app/page.tsx`, `lib/api/workflow.ts`, `app-shared.tsx`, `app-sidebar.tsx`, `worklist-filters.tsx`, admin dialogs; `services/eep/workflow/router.py` (+`/stats`); +recharts.
+
+**Update (later 2026-06-09):** Docker hang fixed (force-killed the stuck engine procs, relaunched — up in 6s). Stack back; **dashboard verified LIVE** (5 cases, 2 urgent, flags-by-group populated), 0 errors. Mapped `spondy_pct_of_lower_AP` → Alignment so the dashboard "Other" bucket is gone (now Canal/cord 5 · Vertebra 1 · Alignment 5).
+
+**Pending / next action:** Deploy goes through the infra chat (merge this branch into `feat/seg/deploy` first). Live-upload link still needs EEP `POST /cases` to forward `{age,sex}` (routers/cases.py = infra-owned) + measurement/interpretation code merged into the measurements IEP image. Demographics capture UI (upload form age/sex) not yet built. PRs still unopened. See the handoff prompt for the full picture.
+
+## 2026-06-08 (cont. 4) — Andrew (LINK measurement pipeline → report + radiologist ZIP)
+
+**Branch:** `feat/app/fullstack-local` — pushed.
+
+**What was done:** Linked the measurement pipeline output to the report UI/PDF and produced the radiologist deliverable.
+- **§3 mapping committed:** `services/eep/tools/run_all_to_case.py` (pipeline `run_all` → contract envelope: passthrough measurements/flags/interpretations; derive impression + triage; demographics; §4 sex-neutral caveat when sex absent).
+- **Clean clinical rendering:** report shows a clinical allowlist (canal/cord/SAC/disc/alignment) + any flag (not all 150+ rows); values rounded (2dp ratios / 1dp mm·deg), `unknown` unit dropped, Cobb rounded — in PDF (`pdf_report.py`) + builder (`builder.py`) + worklist table (`findings-table.tsx`).
+- **Radiologist ZIP built** (local, **not in git** — mmcsd is research-use): `Project/radiologist-deliverable/cervical-mri-radiologist-demo.zip` = 2 branded PDFs + 2 MRIs + README/license. Values match handoff §5 EXACTLY (sub-amu01 none/canal min 14.5/Cobb +16.7°/0 flags; mmcsd urgent/canal min 10.0/SAC C6 3.4/Cobb +4.3°/dural-sac 10.0 flagged). Both cases also live in the running worklist for the §6.1 cross-check.
+- Demo fixtures `case-demo-*.json` gitignored. 3 reporting tests green; prod build/tsc clean; 0 console errors.
+
+**Files changed:** `services/eep/tools/{run_all_to_case,__init__}.py` (new), `services/reporting/{pdf_report,builder}.py`, `frontend/src/components/report/findings-table.tsx`, `.gitignore`.
+
+**Pending / next action:** (1) Andrew cross-checks the 2 reports against a local re-run (§6.2) — send the ZIP/values. (2) Full LIVE-upload link still needs: merge `services/measurements`+`services/interpretation` from `research/andrew/writeups` into the measurements IEP image, and **EEP `POST /cases` forward `{age,sex}` into `load_context`** (routers/cases.py = infra-owned → coordinate). The ZIP used ground-truth `run_all` JSON, so it didn't need the live upload path. [[demographics_interpretation_coupling]]
+
+## 2026-06-08 (cont. 3) — Andrew (session 401-loop fix + real branded report PDF)
+
+**Branch:** `feat/app/fullstack-local` — pushed.
+
+**What was done:**
+- **Fixed the site-breaking 401:** a rebuilt EEP re-seeded `users.db` with new IDs → existing JWTs 401'd and the worklist threw. Now EEP 401s route through `/api/session/expired` (clears cookie → /login, breaks the login↔worklist loop a stale cookie caused); seed users get **deterministic IDs** (uuid5 of email) so rebuilds keep sessions valid (`b2b2311`).
+- **Real branded clinical PDF** (the "generator" was a stub returning HTML): `services/reporting/pdf_report.py` (**fpdf2**, pure-Python, no system deps) renders a polished PDF — logo header, case+patient block, summary chips, findings narrative + color-coded table, impression, cited caveats, disclaimers, footer. `render_clinical_report_pdf` now real; reporting exposes `POST /render.pdf`; EEP `GET /workflow/cases/{id}/report.pdf` (reuses `_case_to_handoff` read-only — **no infra-file edits**); Next.js proxies `/api/cases/[id]/report-pdf`; case page has a **Download PDF** button. 22 pytest green; prod build green; e2e verified (`a568529`).
+
+**Files changed:** `frontend/src/lib/api/{workflow,admin,client}.ts`, `app/api/session/expired/route.ts`, `services/eep/auth/db.py` (fix); `services/reporting/{pdf_report,render_pdf,app}.py` + `requirements.txt` + `assets/logo.png`, `services/eep/workflow/router.py`, `app/api/cases/[id]/report-pdf/route.ts`, `components/report/case-header.tsx` (PDF).
+
+**Pending / next action:** Andrew bringing **measurement codes** + the **age/height/sex → interpretation** wiring (demographics capture is on hold until then; [[demographics_interpretation_coupling]] — must also be coded in Group 6). PDF demographics row auto-appears once `case_header.patient_summary` is populated upstream. Infra note unchanged: `services/eep/app.py` mounts auth+workflow routers.
+
+## 2026-06-08 (cont. 2) — Andrew (radiologist workflow features: worklist A/B/C/D)
+
+**Branch:** `feat/app/fullstack-local` — pushed.
+
+**What was done:** Researched real RIS/reporting tools, then built batch 1 of workflow features (additive, zero collision — new `services/eep/workflow/` package + its own `workflow.db`; reads case store + users DB read-only; only shared touch stays `app.py`, one more line).
+- **A** worklist filter/sort/search + **C** turnaround-time: `GET /workflow/worklist` enriches summaries with assignment + derived TAT (on_track/warning/breach/signed vs `WORKFLOW_TAT_TARGET_HOURS`), filters (status/triage/mine/assignee/q), sorts (priority/oldest/newest).
+- **B** claim/release/assign; **D** report addenda (`POST .../addendum`, `GET /workflow/cases/{id}`). 9 pytest green (19 total EEP), live-smoke + Playwright e2e verified, prod build green, 0 console errors.
+- Frontend: worklist filter bar + Age/Assignee columns + Claim; case page TAT badge + claim strip + Addenda section. Degrades gracefully in mock mode. Docs in `docs/workflow-features.md`.
+
+**Files changed:** new `services/eep/workflow/**` + `tests/{test_workflow,conftest}.py`; `services/eep/app.py` (one line); `docs/workflow-features.md`; frontend `lib/api/workflow.ts`, `lib/actions/workflow.ts`, `components/workflow/*`, `components/worklist/{worklist-filters,case-table}.tsx`, `app/(app)/{worklist,cases/[id]}/page.tsx`.
+
+**Pending / next action:** Andrew wants to **brainstorm batch 2** (E notes / F critical-results / G dashboard / H audit). Still flag the infra chat that `services/eep/app.py` is edited (auth + workflow router mounts). New env (deploy): `WORKFLOW_TAT_TARGET_HOURS` (default 24); `workflow.db` gitignored.
+
+## 2026-06-08 (cont.) — Andrew (full-stack chat: real JWT auth + admin panel; app-shell; logo; view-report)
+
+**Branch:** `feat/app/fullstack-local` (new; = frontend + merged backend from `feat/eep/scaffold`). Pushed.
+
+**What was done:**
+- **Merged the full backend** into the frontend worktree (clean; only SESSION_LOG conflicted → kept both). Ran the whole stack locally: `docker compose` (eep :8080 + measurements :8081 + reporting :8082, `/readyz` both IEPs ready) + `npm run dev` live → :3000.
+- **Real authentication (replaces the mock cookie).** Researched OWASP/2026 first (`docs/auth-design.md`). EEP-enforced JWT: new `services/eep/auth/` package — **Argon2id** hashing (scrypt fallback), **HS256 JWT (alg pinned)**, **SQLite** user store (seeds 4 demo accounts, pw `demo12345`), `/auth` router (login/me/logout + admin user CRUD), `current_user` dep re-checks the DB each request (immediate deactivate/delete revocation). Guards `/cases*`; `/healthz /readyz /metrics /auth/login` open. **10 pytest green.** Only EEP core file touched = `app.py` (mount router + guard) + `requirements.txt` (+pyjwt, argon2-cffi) — **flag the infra chat**.
+- **Frontend auth:** login = email+password → JWT in httpOnly cookie → forwarded as Bearer; viewer/report now go through same-origin Next.js proxy routes (`/api/cases/[id]/{volume,mask,report}`) that attach the token. **Real admin panel** (`/admin`): create user, inline role change, enable/disable, reset password, delete — wired to the EEP. Removed the dev no-login bypass. Login page reworked (password field, social buttons dropped).
+- **Earlier this session:** efferd app-shell-4 → clinical sidebar shell (route group `(app)`); efferd auth-5 login; site logo + favicon; "View report" button. Production build green; e2e (admin creates user → that user logs in → RBAC hides Admin) verified, 0 console errors.
+
+**Files changed:** new `services/eep/auth/**` + test; `services/eep/app.py`, `requirements.txt`; `docs/auth-design.md`; frontend `lib/auth/*`, `lib/api/{client,proxy,admin}.ts`, `app/api/cases/[id]/**`, `app/(app)/admin/**`, `components/{auth-page,nav-user,admin/*}`, app-shell components, `brand.tsx`, `public/logo.png`, `app/icon.png`.
+
+**Pending / next action:** ⚠️ **tell the infra chat I edited `services/eep/app.py` + `requirements.txt`** (auth wiring) so the next `feat/eep/scaffold` merge stays clean. Andrew wants to **brainstorm more functionality** next. In any deploy, set `JWT_SECRET` (≥32 bytes) + `ADMIN_PASSWORD`/`DEMO_PASSWORD` env. Sample data + `users.db` are gitignored. Other queued frontend items: per-case MRI in the viewer, more demo cases (need Colab segmentation).
+
+## 2026-06-07/08 — Andrew (frontend BUILT M1–M6; starting EEP + containerization)
+
+**Branch:** `feat/frontend/scaffold` (worktree `frontend-worktree/`, 39 commits, pushed, **unmerged**). EEP work continues on `feat/eep/scaffold` (worktree `eep-worktree/`).
+
+**What was done:**
+- **Full polished frontend built** — Next.js 16 + Tailwind v4 + shadcn/ui, **mock-first** (`NEXT_PUBLIC_API_MODE=mock`, typed client `lib/api/client.ts`) against the frozen data + report contracts (`docs/contracts/`). Screens: worklist, case report (findings table from `interpretations.measurements[]` + impressions + disclaimers), interactive **NiiVue viewer** (real Spine-Generic `sub-amu01` volume + TSS mask, gitignored under `public/samples/`), **auth/RBAC** (4 roles, mock cookie session, radiologist-only sign-off), **upload + simulated processing**.
+- **Design pass** (light clinical, teal petrol accent, **IBM Plex** serif/sans/mono) + **animation pass** (Framer Motion `motion`, `sonner` toasts, `lucide-react` icons; page transitions, working mobile menu, Back button, uniform button micro-interactions). Light-only, no purple (Andrew's prefs).
+- Fixed 4 bugs (optional report fields; Base-UI button API; route-handler in-memory store not shared with RSC → switched to `router.refresh` polling; font-var mismatch). Type-clean, 0 console errors, verified in-browser per milestone.
+
+**Files changed:** new `frontend-worktree/frontend/**` (whole Next.js app). No `main` files touched (isolated worktree).
+
+**Pending / next action:** Build the **EEP** (FastAPI front-door in `services/eep/`) orchestrating measurements + interpretation (segmentation = Colab/GPU upstream; reporting = Ronnie, pending) → then **containerize** frontend + EEP (`deployment/`) → flip frontend to `live` mode → **AWS deploy (needs Andrew's creds)**. Frontend design refinements pending Andrew's review.
 
 ---
 
