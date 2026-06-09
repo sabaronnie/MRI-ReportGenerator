@@ -561,6 +561,32 @@ image rebuild turned a guess-and-rebuild loop into one confident rebuild. **Bonu
 the engines are not 3-way parallel — SCT consumes TSS's `input_iso` (DAG = TSS ∥ SPINEPS → SCT).
 
 ---
+
+## J28 — The SCT canal task name (`canal` → `sc_canal_t2`): a bug that stayed invisible until the DAG chained
+
+**Context:** continuation of J27 (seg deployment). With TSS, SCT, and SPINEPS all deployed, we did the
+first *clean* end-to-end run of the real DAG (TSS ∥ SPINEPS → SCT) on a real sagittal T2.
+
+- **What was wrong:** the SCT wrapper invoked `sct_deepseg canal`. SCT 7.0 renamed that task to
+  `sc_canal_t2`; argparse rejects `canal` (exit 2, `invalid choice: 'canal'`). The Dockerfile's model
+  pre-install used the same wrong name, so the canal model was *silently never baked* (the `|| true`
+  best-effort swallowed it).
+- **Why it hid for so long:** every prior run failed *upstream* — SCT never received a valid TSS zip
+  (first the wrong flat fan-out, then the `input_iso` packaging path, then a stray mid-run
+  `rollout restart` that killed TSS). SCT's own bug only became reachable once the `input_iso` fix made
+  TSS→SCT actually chain. **Lesson: a downstream stage's bugs are untestable until every upstream stage
+  succeeds — "it deployed + healthz-OK" tells you nothing about whether the stage *runs*.**
+- **How we found it:** read the 500's JSON body — SCT echoed the full `sct_deepseg` task list with
+  `sc_canal_t2` (green=installed for cord/lesion; canal absent). The 2-second failure (vs minutes of
+  inference) confirmed an argparse reject, not a compute error.
+- **The fix:** `canal` → `sc_canal_t2` in the wrapper, the Dockerfile pre-install, and the G3
+  measurements fallback (`functional_canal_ap.py`) + the unit-test assertion.
+- **Validated (live, before the rebuild — per J27's meta-lesson):** ran `sct_deepseg sc_canal_t2` and
+  `sct_deepseg spinalcord` on the actual `input_iso` *inside the running pod* (egress available, so the
+  model auto-downloaded): both exit 0, **canal mask 44,794 voxels, cord mask 13,107 voxels** (canal >
+  cord, anatomically sensible). Only then did we do one confident from-scratch Dockerfile rebuild.
+
+---
 *Open methodology gaps tracked elsewhere:* teammate threshold/citation fixes (disc DHI<0.30, bulge flat-wall,
 Pfirrmann cut-points) — see `group5/AUDIT_groups1-4_measurements.md`; C6/C7 Cobb **precision** is now closed by
 the SPINEPS endplate-voxel method (J12, C6-C7 SD 5.9°); absolute **accuracy** (MAE/ICC) + the slip calibration

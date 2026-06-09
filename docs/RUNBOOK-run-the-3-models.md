@@ -204,6 +204,9 @@ These were debugged during bring‑up and are already baked into the Dockerfiles
 6. **TotalSpineSeg writes the iso volume to `out_dir/input/`** (not `input_iso/`); the wrapper now reads it
    from there so SCT gets `input_iso.nii.gz`.
 7. **DAG, not flat fan‑out** — SCT is `/segment-sct` and consumes the TSS zip (see §0).
+8. **SCT canal task is `sc_canal_t2`, not `canal`** — SCT 7.0 renamed the spinal‑canal deepseg task;
+   the old `sct_deepseg canal` is rejected by argparse (exit 2). Both the wrapper invocation and the
+   Dockerfile model pre‑install must use `sc_canal_t2` (otherwise the model is silently never baked).
 
 ---
 
