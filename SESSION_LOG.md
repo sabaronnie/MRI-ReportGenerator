@@ -11,6 +11,44 @@ Append-only. Newest entries at top. Every session adds one entry before closing.
 
 ---
 
+## 2026-06-09 — Andrew (live 3-engine segmentation deployed + debugged end-to-end on CPU)
+
+**Branch:** `feat/seg/deploy` (off `feat/eep/scaffold`, full-merged `research/andrew/writeups`) — pushed.
+
+**What was done:** merged the 3 science seg wrappers and stood up the real segmentation on AWS —
+seg-tss / seg-sct / seg-spineps as 3 services on a CPU `m5.2xlarge` node group (32 GB; c5.2xlarge's
+16 GB couldn't schedule all 3 pods). The first cloud build was the smoke test (engines never run e2e
+locally) and surfaced 5 real dependency/environment bugs, each fixed at the source (all committed):
+TSS `kornia<0.8` (auglab `kornia.core.Tensor` import) + `--no-stalling` (CPU multiprocessing deadlock)
++ a real `/dev/shm`; SPINEPS bake model weights at build (semantic+instance+labeling, `checkpoint_final`
+→`_best`) + device-aware `-cpu` flag + mem limit 28 Gi (was OOMKilled at 12 Gi). **TSS validated
+end-to-end on CPU (~3.5 min/case)**; SPINEPS model load validated on CPU. Corrected images rebuilding on
+an ephemeral EC2 builder → ECR. Full write-up in DEVELOPMENT_JOURNEY J27.
+
+**Architecture finding:** the engines are NOT 3-way parallel — SCT (`/segment-sct`) consumes TSS's
+`input_iso.nii.gz`, so the real DAG is **TSS ∥ SPINEPS → SCT**. The EEP fan-out client currently assumes
+3 parallel `/segment` calls → needs reworking to the staged DAG before live fan-out.
+
+**Cross-chat coordination:** another chat's branch `feat/eep/auth-async-integration` (in
+`integration-worktree/`, committed-not-pushed) branched from `15cca77` and is +72 commits — it merged
+`feat/app/fullstack-local` into one EEP image with JWT auth + the async-upload fix + workflow + PDF +
+clinical frontend, which matches the deployed auth frontend (`/worklist`→`/login`). That is the canonical
+full-stack bundle; the seg-deploy work here should land under it.
+
+**Files changed:** `services/segmentation/*` (merged wrappers + `--no-stalling`, `-cpu`, weights bake),
+`deployment/docker/seg-*.Dockerfile`, `deployment/k8s/segmentation.yaml` (shm + 28Gi + gunicorn timeout),
+`deployment/aws/segmentation-nodegroup.yaml` (m5.2xlarge), `DEVELOPMENT_JOURNEY.md` (J27).
+
+**Pending / next action:**
+1. Once corrected seg images land, `kubectl rollout restart` the seg deploys, then run the staged pipeline
+   (TSS∥SPINEPS→SCT) → real merged outputs → finalized measurements (G3/G4/G5.1).
+2. Rework the EEP fan-out to the TSS∥SPINEPS→SCT DAG (+ the async-upload refactor) before wiring live.
+3. TEARDOWN after the demo: seg node group (`eksctl delete nodegroup -f
+   deployment/aws/segmentation-nodegroup.yaml --approve`), the ephemeral EC2 builder (tag ephemeral=true),
+   the `mri-seg-builder` IAM role/profile.
+
+---
+
 ## 2026-06-08 (cont. 6) — Andrew (live 3-engine segmentation: deploy-side built, BLOCKED on science wrappers)
 
 **Branch:** `feat/eep/scaffold` — pushed.

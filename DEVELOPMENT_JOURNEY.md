@@ -528,6 +528,39 @@ the target metric (revert otherwise). All 137 service tests stayed green after e
   n=11 result would have been the fake-clean-number failure Andrew explicitly warned against.
 
 ---
+
+## J27 — Deploying the 3 segmentation engines: every failure was packaging, not algorithms (CPU/k8s reality)
+
+**Context:** containerized TotalSpineSeg + SCT + SPINEPS as 3 services on EKS and ran the real demo MRI.
+The first cloud build was the smoke test (the engines had never run end-to-end locally). Five distinct
+failures surfaced — all environment/packaging, none in our wrapper logic — each found by reading pod
+stderr and fixed at the source:
+
+1. **Unpinned transitive deps drift.** `pip install totalspineseg[nnunetv2]` pulled the *latest* `kornia
+   0.8`, which removed `kornia.core.Tensor` that TotalSpineSeg's `auglab` imports → every TSS run crashed
+   at import. Fix: pin `kornia<0.8`. *Lesson:* "install latest" is not reproducible for ML stacks; pin the
+   awkward transitive deps, not just the top-level package.
+2. **CPU multiprocessing deadlock on the default k8s `/dev/shm` (64 MB).** TSS hung silently at
+   "Generating preview images" (CPU idle, no error). Fixes: `--no-stalling` (forkserver) + a real
+   `/dev/shm` (`emptyDir: medium: Memory`). *Lesson:* a hang with no traceback on CPU/k8s is almost always
+   shared-memory or a multiprocessing start-method issue.
+3. **Model weights aren't in the pip package.** SPINEPS shipped code but no weights; `torch.load` 404'd on
+   `checkpoint_best.pth`. The release ships `checkpoint_final.pth` (name mismatch) and the pipeline
+   silently needs a *third* model (labeling) beyond semantic+instance. Fix: bake all 3 downloads at build
+   + copy `final`→`best`. *Lesson:* pre-fetch weights at build; discover the *full* model set by running
+   the real path, not the happy-path docs.
+4. **GPU-by-default crashes on a CPU node.** SPINEPS calls `.cuda()` unconditionally → `Found no NVIDIA
+   driver`. Fix: device-aware `-cpu` flag (only when `torch.cuda.is_available()` is False).
+5. **Container memory sized for GPU, not CPU.** SPINEPS `OOMKilled` (exit 137) at a 12 Gi limit — CPU
+   inference uses far more RAM than GPU (no tiling). Raised to 28 Gi; the 16 GB c5.2xlarge node also had to
+   become a 32 GB m5.2xlarge (same vCPU/quota) just to schedule 3 pods.
+
+**Meta-lesson:** wrapping existing tools is the right strategy, but "it imports + compiles" ≠ "it runs."
+Validating each fix *in the live pod* (pip-install the pin, download the weights, re-run) before a ~20-min
+image rebuild turned a guess-and-rebuild loop into one confident rebuild. **Bonus architecture finding:**
+the engines are not 3-way parallel — SCT consumes TSS's `input_iso` (DAG = TSS ∥ SPINEPS → SCT).
+
+---
 *Open methodology gaps tracked elsewhere:* teammate threshold/citation fixes (disc DHI<0.30, bulge flat-wall,
 Pfirrmann cut-points) — see `group5/AUDIT_groups1-4_measurements.md`; C6/C7 Cobb **precision** is now closed by
 the SPINEPS endplate-voxel method (J12, C6-C7 SD 5.9°); absolute **accuracy** (MAE/ICC) + the slip calibration
