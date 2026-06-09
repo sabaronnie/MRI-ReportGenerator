@@ -98,7 +98,7 @@ spec:
           readinessProbe: { httpGet: { path: /healthz, port: 8085 }, initialDelaySeconds: 20, periodSeconds: 15 }
           resources:
             requests: { cpu: "1", memory: "2Gi" }
-            limits:   { cpu: "7", memory: "28Gi" }   # , nvidia.com/gpu: 1   # <- uncomment on GPU
+            limits:   { cpu: "7", memory: "40Gi" }   # , nvidia.com/gpu: 1   # <- uncomment on GPU
 ---
 apiVersion: v1
 kind: Service
